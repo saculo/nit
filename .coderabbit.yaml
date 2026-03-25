@@ -1,0 +1,47 @@
+language: en-US
+reviews:
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_instructions:
+    - path: ".claude/skills/**"
+      instructions: >
+        These are Claude Code skill definitions (SKILL.md files).
+        Review for clarity, completeness, and consistency across skills.
+        Check that trigger conditions, instructions, and output formats are well-defined.
+    - path: ".claude/agents/**"
+      instructions: >
+        These are Claude Code agent definitions.
+        Review for clear role definitions, appropriate permissions, and consistency with related skills.
+    - path: ".claude/hooks/**"
+      instructions: >
+        These are validation hook scripts (bash).
+        Review for correctness, proper error handling, and consistent validation patterns.
+    - path: ".nit/skills/**"
+      instructions: >
+        These are nit workflow skill definitions (mirrors .claude/skills).
+        Review for consistency with the .claude/skills counterparts and proper workflow integration.
+    - path: ".nit/agents/**"
+      instructions: >
+        These are nit workflow agent definitions (mirrors .claude/agents).
+        Review for consistency with the .claude/agents counterparts.
+    - path: ".nit/hooks/**"
+      instructions: >
+        These are nit workflow validation hooks (mirrors .claude/hooks).
+        Review for consistency with the .claude/hooks counterparts.
+    - path: ".nit/phases/**"
+      instructions: >
+        These are phase and task definitions for the nit workflow.
+        Review for clear acceptance criteria, proper task decomposition, and design completeness.
+    - path: ".github/workflows/**"
+      instructions: >
+        GitHub Actions workflows. Review for security best practices,
+        proper permissions scoping, and correct action versions.
+chat:
+  auto_reply: true
