@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/workspace.schema.json",
+  "title": "Workspace",
+  "description": "Project-level nit workspace configuration.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Project name."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["greenfield", "brownfield"],
+      "description": "Whether this is a new or existing codebase."
+    },
+    "nitVersion": {
+      "type": "string",
+      "description": "Version of the nit workflow specification."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional project description."
+    }
+  },
+  "required": ["name", "mode", "nitVersion"],
+  "additionalProperties": false
+}

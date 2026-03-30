@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/dependency-rules.schema.json",
+  "title": "Dependency Rules",
+  "description": "Constraints governing inter-module dependencies.",
+  "type": "object",
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Source module name."
+          },
+          "to": {
+            "type": "string",
+            "description": "Target module name."
+          },
+          "allowed": {
+            "type": "boolean",
+            "description": "Whether this dependency is allowed."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Explanation for the rule."
+          }
+        },
+        "required": ["from", "to", "allowed"]
+      }
+    }
+  },
+  "required": ["rules"],
+  "additionalProperties": false
+}

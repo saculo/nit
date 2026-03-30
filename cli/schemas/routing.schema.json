@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/routing.schema.json",
+  "title": "Routing",
+  "description": "Resolved skill routing for a task.",
+  "type": "object",
+  "properties": {
+    "taskId": {
+      "type": "string",
+      "description": "The task being routed."
+    },
+    "targetModule": {
+      "type": "string",
+      "description": "The module this task targets."
+    },
+    "baseSkill": {
+      "type": "string",
+      "description": "The base skill resolved for the task type."
+    },
+    "languageSkill": {
+      "type": "string",
+      "description": "Language-specific skill resolved from the module."
+    },
+    "customSkills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Additional custom skills applied."
+    },
+    "globalSkills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Global skills applied to all tasks."
+    },
+    "resolvedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the routing was resolved."
+    }
+  },
+  "required": ["taskId", "baseSkill"],
+  "additionalProperties": false
+}

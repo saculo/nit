@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/step-input.schema.json",
+  "title": "Step Input",
+  "description": "Input payload provided to a specialist for a step.",
+  "type": "object",
+  "properties": {
+    "taskId": {
+      "type": "string",
+      "description": "The task this step belongs to."
+    },
+    "stepId": {
+      "type": "string",
+      "description": "The step identifier."
+    },
+    "stepType": {
+      "type": "string",
+      "description": "The type of step (e.g., analysis, design, implementation, review, qa)."
+    },
+    "role": {
+      "type": "string",
+      "description": "The specialist role assigned to this step."
+    },
+    "skillList": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Skills resolved for this step."
+    },
+    "context": {
+      "type": "object",
+      "description": "Contextual data for the specialist.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["taskId", "stepId", "stepType", "role"],
+  "additionalProperties": false
+}

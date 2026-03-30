@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/role-routing.schema.json",
+  "title": "Role Routing",
+  "description": "Configuration mapping roles to skills for task routing.",
+  "type": "object",
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "The specialist role."
+          },
+          "stepType": {
+            "type": "string",
+            "description": "The step type this rule applies to."
+          },
+          "skills": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Skills to apply for this role/step combination."
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Priority for rule ordering (lower is higher priority)."
+          }
+        },
+        "required": ["role", "skills"]
+      }
+    }
+  },
+  "required": ["rules"],
+  "additionalProperties": false
+}

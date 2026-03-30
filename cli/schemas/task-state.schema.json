@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/task-state.schema.json",
+  "title": "Task State",
+  "description": "Runtime state tracking for a task's step progression.",
+  "type": "object",
+  "properties": {
+    "taskId": {
+      "type": "string",
+      "description": "The task this state belongs to."
+    },
+    "currentStepId": {
+      "type": "string",
+      "description": "The currently active step identifier."
+    },
+    "stepOrder": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ordered list of step IDs defining the execution sequence."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in-progress", "blocked", "done", "failed"],
+      "description": "Overall task execution status."
+    },
+    "reopenCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of times this task has been reopened for repair."
+    },
+    "repairRequired": {
+      "type": "boolean",
+      "description": "Whether the task currently requires repair."
+    },
+    "timestamps": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["createdAt", "updatedAt"]
+    }
+  },
+  "required": ["taskId", "currentStepId", "stepOrder", "status", "reopenCount"],
+  "additionalProperties": false
+}

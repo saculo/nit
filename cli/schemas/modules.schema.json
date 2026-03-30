@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/modules.schema.json",
+  "title": "Modules",
+  "description": "Registry of project modules with their metadata.",
+  "type": "object",
+  "properties": {
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Module name."
+          },
+          "path": {
+            "type": "string",
+            "description": "Filesystem path to the module."
+          },
+          "languageId": {
+            "type": "string",
+            "description": "Language identifier (e.g., typescript, python, go)."
+          },
+          "customSkills": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Module-specific custom skills."
+          },
+          "stepOverrides": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Step-level overrides for this module."
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Tags for categorization and filtering."
+          },
+          "allowedDependencies": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Modules this module is allowed to depend on."
+          }
+        },
+        "required": ["name", "path", "languageId"]
+      }
+    }
+  },
+  "required": ["modules"],
+  "additionalProperties": false
+}

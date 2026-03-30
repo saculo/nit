@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/archetype.schema.json",
+  "title": "Archetype",
+  "description": "Archetype definition governing a task's step sequence and routing.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique archetype identifier."
+    },
+    "abstract": {
+      "type": "boolean",
+      "description": "Whether this archetype is abstract (cannot be used directly, only extended)."
+    },
+    "extends": {
+      "type": "string",
+      "description": "Parent archetype this one extends."
+    },
+    "engineerRole": {
+      "type": "string",
+      "description": "The engineer role that executes tasks of this archetype."
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "role": { "type": "string" },
+          "required": { "type": "boolean" },
+          "description": { "type": "string" }
+        },
+        "required": ["id", "type", "role"]
+      },
+      "description": "Ordered step definitions for this archetype."
+    },
+    "rejectionRouting": {
+      "type": "object",
+      "properties": {
+        "targetStep": { "type": "string" },
+        "maxRetries": { "type": "integer", "minimum": 0 }
+      },
+      "description": "Where to route the task on rejection."
+    },
+    "overrides": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Step-level overrides for customization."
+    }
+  },
+  "required": ["id", "steps"],
+  "additionalProperties": false
+}

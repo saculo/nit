@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/artifact-types.schema.json",
+  "title": "Artifact Types",
+  "description": "Fixed list of recognized artifact types.",
+  "type": "object",
+  "properties": {
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Artifact type identifier."
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable label."
+          },
+          "description": {
+            "type": "string",
+            "description": "What this artifact type represents."
+          },
+          "filePattern": {
+            "type": "string",
+            "description": "Glob pattern matching files of this type."
+          }
+        },
+        "required": ["id", "label"]
+      }
+    }
+  },
+  "required": ["types"],
+  "additionalProperties": false
+}

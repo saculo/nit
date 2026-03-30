@@ -1,0 +1,14 @@
+{
+  "name": "@nit/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "nit": "src/cli.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  }
+}
