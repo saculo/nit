@@ -1,0 +1,10 @@
+{
+  "id": "cross-module-change",
+  "extends": "base",
+  "engineerRole": "$detect",
+  "overrides": {
+    "addSteps": [
+      { "id": "boundary-check", "after": "implement", "role": "reviewer", "approval": true }
+    ]
+  }
+}

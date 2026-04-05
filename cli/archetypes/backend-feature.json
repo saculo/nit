@@ -1,0 +1,5 @@
+{
+  "id": "backend-feature",
+  "extends": "base",
+  "engineerRole": "backend-engineer"
+}
