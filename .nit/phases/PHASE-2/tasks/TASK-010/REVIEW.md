@@ -68,4 +68,6 @@
     - [suggestion] The AC-5 integration test writes a temp file into the actual archetypes/ directory. If the test process is killed before cleanup, a stale `multi-level-test.json` would remain. The try/finally mitigates this; an alternative would be testing via the resolver function directly with mock data (which is already partially done in the unit tests). Not blocking.
   </findings>
 
+  <pr-url>https://github.com/saculo/nit/pull/11</pr-url>
+
 </review>
