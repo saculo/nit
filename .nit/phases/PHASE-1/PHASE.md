@@ -6,7 +6,7 @@
     <id>PHASE-1</id>
     <title>Workflow Layer Foundation</title>
     <milestone>Complete set of Claude Code skills, agents, and hooks enabling the full nit workflow pipeline (init → clarify → phases → tasks → design → implement → review → phase-summary) to be invoked manually or via orchestration</milestone>
-    <status>in-progress</status>
+    <status>done</status>
   </meta>
 
   <business-value>
