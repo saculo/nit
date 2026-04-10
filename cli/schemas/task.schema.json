@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/task.schema.json",
+  "title": "Task",
+  "description": "A work unit within a phase.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TASK-\\d+$",
+      "description": "Task identifier (e.g., TASK-001)."
+    },
+    "phase": {
+      "type": "string",
+      "pattern": "^PHASE-\\d+$",
+      "description": "Parent phase identifier."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short task title."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["backend", "frontend", "devops", "qa"],
+      "description": "Task type determining the specialist role."
+    },
+    "targetModule": {
+      "type": "string",
+      "description": "Module this task targets."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "ready", "in-progress", "review", "done"],
+      "description": "Current task status."
+    },
+    "archetype": {
+      "type": "string",
+      "description": "Archetype identifier governing the task's step sequence."
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["id", "description"]
+      },
+      "description": "List of acceptance criteria for the task."
+    }
+  },
+  "required": ["id", "phase", "title", "type", "status"],
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/phase.schema.json",
+  "title": "Phase",
+  "description": "A delivery phase grouping related tasks toward a milestone.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^PHASE-\\d+$",
+      "description": "Phase identifier (e.g., PHASE-1)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable phase title."
+    },
+    "milestone": {
+      "type": "string",
+      "description": "The milestone this phase targets."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["planned", "in-progress", "done"],
+      "description": "Current phase status."
+    },
+    "businessValue": {
+      "type": "string",
+      "description": "Business value delivered by completing this phase."
+    }
+  },
+  "required": ["id", "title", "status"],
+  "additionalProperties": false
+}

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/step-output.schema.json",
+  "title": "Step Output",
+  "description": "Output produced by a specialist after completing a step.",
+  "type": "object",
+  "properties": {
+    "taskId": {
+      "type": "string",
+      "description": "The task this output belongs to."
+    },
+    "stepId": {
+      "type": "string",
+      "description": "The step identifier."
+    },
+    "stepType": {
+      "type": "string",
+      "description": "The type of step that produced this output."
+    },
+    "result": {
+      "description": "The step result, varying by step type.",
+      "oneOf": [
+        { "$ref": "#/$defs/analysis-result" },
+        { "$ref": "#/$defs/design-result" },
+        { "$ref": "#/$defs/implementation-result" },
+        { "$ref": "#/$defs/review-result" },
+        { "$ref": "#/$defs/qa-result" }
+      ]
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "path": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["type", "path"]
+      },
+      "description": "Files or artifacts produced by this step."
+    },
+    "adrCandidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adr-candidate" },
+      "description": "Architecture decision records identified during this step."
+    }
+  },
+  "required": ["taskId", "stepId", "stepType"],
+  "$defs": {
+    "analysis-result": {
+      "type": "object",
+      "properties": {
+        "resultType": { "type": "string", "const": "analysis" },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "risks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["resultType", "findings"]
+    },
+    "design-result": {
+      "type": "object",
+      "properties": {
+        "resultType": { "type": "string", "const": "design" },
+        "summary": { "type": "string" },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "rationale": { "type": "string" }
+            },
+            "required": ["id", "description", "rationale"]
+          }
+        },
+        "tradeOffs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["resultType", "summary", "decisions"]
+    },
+    "implementation-result": {
+      "type": "object",
+      "properties": {
+        "resultType": { "type": "string", "const": "implementation" },
+        "filesChanged": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "action": { "type": "string", "enum": ["created", "modified", "deleted"] }
+            },
+            "required": ["path", "action"]
+          }
+        },
+        "deviations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "techDebt": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["resultType", "filesChanged"]
+    },
+    "review-result": {
+      "type": "object",
+      "properties": {
+        "resultType": { "type": "string", "const": "review" },
+        "verdict": {
+          "type": "string",
+          "enum": ["approved", "changes-requested", "rejected"]
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "line": { "type": "integer" },
+              "severity": { "type": "string", "enum": ["info", "warning", "error"] },
+              "message": { "type": "string" }
+            },
+            "required": ["message", "severity"]
+          }
+        }
+      },
+      "required": ["resultType", "verdict"]
+    },
+    "qa-result": {
+      "type": "object",
+      "properties": {
+        "resultType": { "type": "string", "const": "qa" },
+        "testsRun": { "type": "integer", "minimum": 0 },
+        "testsPassed": { "type": "integer", "minimum": 0 },
+        "testsFailed": { "type": "integer", "minimum": 0 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 100 },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["resultType", "testsRun", "testsPassed", "testsFailed"]
+    },
+    "adr-candidate": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "context": { "type": "string" },
+        "decision": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "rejected", "superseded"]
+        }
+      },
+      "required": ["title", "context", "decision"]
+    }
+  },
+  "additionalProperties": false
+}

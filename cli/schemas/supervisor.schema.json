@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/supervisor.schema.json",
+  "title": "Supervisor",
+  "description": "Supervisor configuration for task orchestration.",
+  "type": "object",
+  "properties": {
+    "maxReopenCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum number of times a task can be reopened for repair."
+    },
+    "autoAdvance": {
+      "type": "object",
+      "description": "Settings controlling automatic task advancement.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether tasks auto-advance on step completion."
+        },
+        "requireApproval": {
+          "type": "boolean",
+          "description": "Whether human approval is required before advancing."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["maxReopenCount"],
+  "additionalProperties": false
+}
