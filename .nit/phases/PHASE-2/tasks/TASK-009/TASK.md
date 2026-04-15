@@ -1,57 +1,62 @@
-# TASK-009 — Rewrite nit:design and nit:implement for JSON Output
+# TASK-009 — CLI Package Foundation and JSON Schemas
 
 <task>
 
   <meta>
     <id>TASK-009</id>
     <phase>PHASE-2</phase>
-    <title>Rewrite nit:design and nit:implement for JSON Output</title>
+    <title>CLI Package Foundation and JSON Schemas</title>
     <type>devops</type>
-    <module>.claude/skills</module>
-    <status>draft</status>
+    <module>@nit/cli</module>
+    <status>done</status>
   </meta>
 
   <user-story>
-    As a specialist agent executing design or implement steps,
-    I want nit:design and nit:implement skills to produce JSON step output following step-output.schema.json,
-    So that all step artifacts are structured, schema-validated, and consumable by the supervisor state machine.
+    As a nit developer,
+    I want a scaffolded @nit/cli package containing all JSON Schema files and a validate command,
+    So that all downstream tasks can reference schemas for validation and the CLI package structure is established.
   </user-story>
 
   <scope>
     <in-scope>
-    - nit:design rewrite: reads input.json from step directory, produces output.json with design-result embedded in step-output format (architecture decisions, component design, interface contracts, file plan)
-    - nit:implement rewrite: reads input.json from step directory, produces output.json with implementation-result embedded in step-output format (files changed, implementation notes, test results)
-    - Both skills write output.json to their respective step directory (STEP-NNN-design/, STEP-NNN-implement/)
-    - Output follows step-output.schema.json with appropriate $defs/$ref for the embedded result type
-    - Skills read context from previous step outputs (e.g., implement reads design output)
+    - Scaffold @nit/cli package structure (package.json with bin entry, src/, schemas/)
+    - All ~13 standalone JSON Schema files inside the package (schemas/): workspace, phase, task, task-state, step-input, step-output (with $defs for analysis-result, design-result, implementation-result, review-result, qa-result, adr-candidate), approval, validation, routing, modules, dependency-rules, archetype, supervisor, role-routing, adr-triggers, task-types, roles, skills, artifact-types
+    - Schema validation command: `npx nit validate --schema <type> <file>` using check-jsonschema or ajv-cli internally
+    - Support both bunx and npx invocation (per R-5)
     </in-scope>
     <out-of-scope>
-    - nit:review and nit:qa step output rewrites (PHASE-3)
-    - Validation hook execution (TASK-010) — the skills produce output, validation runs separately
-    - State tracking updates (TASK-007 supervisor handles that)
+    - Archetype JSON files (TASK-002)
+    - Validation hook scripts (TASK-010)
+    - CLI install/update commands (PHASE-4)
+    - Publishing to npm registry
     </out-of-scope>
   </scope>
 
   <acceptance-criteria>
     <criterion id="AC-1">
-      Given a task at the design step with input.json containing task requirements and analysis context,
-      When nit:design completes,
-      Then STEP-NNN-design/output.json exists, contains a design-result with architecture decisions and component design, and validates against step-output.schema.json.
+      Given the @nit/cli package is scaffolded,
+      When a developer inspects the package structure,
+      Then package.json exists with a bin entry for "nit", src/ directory exists, and schemas/ directory contains all ~13 standalone .schema.json files.
     </criterion>
     <criterion id="AC-2">
-      Given a task at the implement step with input.json containing design output and task requirements,
-      When nit:implement completes,
-      Then STEP-NNN-implement/output.json exists, contains an implementation-result with files changed and implementation notes, and validates against step-output.schema.json.
+      Given a valid JSON artifact file conforming to workspace.schema.json,
+      When `npx nit validate --schema workspace artifact.json` is executed,
+      Then the command exits with code 0 and outputs no errors.
     </criterion>
     <criterion id="AC-3">
-      Given the nit:implement skill executing,
-      When it reads context from previous steps,
-      Then it loads design output from STEP-NNN-design/output.json and uses it to inform implementation decisions.
+      Given an invalid JSON artifact file missing required fields,
+      When `npx nit validate --schema workspace artifact.json` is executed,
+      Then the command exits with a non-zero code and outputs structured error messages identifying the validation failures.
     </criterion>
     <criterion id="AC-4">
-      Given either nit:design or nit:implement producing output,
-      When the output contains adrCandidates (architectural decisions worth recording),
-      Then the adrCandidates array is included in the step-output.json per the adr-candidate $def in the schema.
+      Given the step-output.schema.json file,
+      When its contents are inspected,
+      Then it contains $defs for embedded types (analysis-result, design-result, implementation-result, review-result, qa-result, adr-candidate) referenced via $ref (per U-8).
+    </criterion>
+    <criterion id="AC-5">
+      Given any of the ~13 schema files,
+      When validated against the JSON Schema meta-schema,
+      Then each schema file is itself valid JSON Schema (draft-07 or later).
     </criterion>
   </acceptance-criteria>
 
@@ -70,11 +75,12 @@
   </definition-of-done>
 
   <dependencies>
-    TASK-001 in PHASE-2 (step-output.schema.json with $defs for design-result and implementation-result)
+    None
   </dependencies>
 
   <open-questions>
-    None
+    <question id="Q-1">Which JSON Schema draft version should be used across all schemas (draft-07, 2019-09, 2020-12)?</question>
+    <question id="Q-2">Should the validate command use check-jsonschema (Python dependency) or ajv-cli (Node dependency)? The choice affects install requirements.</question>
   </open-questions>
 
 </task>

@@ -69,4 +69,6 @@
     - [suggestion] Consider adding a test that explicitly checks the 6 $defs keys in step-output.schema.json by name (e.g., loading the schema JSON and asserting Object.keys($defs)), rather than only testing via runtime validation. This would make AC-4 verification more direct.
   </findings>
 
+  <pr-url>https://github.com/saculo/nit/pull/12</pr-url>
+
 </review>

@@ -66,7 +66,7 @@
   </dependencies>
 
   <draft-tasks>
-  - Define JSON Schemas for all artifact types (.nit/schemas/)
+  - Define JSON Schemas for all artifact types (inside CLI package: cli/schemas/)
   - Create config files (workspace.json, supervisor.json, validation.json, role-routing.json) with schemas
   - Create registry files (task-types.json, roles.json, skills.json, artifact-types.json) with schemas
   - Create archetype definitions (base.json + 6 concrete) with inheritance resolver logic
@@ -87,7 +87,7 @@
   </draft-tasks>
 
   <success-criteria>
-  - nit:init creates the complete v2 .nit/ directory structure with config, registry, schemas, and archetypes
+  - nit:init creates the complete v2 .nit/ directory structure with config and registry (schemas and archetypes live inside the CLI package, not in .nit/)
   - Brownfield nit:init auto-detects module languages and populates modules.json
   - All archetype definitions load correctly, including inheritance resolution from base
   - nit:continue advances a task through analyze -> design -> implement steps using archetype-driven sequencing
