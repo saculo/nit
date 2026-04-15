@@ -1,0 +1,11 @@
+{
+  "id": "bugfix",
+  "extends": "base",
+  "engineerRole": "$detect",
+  "overrides": {
+    "removeSteps": ["analyze"],
+    "steps": {
+      "design": { "approval": false }
+    }
+  }
+}

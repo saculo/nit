@@ -1,0 +1,5 @@
+{
+  "id": "infra-change",
+  "extends": "base",
+  "engineerRole": "infra-engineer"
+}

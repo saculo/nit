@@ -1,0 +1,18 @@
+{
+  "id": "base",
+  "abstract": true,
+  "steps": [
+    { "id": "analyze", "role": "analyst", "approval": false },
+    { "id": "design", "role": "architect", "approval": true },
+    { "id": "implement", "role": "$engineer", "approval": false },
+    { "id": "review", "role": "reviewer", "approval": true },
+    { "id": "qa", "role": "qa", "approval": false }
+  ],
+  "rejectionRouting": {
+    "analyze": "analyze",
+    "design": "design",
+    "implement": "implement",
+    "review": "implement",
+    "qa": "implement"
+  }
+}

@@ -19,37 +19,88 @@
     },
     "engineerRole": {
       "type": "string",
-      "description": "The engineer role that executes tasks of this archetype."
+      "description": "The engineer role that replaces the $engineer placeholder in steps."
     },
     "steps": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "type": { "type": "string" },
-          "role": { "type": "string" },
-          "required": { "type": "boolean" },
-          "description": { "type": "string" }
-        },
-        "required": ["id", "type", "role"]
+        "$ref": "#/$defs/step"
       },
       "description": "Ordered step definitions for this archetype."
     },
     "rejectionRouting": {
       "type": "object",
-      "properties": {
-        "targetStep": { "type": "string" },
-        "maxRetries": { "type": "integer", "minimum": 0 }
+      "additionalProperties": {
+        "type": "string"
       },
-      "description": "Where to route the task on rejection."
+      "description": "Map of step id to the step id to route to on rejection."
     },
     "overrides": {
       "type": "object",
-      "additionalProperties": true,
-      "description": "Step-level overrides for customization."
+      "properties": {
+        "removeSteps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Step ids to remove from the parent."
+        },
+        "addSteps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/addStep"
+          },
+          "description": "Steps to add, each with an 'after' field indicating insertion point."
+        },
+        "steps": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string" },
+              "approval": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          },
+          "description": "Step property modifications keyed by step id."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Step-level overrides for child archetypes."
     }
   },
-  "required": ["id", "steps"],
-  "additionalProperties": false
+  "required": ["id"],
+  "additionalProperties": false,
+  "if": {
+    "not": {
+      "required": ["extends"]
+    }
+  },
+  "then": {
+    "required": ["id", "steps"]
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string" },
+        "approval": { "type": "boolean" }
+      },
+      "required": ["id", "role"],
+      "additionalProperties": false
+    },
+    "addStep": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string" },
+        "approval": { "type": "boolean" },
+        "after": {
+          "type": "string",
+          "description": "Insert this step after the step with this id."
+        }
+      },
+      "required": ["id", "role", "after"],
+      "additionalProperties": false
+    }
+  }
 }

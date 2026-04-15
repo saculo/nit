@@ -1,0 +1,11 @@
+{
+  "id": "architecture-decision",
+  "extends": "base",
+  "overrides": {
+    "removeSteps": ["implement", "qa"],
+    "steps": {
+      "design": { "role": "architect" },
+      "review": { "role": "reviewer" }
+    }
+  }
+}
