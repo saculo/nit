@@ -1,9 +1,9 @@
-# TASK-007 — Deterministic Supervisor (nit:continue)
+# TASK-015 — Deterministic Supervisor (nit:continue)
 
 <task>
 
   <meta>
-    <id>TASK-007</id>
+    <id>TASK-015</id>
     <phase>PHASE-2</phase>
     <title>Deterministic Supervisor (nit:continue)</title>
     <type>devops</type>
@@ -42,12 +42,12 @@
     <criterion id="AC-1">
       Given a task with no state.json and a backend-feature archetype,
       When nit:continue is run,
-      Then state.json is created with currentStepId="analyze", stepOrder listing all 5 steps, status="in_progress", and STEP-001-analyze/input.json is built and the analyst agent is dispatched.
+      Then state.json is created with currentStepId="analyze", stepOrder listing all 5 steps, STEP-001-analyze/input.json is built, the analyst agent is dispatched, and upon successful output validation, approval.json is written with status=pending and state.json is updated to status="awaiting_approval".
     </criterion>
     <criterion id="AC-2">
       Given a task with state.json showing analyze step approved,
       When nit:continue is run,
-      Then the supervisor advances to the design step, creates STEP-002-design/input.json, and dispatches the architect agent with skills from routing.json.
+      Then the supervisor advances to the design step, creates STEP-002-design/input.json, dispatches the architect agent with skills from routing.json, and upon successful output validation, approval.json is written with status=pending and state.json is updated to status="awaiting_approval".
     </criterion>
     <criterion id="AC-3">
       Given the agent produces an output.json that fails schema validation,

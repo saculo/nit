@@ -1,9 +1,9 @@
-# TASK-003 — Config and Registry Scaffolding (nit:init Rewrite)
+# TASK-011 — Config and Registry Scaffolding (nit:init Rewrite)
 
 <task>
 
   <meta>
-    <id>TASK-003</id>
+    <id>TASK-011</id>
     <phase>PHASE-2</phase>
     <title>Config and Registry Scaffolding (nit:init Rewrite)</title>
     <type>devops</type>

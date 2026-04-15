@@ -20,7 +20,8 @@
           "type": "string",
           "description": "Path to additional schema files."
         }
-      }
+      },
+      "additionalProperties": false
     },
     "policies": {
       "type": "array",
@@ -31,7 +32,8 @@
           "enabled": { "type": "boolean" },
           "severity": { "type": "string", "enum": ["error", "warning", "info"] }
         },
-        "required": ["name", "enabled"]
+        "required": ["name", "enabled"],
+        "additionalProperties": false
       },
       "description": "Policy checks to run during validation."
     }

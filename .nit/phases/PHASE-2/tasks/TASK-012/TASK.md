@@ -1,9 +1,9 @@
-# TASK-004 — Agent Definitions for v2 Roles
+# TASK-012 — Agent Definitions for v2 Roles
 
 <task>
 
   <meta>
-    <id>TASK-004</id>
+    <id>TASK-012</id>
     <phase>PHASE-2</phase>
     <title>Agent Definitions for v2 Roles</title>
     <type>devops</type>
