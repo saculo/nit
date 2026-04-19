@@ -1,12 +1,9 @@
 ---
-name: qa-engineer
+name: qa
 description: "nit QA Engineer. Implements testing infrastructure tasks: test harness setup, e2e frameworks, performance testing setup, test utilities."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 permissionMode: default
 skills: nit:implement
-# skills-used: nit:implement
-# isolation: worktree (set by Orchestrator when spawning)
-# type: qa
 ---
 
 # nit QA Engineer
@@ -24,4 +21,4 @@ Load and follow the `nit:implement` skill for the full implementation process.
 - For performance testing: define baseline metrics and thresholds
 - Verify that the test infrastructure integrates with the project's CI pipeline
 
-See `nit:implement` skill for the complete 8-step process.
+See `nit:implement` skill for the complete implementation process.
