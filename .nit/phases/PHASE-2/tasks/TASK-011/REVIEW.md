@@ -4,6 +4,8 @@
 
   <verdict>approved</verdict>
 
+  <pr-url>https://github.com/saculo/nit/pull/14</pr-url>
+
   <criteria-check>
     <criterion id="AC-1" result="pass">Step 3 of the skill creates all 9 required subdirectories (config/, registry/, boundaries/, phases/, decisions/, logs/, plr/, prd/, project/). Steps 4–6 write and validate all 9 JSON files. All default payloads pass schema validation — confirmed by the engineer and independently verified by re-reading the validate invocations against their schema types.</criterion>
     <criterion id="AC-2" result="pass">workspace.json template in Step 4a includes name, mode, nitVersion="2.0", and optional description. The schema requires name, mode, nitVersion — all are present. The description field is correctly omitted when empty per the prose instruction.</criterion>
