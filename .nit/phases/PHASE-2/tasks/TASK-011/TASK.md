@@ -8,7 +8,7 @@
     <title>Config and Registry Scaffolding (nit:init Rewrite)</title>
     <type>devops</type>
     <module>.nit</module>
-    <status>draft</status>
+    <status>ready</status>
   </meta>
 
   <user-story>
