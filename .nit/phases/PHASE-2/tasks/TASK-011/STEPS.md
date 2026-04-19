@@ -52,7 +52,7 @@
   <dod-check>
     <item id="DOD-1" status="done">All acceptance criteria passed</item>
     <item id="DOD-2" status="done">Tests written and passed — all 9 generated JSON defaults validated against their schemas via bun run ./cli/src/cli.ts validate; brownfield modules.json validated with representative payload</item>
-    <item id="DOD-3" status="pending">Code review passed</item>
+    <item id="DOD-3" status="done">Code review passed</item>
     <item id="DOD-4" status="done">No critical tech debt introduced — minor deviation: CLI invoked as `bun run ./cli/src/cli.ts` rather than `bunx nit` since package is not published; documented in SKILL.md Rules and IMPLEMENTATION.md</item>
   </dod-check>
 
