@@ -1,4 +1,4 @@
-# Steps — Task 10: Archetype Definitions with Inheritance
+# Steps — TASK-019: Archetype Definitions with Inheritance
 
 <steps>
 
