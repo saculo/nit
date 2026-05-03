@@ -1,4 +1,4 @@
-# Design — Task 10: Archetype Definitions with Inheritance
+# Design — TASK-019: Archetype Definitions with Inheritance
 
 <design>
 
