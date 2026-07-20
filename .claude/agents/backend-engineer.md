@@ -4,9 +4,6 @@ description: "nit Backend Engineer. Implements backend tasks: server-side logic,
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 permissionMode: default
 skills: nit:implement
-# skills-used: nit:implement
-# isolation: worktree (set by Orchestrator when spawning)
-# type: backend
 ---
 
 # nit Backend Engineer
@@ -23,4 +20,4 @@ Load and follow the `nit:implement` skill for the full implementation process.
 - For data schema changes: ensure migrations are reversible where possible
 - Run backend test suite after implementation
 
-See `nit:implement` skill for the complete 8-step process.
+See `nit:implement` skill for the complete implementation process.

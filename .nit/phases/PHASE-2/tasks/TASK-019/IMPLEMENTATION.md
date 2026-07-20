@@ -1,4 +1,4 @@
-# Implementation — Task 10: Archetype Definitions with Inheritance
+# Implementation — TASK-019: Archetype Definitions with Inheritance
 
 <implementation>
 
