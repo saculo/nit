@@ -2,47 +2,27 @@
 set -euo pipefail
 
 # Validates inputs for nit:phases skill.
-# Checks: PRD file exists, CLARIFICATIONS.md exists + structure + no empty answers.
+# Checks: prd/summary.json exists, is valid JSON, and all clarifications are answered.
 
 INPUT=$(cat)
-ARGS=$(echo "$INPUT" | jq -r '.tool_input.args // empty')
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 NIT_DIR="${CWD}/.nit"
 
-find_prd() {
-  local prd_path="$1"
-  if [[ -n "$prd_path" && -f "${CWD}/${prd_path}" ]]; then return 0; fi
-  if [[ -n "$prd_path" && -f "$prd_path" ]]; then return 0; fi
-  for candidate in "PRD.md" "prd.md"; do
-    if [[ -f "${CWD}/${candidate}" ]]; then return 0; fi
-  done
-  local found
-  found=$(find "$CWD" -maxdepth 1 \( -iname '*prd*' -o -iname '*requirements*' -o -iname '*spec*' \) -print -quit 2>/dev/null)
-  if [[ -n "$found" ]]; then return 0; fi
-  return 1
-}
-
-if ! find_prd "$ARGS"; then
-  echo "PRD file not found. Provide the path: /nit:phases <path-to-prd>" >&2
-  exit 2
-fi
-
-CLARIFICATIONS="${NIT_DIR}/CLARIFICATIONS.md"
-if [[ ! -f "$CLARIFICATIONS" ]]; then
-  echo "CLARIFICATIONS.md not found at ${CLARIFICATIONS}.
+SUMMARY="${NIT_DIR}/prd/summary.json"
+if [[ ! -f "$SUMMARY" ]]; then
+  echo "prd/summary.json not found at ${SUMMARY}.
 Run /nit:clarify first." >&2
   exit 2
 fi
 
-for tag in clarifications unknowns risks assumptions; do
-  if ! grep -q "<${tag}>" "$CLARIFICATIONS" 2>/dev/null; then
-    echo "Invalid structure in ${CLARIFICATIONS}: missing <${tag}> element." >&2
-    exit 2
-  fi
-done
+if ! jq -e . "$SUMMARY" >/dev/null 2>&1; then
+  echo "prd/summary.json is not valid JSON at ${SUMMARY}. Re-run /nit:clarify." >&2
+  exit 2
+fi
 
-if grep -qP '<answer>\s*</answer>' "$CLARIFICATIONS" 2>/dev/null; then
-  echo "CLARIFICATIONS.md has unanswered questions (empty <answer> tags).
+# Every clarification must carry a non-empty answer.
+if ! jq -e '(.clarifications // []) | all(.answer != null and .answer != "")' "$SUMMARY" >/dev/null 2>&1; then
+  echo "prd/summary.json has unanswered clarifications (empty answer).
 Complete /nit:clarify first." >&2
   exit 2
 fi

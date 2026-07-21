@@ -28,6 +28,8 @@ const SCHEMA_MAP: Record<string, string> = {
   roles: "roles.schema.json",
   "skills-registry": "skills-registry.schema.json",
   "artifact-types": "artifact-types.schema.json",
+  "prd-summary": "prd-summary.schema.json",
+  glossary: "glossary.schema.json",
 };
 
 /**

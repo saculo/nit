@@ -35,6 +35,46 @@ beforeAll(async () => {
     })
   );
 
+  // Valid prd-summary
+  await Bun.write(
+    join(FIXTURES_DIR, "valid-prd-summary.json"),
+    JSON.stringify({
+      goal: "Deterministic agent workflow orchestration",
+      audience: "Engineering teams using Claude Code",
+      capabilities: ["clarify PRDs", "plan phases", "create tasks"],
+      clarifications: [
+        { id: "U-1", category: "unknown", question: "Which output format?", answer: "JSON" }
+      ]
+    })
+  );
+
+  // Invalid prd-summary (missing required capabilities; bad clarification category)
+  await Bun.write(
+    join(FIXTURES_DIR, "invalid-prd-summary.json"),
+    JSON.stringify({
+      goal: "x",
+      audience: "y",
+      clarifications: [{ id: "U-1", category: "bogus", question: "?", answer: "!" }]
+    })
+  );
+
+  // Valid glossary
+  await Bun.write(
+    join(FIXTURES_DIR, "valid-glossary.json"),
+    JSON.stringify({
+      terms: [
+        { term: "archetype", definition: "A reusable task step sequence", aliases: ["template"] },
+        { term: "supervisor", definition: "The deterministic pipeline driver" }
+      ]
+    })
+  );
+
+  // Invalid glossary (entry missing definition)
+  await Bun.write(
+    join(FIXTURES_DIR, "invalid-glossary.json"),
+    JSON.stringify({ terms: [{ term: "archetype" }] })
+  );
+
   // Not JSON
   await Bun.write(join(FIXTURES_DIR, "not-json.txt"), "this is not json");
 });
@@ -104,5 +144,37 @@ describe("nit validate", () => {
     ]);
     expect(exitCode).toBe(0);
     expect(stdout.trim()).toBe("Valid");
+  });
+
+  test("validates a conforming prd-summary file", async () => {
+    const { exitCode, stdout } = await runCli([
+      "validate", "--schema", "prd-summary", join(FIXTURES_DIR, "valid-prd-summary.json")
+    ]);
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toBe("Valid");
+  });
+
+  test("rejects a non-conforming prd-summary file", async () => {
+    const { exitCode, stderr } = await runCli([
+      "validate", "--schema", "prd-summary", join(FIXTURES_DIR, "invalid-prd-summary.json")
+    ]);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("Validation failed");
+  });
+
+  test("validates a conforming glossary file", async () => {
+    const { exitCode, stdout } = await runCli([
+      "validate", "--schema", "glossary", join(FIXTURES_DIR, "valid-glossary.json")
+    ]);
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toBe("Valid");
+  });
+
+  test("rejects a glossary entry missing its definition", async () => {
+    const { exitCode, stderr } = await runCli([
+      "validate", "--schema", "glossary", join(FIXTURES_DIR, "invalid-glossary.json")
+    ]);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("Validation failed");
   });
 });

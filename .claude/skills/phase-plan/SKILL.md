@@ -1,7 +1,7 @@
 ---
 name: "nit:phases"
-description: "Phase planner for the nit workflow. Takes PRD and CLARIFICATIONS.md (and initial-state.md for brownfield) and breaks the project into incremental delivery phases. Each phase is a milestone with demonstrable business value. Use when the user says '/nit:phases', 'plan phases', 'create phases', 'break into phases', or after PRD analysis is complete."
-allowed-tools: Read, Write, Edit, Glob, Grep
+description: "Phase planner for the nit workflow. Takes the PRD summary (prd/summary.json) and initial-state.md for brownfield and breaks the project into incremental delivery phases. Persists each phase as phase.json. Each phase is a milestone with demonstrable business value. Use when the user says '/nit:phases', 'plan phases', 'create phases', 'break into phases', or after PRD analysis is complete."
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 hooks:
   PreToolUse:
     - matcher: Skill
@@ -33,21 +33,22 @@ Every item in a phase must answer: **"What milestone does this directly enable?"
 
 ## Step 0 — Input Validation
 
-1. PRD file path provided as `$ARGUMENTS`. If missing, STOP and report.
-2. Verify the PRD file exists on disk — if not, STOP: `PRD file not found at <path>.`
-3. Verify `.nit/CLARIFICATIONS.md` exists — if not, STOP: `CLARIFICATIONS.md not found. Run /nit clarify first.`
-4. Read CLARIFICATIONS.md and validate structure:
-   - Must contain `<clarifications>` root element
-   - Must contain `<unknowns>`, `<risks>`, `<assumptions>` sections
-   - Check for empty `<answer>` tags — if any answers are empty, STOP: `CLARIFICATIONS.md has unanswered questions. Complete /nit clarify first.`
+1. Verify `.nit/prd/summary.json` exists — if not, STOP: `prd/summary.json not found. Run /nit:clarify first.`
+2. Read `.nit/prd/summary.json` and validate it against its schema:
+   ```bash
+   bun run ./cli/src/cli.ts validate --schema prd-summary .nit/prd/summary.json
+   ```
+   If it exits non-zero, STOP: `prd/summary.json is invalid. Re-run /nit:clarify.`
+3. Check every entry in `clarifications[]` has a non-empty `answer` — if any are empty, STOP: `prd/summary.json has unanswered clarifications. Complete /nit:clarify first.`
+4. The verbatim PRD is available at `.nit/prd/source.md` if you need the full original text.
 5. **Brownfield only**: if `.nit/config/nit.yaml` indicates brownfield, verify `.nit/project/initial-state.md` exists.
 
 If validation passes, proceed.
 
 ## Input
 
-- PRD file (validated above)
-- `.nit/CLARIFICATIONS.md` (validated above)
+- `.nit/prd/summary.json` (validated above) — goal, audience, capabilities, resolved clarifications
+- `.nit/prd/source.md` — verbatim PRD, for full detail when needed
 - **Brownfield only**: `.nit/project/initial-state.md`
 
 ## Brownfield Considerations
@@ -71,78 +72,56 @@ Do NOT read or reference `initial-state.md` for greenfield projects — it does 
 
 ## Output
 
-Create one directory per phase under `.nit/phases/`:
+Create one directory per phase under `.nit/phases/`, each holding a `phase.json`:
 
 ```
 .nit/phases/
   PHASE-1/
-    PHASE.md
+    phase.json
   PHASE-2/
-    PHASE.md
+    phase.json
   PHASE-3/
-    PHASE.md
+    phase.json
 ```
 
-### PHASE.md Format
+Phase directories use natural (non-zero-padded) numbering: `PHASE-1`, `PHASE-2`, …
 
-```md
-# PHASE-N — Title
+### phase.json Format
 
-<phase>
+`phase.json` is the canonical, machine-readable phase definition. It must conform to
+`phase.schema.json` (fields below; no others — the schema rejects unknown fields):
 
-  <meta>
-    <id>PHASE-N</id>
-    <title>Short descriptive title</title>
-    <milestone>What is achieved — one sentence</milestone>
-    <status>draft</status>
-  </meta>
-
-  <business-value>
-    What is usable or demonstrable at the end of this phase.
-    Why this matters to the user/stakeholder.
-  </business-value>
-
-  <scope>
-    <in-scope>
-    - What this phase builds (only what's needed for the milestone)
-    </in-scope>
-    <out-of-scope>
-    - What is explicitly deferred to later phases
-    </out-of-scope>
-  </scope>
-
-  <dependencies>
-    None | PHASE-N (list prior phases this depends on)
-  </dependencies>
-
-  <draft-tasks>
-  - Loose bullet point describing a unit of work
-  - Another bullet point
-  - These are NOT detailed task plans — just high-level items
-  </draft-tasks>
-
-  <success-criteria>
-  - How you know this phase is complete
-  - Measurable or demonstrable outcomes
-  </success-criteria>
-
-  <risks>
-  - Risk relevant to this specific phase
-  - Mitigation if known
-  </risks>
-
-</phase>
+```json
+{
+  "id": "PHASE-1",
+  "title": "Short descriptive title",
+  "milestone": "What is achieved — one sentence",
+  "status": "planned",
+  "businessValue": "What is usable or demonstrable at the end of this phase, and why it matters."
+}
 ```
+
+- `id` — `PHASE-N`, matching the directory.
+- `status` — a new phase is `planned` (allowed values: `planned`, `in-progress`, `done`).
+- `milestone` and `businessValue` carry the phase intent. Per-phase scope, draft tasks, and
+  success criteria are worked out interactively and then materialised by `nit:tasks`, which reads
+  `phase.json` and the PRD summary — they are not stored in `phase.json`.
+
+Do NOT also write a prose `PHASE.md`; `phase.json` is the single source of truth, rendered for
+humans on demand by `nit:status`.
 
 ## Process
 
-1. Read PRD and CLARIFICATIONS.md fully
-2. Read initial-state.md if brownfield
-3. Identify the natural delivery milestones — what are the meaningful "checkpoints" where value is delivered?
-4. Order by: risk reduction → value delivery → dependency chain
-5. For each phase, define scope using the YAGNI rule: only what this milestone needs
-6. Write all PHASE.md files
-7. Report back with a summary of all phases:
+1. Read `.nit/prd/summary.json` fully (and `prd/source.md` for detail); read `initial-state.md` if brownfield
+2. Identify the natural delivery milestones — what are the meaningful "checkpoints" where value is delivered?
+3. Order by: risk reduction → value delivery → dependency chain
+4. For each phase, define scope using the YAGNI rule: only what this milestone needs (discuss scope with the user; it is not persisted in phase.json)
+5. Write each `phase.json` and validate it immediately:
+   ```bash
+   bun run ./cli/src/cli.ts validate --schema phase .nit/phases/PHASE-N/phase.json
+   ```
+   A non-zero exit aborts the step — fix the reported field and re-write before continuing.
+6. Report back with a summary of all phases:
    - Phase title and milestone (one line each)
    - Why this ordering
 
@@ -151,6 +130,7 @@ Create one directory per phase under `.nit/phases/`:
 - Never include work in a phase that isn't directly required for that phase's milestone
 - Never pre-build infrastructure, modules, or abstractions "for later"
 - Each phase must have a clear, demonstrable business value — not just "setup" or "preparation"
-- Draft tasks are bullet points only — detailed task planning happens separately per task
+- Detailed task planning happens separately per task via `nit:tasks`
 - If a phase has no clear business value, it should be merged into another phase
 - Brownfield: always consider initial-state.md; greenfield: never reference it
+- `phase.json` is the canonical output — validate every one against `phase.schema.json`; never leave an invalid phase file behind, and never write a parallel prose `PHASE.md`
