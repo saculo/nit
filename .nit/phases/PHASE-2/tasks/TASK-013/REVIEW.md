@@ -4,6 +4,8 @@
 
   <verdict>approved</verdict>
 
+  <pr-url>https://github.com/saculo/nit/pull/16</pr-url>
+
   <criteria-check>
     <criterion id="AC-1" result="pass">
       clarify/SKILL.md copies the PRD to `.nit/prd/source.md` (Step 0.6), seeds and fills
