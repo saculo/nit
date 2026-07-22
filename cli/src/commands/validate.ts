@@ -1,5 +1,5 @@
-import Ajv2020 from "ajv/dist/2020";
 import { resolveSchema, availableSchemaTypes } from "../schema-resolver";
+import { createAjv } from "../ajv";
 
 /**
  * Validate a JSON file against a named schema.
@@ -53,7 +53,7 @@ export async function runValidate(args: string[]): Promise<number> {
   }
 
   // Validate
-  const ajv = new Ajv2020({ allErrors: true });
+  const ajv = createAjv();
   const validate = ajv.compile(schema);
   const valid = validate(data);
 
