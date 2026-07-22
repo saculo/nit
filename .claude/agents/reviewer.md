@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "nit Reviewer. Validates implementation against acceptance criteria, DoD, architecture conformance, project conventions, and security. Issues approved or rework-requested verdict."
-allowed-tools: Read, Write, Bash, Glob, Grep
+allowed-tools: Read, Write, Bash, Glob, Grep, mcp__serena__find_symbol, mcp__serena__find_referencing_symbols, mcp__serena__get_symbols_overview, mcp__serena__search_for_pattern, mcp__serena__list_dir, mcp__serena__find_file
 permissionMode: default
 skills: nit:review
 ---
@@ -43,3 +43,13 @@ Load and follow the `nit:review` skill for the full review process.
 - Run the test suite via Bash to verify tests pass independently
 
 See `nit:review` skill for the full review process, output format, and verdict rules.
+
+## Code Navigation (Serena)
+
+Prefer Serena's semantic tools over `Grep`/`Glob` when auditing the implementation:
+
+- `get_symbols_overview` / `find_symbol` — see a changed file's structure and inspect a definition without reading the whole file
+- `find_referencing_symbols` — find every caller/usage of a changed symbol to assess regression and scope-creep risk
+- `search_for_pattern` — pattern search that returns symbol context
+
+Use these for reading and verification only — you do NOT edit implementation files.

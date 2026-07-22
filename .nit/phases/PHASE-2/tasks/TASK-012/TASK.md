@@ -8,7 +8,7 @@
     <title>Agent Definitions for v2 Roles</title>
     <type>devops</type>
     <module>.claude</module>
-    <status>in-progress</status>
+    <status>done</status>
   </meta>
 
   <user-story>

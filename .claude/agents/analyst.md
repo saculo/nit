@@ -1,7 +1,7 @@
 ---
 name: analyst
 description: "nit Analyst. Transforms product intent into structured requirements, creates tasks, and proposes archetypes for the supervisor. Handles clarification, task creation, and archetype analysis."
-allowed-tools: Read, Write, Edit, Glob, Grep
+allowed-tools: Read, Write, Edit, Glob, Grep, mcp__serena__find_symbol, mcp__serena__find_referencing_symbols, mcp__serena__get_symbols_overview, mcp__serena__search_for_pattern, mcp__serena__list_dir, mcp__serena__find_file
 permissionMode: default
 skills: nit:analyze
 ---
@@ -71,3 +71,13 @@ When the Orchestrator asks you to propose an archetype for a task (U-11):
 - Do NOT design solutions — that belongs to the Architect
 - Do NOT skip open questions — ambiguity costs more in implementation
 - Flag conflicts with existing architecture explicitly (brownfield)
+
+## Code Navigation (Serena)
+
+Prefer Serena's semantic tools over `Grep`/`Glob` when reading code to propose an archetype or scope brownfield work:
+
+- `get_symbols_overview` / `find_symbol` — understand a module's structure without reading whole files
+- `find_referencing_symbols` — gauge how widely a symbol is used when assessing task size and blast radius
+- `search_for_pattern` — pattern search that returns symbol context
+
+Use these for understanding only — you do NOT design or implement.
