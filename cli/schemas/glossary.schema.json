@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/glossary.schema.json",
+  "title": "Glossary",
+  "description": "Domain terms and definitions extracted from a PRD by nit:clarify.",
+  "type": "object",
+  "properties": {
+    "terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string",
+            "description": "The domain term being defined."
+          },
+          "definition": {
+            "type": "string",
+            "description": "What the term means in this project's context."
+          },
+          "aliases": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Alternative names or abbreviations for the term."
+          }
+        },
+        "required": ["term", "definition"],
+        "additionalProperties": false
+      },
+      "description": "The glossary entries."
+    }
+  },
+  "required": ["terms"],
+  "additionalProperties": false
+}

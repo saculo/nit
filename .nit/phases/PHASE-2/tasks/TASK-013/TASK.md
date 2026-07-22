@@ -8,7 +8,7 @@
     <title>Rewrite nit:clarify, nit:phases, nit:tasks for JSON Output</title>
     <type>devops</type>
     <module>.claude/skills</module>
-    <status>draft</status>
+    <status>done</status>
   </meta>
 
   <user-story>

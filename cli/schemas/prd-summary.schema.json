@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/prd-summary.schema.json",
+  "title": "PRD Summary",
+  "description": "Structured summary of a PRD produced by nit:clarify.",
+  "type": "object",
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "The primary goal or problem the product solves."
+    },
+    "audience": {
+      "type": "string",
+      "description": "Who the product is for."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "High-level capabilities the system should provide."
+    },
+    "clarifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Clarification identifier (e.g., U-1, R-1, A-1)."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["unknown", "risk", "assumption"],
+            "description": "Kind of clarification item."
+          },
+          "question": {
+            "type": "string",
+            "description": "The unknown, risk, or assumption raised."
+          },
+          "answer": {
+            "type": "string",
+            "description": "The resolution agreed with the user."
+          }
+        },
+        "required": ["id", "category", "question", "answer"],
+        "additionalProperties": false
+      },
+      "description": "Resolved clarifications gathered during the interactive session."
+    }
+  },
+  "required": ["goal", "audience", "capabilities"],
+  "additionalProperties": false
+}
