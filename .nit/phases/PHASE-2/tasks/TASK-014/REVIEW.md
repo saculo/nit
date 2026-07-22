@@ -4,6 +4,8 @@
 
   <verdict>approved</verdict>
 
+  <pr-url>https://github.com/saculo/nit/pull/17</pr-url>
+
   <criteria-check>
     <criterion id="AC-1" result="pass">
       resolveRouting derives baseSkill by convention (`nit:${step}`) and, for a Java module with
