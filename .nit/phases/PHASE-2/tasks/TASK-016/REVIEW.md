@@ -4,6 +4,8 @@
 
   <verdict>approved</verdict>
 
+  <pr-url>https://github.com/saculo/nit/pull/19</pr-url>
+
   <criteria-check>
     <criterion id="AC-1" result="pass">
       `approveStep` requires status awaiting_approval, writes an approved approval.json (with
