@@ -8,7 +8,7 @@
     <title>Deterministic Supervisor (nit:continue)</title>
     <type>devops</type>
     <module>.claude/skills</module>
-    <status>draft</status>
+    <status>done</status>
   </meta>
 
   <user-story>
