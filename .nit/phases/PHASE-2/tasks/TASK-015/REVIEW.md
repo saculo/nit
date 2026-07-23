@@ -4,6 +4,8 @@
 
   <verdict>approved</verdict>
 
+  <pr-url>https://github.com/saculo/nit/pull/18</pr-url>
+
   <criteria-check>
     <criterion id="AC-1" result="pass">
       `prepare` on a directory with no state.json calls `initialState`, writing state.json with
