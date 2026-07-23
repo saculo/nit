@@ -20,7 +20,15 @@
     },
     "status": {
       "type": "string",
-      "enum": ["pending", "in-progress", "blocked", "done", "failed"],
+      "enum": [
+        "pending",
+        "in-progress",
+        "awaiting_approval",
+        "blocked",
+        "escalated",
+        "done",
+        "failed"
+      ],
       "description": "Overall task execution status."
     },
     "reopenCount": {
