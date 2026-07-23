@@ -63,6 +63,10 @@
         "risks": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "proposedArchetype": {
+          "type": "string",
+          "description": "Concrete archetype the analyst proposes for the task."
         }
       },
       "required": ["resultType", "findings"]
