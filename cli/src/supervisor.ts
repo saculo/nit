@@ -222,6 +222,26 @@ function defaultContext(state: TaskState, step: ArchetypeStep, repairErrors?: Va
 }
 
 /**
+ * Map every completed step that produced an output.json to its path, keyed by
+ * step id. Threaded into the step input so a specialist reads earlier results
+ * (e.g. implement reading the design output) without re-deriving the
+ * STEP-NNN-<id> directory convention itself.
+ */
+export async function priorOutputs(
+  taskDir: string,
+  steps: ArchetypeStep[],
+  currentIdx: number
+): Promise<Record<string, string>> {
+  const outputs: Record<string, string> = {};
+  for (let i = 0; i < currentIdx; i++) {
+    const step = steps[i]!;
+    const path = join(taskDir, stepDirName(i, step.id), "output.json");
+    if (await Bun.file(path).exists()) outputs[step.id] = path;
+  }
+  return outputs;
+}
+
+/**
  * Prepare the next step: create or advance state.json, scaffold the step
  * directory, write input.json, and return the dispatch descriptor. Blocks
  * (returns a status without writing) when the current step is still awaiting an
@@ -276,6 +296,10 @@ export async function prepare(
 
   const skillList = resolveSkillList(step);
   const context = buildContext(state, step, repairErrors);
+  if (context.priorOutputs === undefined) {
+    const outputs = await priorOutputs(opts.taskDir, opts.steps, idx);
+    if (Object.keys(outputs).length > 0) context.priorOutputs = outputs;
+  }
   const input = buildStepInput(state.taskId, step, skillList, context);
   const inputPath = join(dir, "input.json");
   await writeJson(inputPath, input, "step-input");

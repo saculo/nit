@@ -44,7 +44,9 @@ Every step skill therefore:
 1. reads `input.json` from its step directory (`STEP-NNN-<stepId>/`),
 2. writes exactly one canonical artifact, `output.json`, in that same directory,
 3. validates it against `step-output.schema.json` at write time (ADR-0003) before finishing,
-4. records any other file it produced — source files, ADRs, notes — in `artifacts[]`, by path.
+4. records every other file it produced in the field its result type provides: source files the step
+   created, modified, or deleted go in `result.filesChanged[]`; non-source outputs and commit
+   references — notes, generated fixtures, the implementation commit — go in `artifacts[]`, by path.
 
 Prose files are not written by step skills. Human-readable views are rendered from `output.json`.
 

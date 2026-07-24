@@ -91,6 +91,51 @@
         "tradeOffs": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "components": {
+          "type": "array",
+          "description": "Component design: the units the implementation is expected to create or change.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "responsibility": { "type": "string" },
+              "collaborators": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "required": ["name", "responsibility"]
+          }
+        },
+        "interfaces": {
+          "type": "array",
+          "description": "Contracts between components or across module boundaries.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "kind": {
+                "type": "string",
+                "enum": ["function", "type", "cli", "http", "event", "file-format"]
+              },
+              "contract": { "type": "string" }
+            },
+            "required": ["name", "contract"]
+          }
+        },
+        "filePlan": {
+          "type": "array",
+          "description": "Files the implementation step is expected to create, modify, or delete.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "action": { "type": "string", "enum": ["created", "modified", "deleted"] },
+              "purpose": { "type": "string" }
+            },
+            "required": ["path", "action"]
+          }
         }
       },
       "required": ["resultType", "summary", "decisions"]
@@ -117,6 +162,22 @@
         "techDebt": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "notes": {
+          "type": "array",
+          "description": "Implementation notes: how the design was realised, and anything the reviewer should know.",
+          "items": { "type": "string" }
+        },
+        "tests": {
+          "type": "object",
+          "description": "Outcome of the test run performed by the implementation step.",
+          "properties": {
+            "command": { "type": "string" },
+            "outcome": { "type": "string", "enum": ["passed", "failed", "not-run"] },
+            "passed": { "type": "integer", "minimum": 0 },
+            "failed": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["outcome"]
         }
       },
       "required": ["resultType", "filesChanged"]
