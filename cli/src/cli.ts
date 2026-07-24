@@ -4,6 +4,8 @@ import { runValidate } from "./commands/validate";
 import { runArchetype } from "./commands/archetype";
 import { runRoute } from "./commands/route";
 import { runContinue } from "./commands/continue";
+import { runApprove } from "./commands/approve";
+import { runReject } from "./commands/reject";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -16,6 +18,8 @@ async function main(): Promise<number> {
     console.log("  archetype <name>                  Resolve an archetype and output flat step list");
     console.log("  route --task <id> --step <step>   Resolve layered skill routing for a task+step");
     console.log("  continue --task-dir <dir>         Advance a task through its archetype steps");
+    console.log("  approve --task-dir <dir>          Approve the current step and advance");
+    console.log("  reject --task-dir <dir>           Reject the current step and reopen per routing");
     return 0;
   }
 
@@ -28,6 +32,10 @@ async function main(): Promise<number> {
       return runRoute(args.slice(1));
     case "continue":
       return runContinue(args.slice(1));
+    case "approve":
+      return runApprove(args.slice(1));
+    case "reject":
+      return runReject(args.slice(1));
     default:
       console.error(`Unknown command: "${command}"`);
       console.error("Run 'nit --help' for available commands.");

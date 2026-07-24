@@ -394,3 +394,97 @@ export async function dryRun(opts: SupervisorOptions): Promise<DryRunPlan | { do
   const input = buildStepInput(state.taskId, step, skillList, buildContext(state, step));
   return { taskId: state.taskId, resolvedSteps: opts.steps, currentStepId: step.id, skillList, input };
 }
+
+// --- approval operations (TASK-016) ----------------------------------------
+
+/**
+ * Reopen the rejection-routing target for the current step. Resets the repair
+ * counters — a rejection starts the target step fresh.
+ */
+export function rejectState(
+  state: TaskState,
+  rejectionRouting: Record<string, string>,
+  now: string
+): TaskState {
+  const target = rejectionRouting[state.currentStepId];
+  if (!target) throw new Error(`No rejection routing for step "${state.currentStepId}"`);
+  return {
+    ...state,
+    currentStepId: target,
+    status: "in-progress",
+    repairRequired: false,
+    reopenCount: 0,
+    timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now },
+  };
+}
+
+/** Construct an approval record. */
+export function buildApproval(
+  taskId: string,
+  stepId: string,
+  status: Approval["status"],
+  opts?: { approvedBy?: string; comment?: string; timestamp?: string }
+): Approval {
+  const approval: Approval = { taskId, stepId, status };
+  if (opts?.approvedBy) approval.approvedBy = opts.approvedBy;
+  if (opts?.timestamp) approval.timestamp = opts.timestamp;
+  if (opts?.comment) approval.comment = opts.comment;
+  return approval;
+}
+
+/** Common options for approve/reject operations. */
+interface ApprovalOpts {
+  taskDir: string;
+  now?: string;
+}
+
+/** Assert the task is parked at awaiting_approval and return its state + current step dir. */
+async function loadAwaitingApproval(taskDir: string, verb: string): Promise<{ state: TaskState; dir: string }> {
+  const state = await readJson<TaskState>(join(taskDir, "state.json"));
+  if (!state) throw new Error(`No state.json in ${taskDir}`);
+  if (state.status !== "awaiting_approval") {
+    throw new Error(`Cannot ${verb}: task status is "${state.status}", expected awaiting_approval`);
+  }
+  const dir = join(taskDir, stepDirName(currentIndex(state), state.currentStepId));
+  return { state, dir };
+}
+
+/**
+ * Approve the current step: write an approved approval.json and advance the
+ * task to the next step (or complete it at the last step).
+ */
+export async function approveStep(
+  opts: ApprovalOpts & { approvedBy?: string; comment?: string }
+): Promise<{ status: string; currentStepId: string; done: boolean }> {
+  const now = opts.now ?? new Date().toISOString();
+  const { state, dir } = await loadAwaitingApproval(opts.taskDir, "approve");
+  const approval = buildApproval(state.taskId, state.currentStepId, "approved", {
+    approvedBy: opts.approvedBy,
+    comment: opts.comment,
+    timestamp: now,
+  });
+  await writeJson(join(dir, "approval.json"), approval, "approval");
+  const next = advanceState(state, now);
+  await writeJson(join(opts.taskDir, "state.json"), next, "task-state");
+  return { status: next.status, currentStepId: next.currentStepId, done: next.status === "done" };
+}
+
+/**
+ * Reject the current step: write a rejected approval.json and reopen the
+ * archetype's rejection-routing target for the current step.
+ */
+export async function rejectStep(
+  opts: ApprovalOpts & { rejectionRouting: Record<string, string>; comment?: string }
+): Promise<{ status: string; rejectedStep: string; reopenedStep: string }> {
+  const now = opts.now ?? new Date().toISOString();
+  const { state, dir } = await loadAwaitingApproval(opts.taskDir, "reject");
+  const approval = buildApproval(state.taskId, state.currentStepId, "rejected", {
+    comment: opts.comment,
+    timestamp: now,
+  });
+  await writeJson(join(dir, "approval.json"), approval, "approval");
+  const rejectedStep = state.currentStepId;
+  const next = rejectState(state, opts.rejectionRouting, now);
+  await writeJson(join(opts.taskDir, "state.json"), next, "task-state");
+  return { status: next.status, rejectedStep, reopenedStep: next.currentStepId };
+}
