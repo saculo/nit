@@ -16,10 +16,10 @@ without guessing. Your output is a machine-readable `design-result` embedded in 
 ## Inputs
 
 - `input.json` in the step directory — `taskId`, `stepId`, `role`, `skillList`, and `context`.
-- `context.priorOutputs` — a map of completed step id to that step's `output.json` path. Read
-  `priorOutputs.analyze` for the analysis findings, risks, and recommendations this design builds on.
-  If the map is absent, fall back to the sibling directory convention (`STEP-NNN-<stepId>/output.json`
-  under the task directory).
+- `context.priorOutputs` — a map of completed step id to that step's `output.json`, as a path relative
+  to the task directory (e.g. `STEP-001-analyze/output.json`). Read `priorOutputs.analyze` for the
+  analysis findings, risks, and recommendations this design builds on. If the map is absent, fall back
+  to the directory convention: `STEP-NNN-<stepId>/output.json` under the task directory.
 - `context.repairErrors`, when present — schema errors from your previous attempt at this step. Fix
   exactly those and re-emit.
 - `task.json` for the task under design — user story, acceptance criteria, target module.

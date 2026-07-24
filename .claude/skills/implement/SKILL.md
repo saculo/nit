@@ -18,10 +18,11 @@ report what you did. Your output is a machine-readable `implementation-result` e
 ## Inputs
 
 - `input.json` in the step directory — `taskId`, `stepId`, `role`, `skillList`, and `context`.
-- `context.priorOutputs` — a map of completed step id to that step's `output.json` path. Read
-  `priorOutputs.design` for the decisions, components, interfaces, and file plan you implement against;
-  read `priorOutputs.analyze` for the risks behind them. If the map is absent, fall back to the sibling
-  directory convention (`STEP-NNN-<stepId>/output.json` under the task directory).
+- `context.priorOutputs` — a map of completed step id to that step's `output.json`, as a path relative
+  to the task directory (e.g. `STEP-002-design/output.json`). Read `priorOutputs.design` for the
+  decisions, components, interfaces, and file plan you implement against; read `priorOutputs.analyze`
+  for the risks behind them. If the map is absent, fall back to the directory convention:
+  `STEP-NNN-<stepId>/output.json` under the task directory.
 - `context.repairErrors`, when present — schema errors from your previous attempt at this step. Fix
   exactly those and re-emit.
 - `task.json` for the task — acceptance criteria and definition of done.

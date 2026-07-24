@@ -71,10 +71,19 @@
 
     <decision id="KD-3">
       <description>
-        The supervisor's `defaultContext` gains `priorOutputs`: a map from completed step id to the
-        repo-relative path of that step's `output.json`, populated from the archetype's step list up to
-        the current index, including only files that exist. Skills read prior results through this map
-        rather than globbing sibling directories.
+        The supervisor gains `priorOutputs`: a map from completed step id to that step's `output.json`,
+        as a path relative to the task directory, populated from the archetype's step list up to the
+        current index and including only files that exist. Skills read prior results through this map
+        rather than globbing sibling directories. Context assembly (the caller's `buildContext` plus
+        this enrichment) lives in one shared helper used by `prepare`, `dryRun`, and the reopen path in
+        `ingest`, so the three cannot report different inputs for the same step.
+
+        Amended during review: the map was originally specified as repo-relative and assembled only in
+        `prepare`. Task-directory-relative paths are what the consumer actually needs — the specialist
+        already works from the step directory — and keep `input.json` portable across checkouts, which
+        a `join(taskDir, …)` value does not when `--task-dir` is absolute. The single-helper
+        requirement was added after review found `dryRun` and `ingest`'s reopen path each rebuilding
+        context independently.
       </description>
       <rationale>
         AC-3 requires `nit:implement` to load the design step's output, and today nothing tells it

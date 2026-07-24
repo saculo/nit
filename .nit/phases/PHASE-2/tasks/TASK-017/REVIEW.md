@@ -2,7 +2,13 @@
 
 <review>
 
-  <verdict>rework-requested</verdict>
+  <verdict>approved</verdict>
+
+  <verdict-history>
+    rework-requested (2026-07-24) -> approved (2026-07-25), after RW-1 and RW-2 were fixed and
+    re-verified. The findings below are kept verbatim as the record of what was found; see
+    rework-resolution for what changed.
+  </verdict-history>
 
   <input-validation-deviation>
     This task's own execution did not produce STEPS.md or IMPLEMENTATION.md, which the v1 nit:review
@@ -42,11 +48,11 @@
   <dod-check>
     <item id="DOD-1" result="pass">All four acceptance criteria verified above.</item>
     <item id="DOD-2" result="pass">
-      `bun test cli/tests/` — 94 pass, 0 fail, 8 files. 16 tests added across two files. Result
-      reproduced by the reviewer, not taken on report.
+      `bun test cli/tests/` — 94 pass, 0 fail at first review; 96 pass, 0 fail after rework. 18 tests
+      added across two files. Result reproduced by the reviewer, not taken on report.
     </item>
-    <item id="DOD-3" result="fail">
-      Code review — see rework items RW-1 and RW-2.
+    <item id="DOD-3" result="pass">
+      Code review — RW-1 and RW-2 fixed and re-verified; see rework-resolution.
     </item>
     <item id="DOD-4" result="pass">
       No critical tech debt introduced. The oneOf error-noise issue in findings is pre-existing and was
@@ -54,7 +60,7 @@
     </item>
   </dod-check>
 
-  <architecture-conformance result="fail">
+  <architecture-conformance result="pass">
     KD-1 (output.json as sole artifact), KD-2 (additive optional schema fields, no `required` changes),
     KD-4 (hook wiring removed, scripts left for the PHASE-3 sweep), KD-5 (adrCandidates not written to
     .nit/adr/), and KD-6 (validate at write time) are all implemented as designed. ADR-0005 is present
@@ -65,6 +71,9 @@
     contract in two ways, both flagged below: the paths are not repo-relative as KD-3 specifies (RW-2),
     and the design's claim that `input.json` becomes self-describing does not hold for `dryRun`, which
     still reports an input without priorOutputs (RW-1). Neither deviation was declared.
+
+    Resolved at rework: both deviations are fixed and KD-3 is amended to match the implemented
+    contract, so design and code now agree.
   </architecture-conformance>
 
   <security-check result="pass">
@@ -82,7 +91,8 @@
     behaviour, tests use in-process temp dirs, and no on-disk fixture directories were added.
 
     One gap, non-blocking: no test covers priorOutputs on the `reopen` path (repairRequired), where
-    both priorOutputs and repairErrors should appear together in the same input.json.
+    both priorOutputs and repairErrors should appear together in the same input.json. Closed at rework
+    — that test is what pins the third divergent site described in rework-resolution.
   </test-quality>
 
   <scope-check result="pass">
@@ -98,7 +108,7 @@
     <guard description="Every generated JSON validated at write time (ADR-0003)" result="pass">Both skills invoke the CLI validator on output.json; prepare still writes input.json through the validating writeJson.</guard>
     <guard description="Additive-only schema evolution" result="pass">No required list changed, no field removed or retyped; backward compatibility asserted by test.</guard>
     <guard description="One canonical artifact per step (ADR-0005)" result="pass">Both skills instruct against writing DESIGN.md / STEPS.md / IMPLEMENTATION.md and route other files through artifacts[].</guard>
-    <guard description="dryRun reports what prepare would produce" result="fail">See RW-1.</guard>
+    <guard description="dryRun reports what prepare would produce" result="pass">Fixed in RW-1; asserted by test against prepare's actual written context.</guard>
   </convention-guards>
 
   <findings>
@@ -160,6 +170,37 @@
       </fix>
     </item>
   </rework-items>
+
+  <rework-resolution>
+    <item id="RW-1" result="fixed">
+      Context assembly is now a single helper, `assembleContext`, called by `prepare`, `dryRun`, and
+      the reopen path in `ingest`. Re-review while fixing found a **third** divergent site the original
+      review missed: `ingest` rebuilt input.json on reopen with only `repairErrors`, so a reopened
+      implement step would have lost its design pointer entirely — a runtime defect, worse than the
+      dryRun mismatch that was reported. It is fixed by the same helper. `dryRun` additionally now
+      resolves `repairErrors`, a divergence that pre-dated this task.
+      Tests: dryRun's plan is asserted equal to the context prepare actually writes, and the reopen
+      path is asserted to carry priorOutputs and repairErrors together.
+    </item>
+    <item id="RW-2" result="fixed">
+      `priorOutputs` values are now relative to the task directory (`STEP-002-design/output.json`), so
+      input.json stays portable regardless of what `--task-dir` receives. Both skills document the
+      resolution rule, and the tests assert the relative form rather than a join against the temp dir.
+      DESIGN.md KD-3 is amended: task-directory-relative rather than repo-relative, with the reasoning
+      recorded, so code and design no longer contradict each other.
+    </item>
+    <item id="suggestion-mutation" result="fixed">
+      `assembleContext` returns a new object via spread instead of mutating the object returned by
+      `buildContext`, closing the shared-object hazard raised as a suggestion.
+    </item>
+    <item id="suggestion-reopen-test" result="fixed">
+      The reopen-path test suggested in findings was added, and is what pins the RW-1 third-site fix.
+    </item>
+    <verification>
+      `bun test cli/tests/` — 96 pass, 0 fail (2 added). No production code outside supervisor.ts and
+      the two SKILL.md files was touched during rework.
+    </verification>
+  </rework-resolution>
 
   <pr-url>https://github.com/saculo/nit/pull/20</pr-url>
 
