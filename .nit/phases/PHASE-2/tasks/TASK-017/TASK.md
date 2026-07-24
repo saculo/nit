@@ -8,7 +8,7 @@
     <title>Rewrite nit:design and nit:implement for JSON Output</title>
     <type>devops</type>
     <module>.claude/skills</module>
-    <status>draft</status>
+    <status>ready</status>
   </meta>
 
   <user-story>
