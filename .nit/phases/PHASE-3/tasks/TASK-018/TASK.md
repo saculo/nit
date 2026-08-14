@@ -1,9 +1,9 @@
-# TASK-023 — Blocked-Step Escalation Contract for Step Skills
+# TASK-018 — Blocked-Step Escalation Contract for Step Skills
 
 <task>
 
   <meta>
-    <id>TASK-023</id>
+    <id>TASK-018</id>
     <phase>PHASE-3</phase>
     <title>Blocked-Step Escalation Contract for Step Skills</title>
     <type>devops</type>
