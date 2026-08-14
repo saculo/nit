@@ -29,6 +29,7 @@
     - nit:skills command: lists all skills grouped by layer and module
     - Rewrite nit:phase-summary for JSON output with PLR generation
     - Cross-module-change archetype boundary-check step (already defined in PHASE-2 archetype, now enforced)
+    - Blocked-step escalation contract: a schema-valid way for a specialist to report it cannot proceed (needs splitting, contradictory input, unsatisfiable criterion), with supervisor ingest handling (TASK-023)
     </in-scope>
     <out-of-scope>
     - nit:add-skill interactive creation (PHASE-4)
@@ -56,6 +57,7 @@
   - Build nit:resolve-routing command
   - Build nit:skills listing command
   - Rewrite nit:phase-summary for JSON output
+  - Add the blocked-step escalation contract to step-output and supervisor ingest (TASK-023; sequence before the review/qa rewrites)
   </draft-tasks>
 
   <success-criteria>
