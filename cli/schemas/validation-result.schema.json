@@ -28,8 +28,8 @@
     },
     "action": {
       "type": "string",
-      "enum": ["repair", "proceed"],
-      "description": "Recommended action based on validation outcome."
+      "enum": ["repair", "proceed", "block"],
+      "description": "Recommended action based on validation outcome. `block` means the step cannot be repaired by re-running it and needs human intervention."
     }
   },
   "required": ["schemaValid", "policyValid", "errors", "action"],

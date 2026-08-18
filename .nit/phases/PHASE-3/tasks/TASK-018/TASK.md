@@ -8,7 +8,7 @@
     <title>Blocked-Step Escalation Contract for Step Skills</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>in-progress</status>
   </meta>
 
   <user-story>
@@ -63,6 +63,12 @@
       Given the rewritten nit:review and nit:qa skills,
       When either cannot complete its step,
       Then it uses the same blocked contract rather than a skill-specific convention.
+      <deferred>
+        Cannot be satisfied in this task: nit:review is still the v1 prose skill and nit:qa does not
+        exist yet. The contract is in place and schema-enforced for every step type, so AC-6 is a
+        conformance requirement on the two PHASE-3 rewrites rather than work this task can do. Carry
+        it as an acceptance criterion of those tasks.
+      </deferred>
     </criterion>
   </acceptance-criteria>
 

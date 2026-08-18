@@ -60,6 +60,34 @@ analysis that later steps (design, implementation) build on. Your output is a ma
 `proposedArchetype` are strongly encouraged. A non-zero exit from the validator means the output is
 malformed — fix and re-write before finishing.
 
+## When you cannot proceed
+
+If the task cannot be analysed as it stands, emit a `blocked` result instead of stopping with prose.
+It is a valid `output.json`, so the supervisor parks the task at `blocked` for a human:
+
+```json
+{
+  "taskId": "TASK-018",
+  "stepId": "analyze",
+  "stepType": "analyze",
+  "result": {
+    "resultType": "blocked",
+    "reason": "contradictory-input",
+    "explanation": "AC-2 requires the import to be synchronous; AC-4 requires it to stream files larger than memory. Both cannot hold.",
+    "detail": { "conflictsWith": "AC-2 vs AC-4" }
+  }
+}
+```
+
+`reason` is one of `needs-splitting` (the task spans two task types — put them in
+`detail.taskTypes`), `contradictory-input` (acceptance criteria or context conflict — name the
+conflict in `detail.conflictsWith`), or `criterion-unsatisfiable` (a criterion cannot be met as
+written — name it in `detail.criterionId`). `explanation` is required and must be specific enough to
+act on. Do not report `no-output`; that reason is the supervisor's, for a step that wrote nothing.
+
+Blocking is for a task that cannot be analysed at all — not for one that is merely ambiguous. Record
+ambiguity as a `risk` and analyse on.
+
 ## Rules
 
 - Do NOT design or implement — analysis only; the design step owns technical decisions.

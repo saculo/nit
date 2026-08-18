@@ -14,6 +14,7 @@ import {
   ingest,
   dryRun,
   priorOutputs,
+  defaultValidateOutput,
   type TaskState,
 } from "../src/supervisor";
 
@@ -343,5 +344,149 @@ describe("supervisor — prior step outputs", () => {
       join(dir, "STEP-003-implement", "input.json")
     );
     expect(input.context.priorOutputs.design).toBe("elsewhere/output.json");
+  });
+});
+
+// TASK-018 — a specialist that cannot proceed parks the task instead of
+// crashing the supervisor or burning the reopen budget.
+describe("supervisor — blocked-step escalation", () => {
+  const blockedOutput = {
+    taskId: "TASK-018",
+    stepId: "analyze",
+    stepType: "analyze",
+    result: {
+      resultType: "blocked",
+      reason: "needs-splitting",
+      explanation: "The task spans backend and frontend; it cannot be designed as one.",
+      detail: { taskTypes: ["backend", "frontend"] },
+    },
+  };
+
+  function midBudgetState(stepId: string, reopenCount: number): TaskState {
+    return {
+      taskId: "TASK-018",
+      currentStepId: stepId,
+      stepOrder: ["analyze", "design", "implement", "review", "qa"],
+      status: "in-progress",
+      reopenCount,
+      timestamps: { createdAt: NOW, updatedAt: NOW },
+    };
+  }
+
+  // AC-1
+  test("a blocked result validates, and one without an explanation does not", () => {
+    expect(defaultValidateOutput(blockedOutput)).toHaveLength(0);
+
+    const noExplanation = {
+      ...blockedOutput,
+      result: { resultType: "blocked", reason: "needs-splitting" },
+    };
+    expect(defaultValidateOutput(noExplanation).length).toBeGreaterThan(0);
+  });
+
+  // AC-1 — the reason code is a closed set
+  test("an unrecognised reason code is rejected", () => {
+    const badReason = {
+      ...blockedOutput,
+      result: { resultType: "blocked", reason: "bored", explanation: "nope" },
+    };
+    expect(defaultValidateOutput(badReason).length).toBeGreaterThan(0);
+  });
+
+  // AC-2
+  test("ingesting a blocked output parks at blocked, preserving the reopen budget", async () => {
+    const dir = tmpTaskDir();
+    await prepare({ taskDir: dir, taskId: "TASK-018", steps, now: NOW });
+    writeFileSync(join(dir, "STEP-001-analyze", "output.json"), JSON.stringify(blockedOutput));
+
+    const result = (await ingest({ taskDir: dir, taskId: "TASK-018", steps, now: NOW })) as any;
+    expect(result.blocked).toBe(true);
+    expect(result.status).toBe("blocked");
+    expect(result.reason).toBe("needs-splitting");
+
+    const state = readJson<TaskState>(join(dir, "state.json"));
+    expect(state.status).toBe("blocked");
+    expect(state.reopenCount).toBe(0);
+    expect(state.repairRequired).toBe(false);
+
+    // no repair was scheduled, and nothing failed validation
+    expect(existsSync(join(dir, "STEP-001-analyze", "validation.json"))).toBe(false);
+    const input = readJson<{ context: { repairErrors?: unknown[] } }>(
+      join(dir, "STEP-001-analyze", "input.json")
+    );
+    expect(input.context.repairErrors).toBeUndefined();
+  });
+
+  // AC-2 — blocking does not consume budget already partly spent
+  test("a blocked output leaves an existing reopenCount untouched", async () => {
+    const dir = tmpTaskDir();
+    writeFileSync(join(dir, "state.json"), JSON.stringify(midBudgetState("analyze", 2)));
+    mkdirSync(join(dir, "STEP-001-analyze"), { recursive: true });
+    writeFileSync(join(dir, "STEP-001-analyze", "output.json"), JSON.stringify(blockedOutput));
+
+    await ingest({ taskDir: dir, taskId: "TASK-018", steps, now: NOW, maxReopenCount: 3 });
+    const state = readJson<TaskState>(join(dir, "state.json"));
+    expect(state.status).toBe("blocked");
+    expect(state.reopenCount).toBe(2);
+  });
+
+  // AC-3
+  test("a step directory with no output.json blocks rather than throwing", async () => {
+    const dir = tmpTaskDir();
+    await prepare({ taskDir: dir, taskId: "TASK-018", steps, now: NOW });
+
+    const result = (await ingest({ taskDir: dir, taskId: "TASK-018", steps, now: NOW })) as any;
+    expect(result.blocked).toBe(true);
+    expect(result.status).toBe("blocked");
+    expect(result.reason).toBe("no-output");
+
+    const state = readJson<TaskState>(join(dir, "state.json"));
+    expect(state.status).toBe("blocked");
+    expect(state.reopenCount).toBe(0);
+    expect(state.repairRequired).toBe(false);
+
+    // the miss is recorded, but no repair is scheduled
+    const validation = readJson<{ schemaValid: boolean; action: string; errors: unknown[] }>(
+      join(dir, "STEP-001-analyze", "validation.json")
+    );
+    expect(validation.schemaValid).toBe(false);
+    expect(validation.action).toBe("block");
+    expect(validation.errors).toHaveLength(1);
+    const input = readJson<{ context: { repairErrors?: unknown[] } }>(
+      join(dir, "STEP-001-analyze", "input.json")
+    );
+    expect(input.context.repairErrors).toBeUndefined();
+  });
+
+  // a malformed blocked result is still just a malformed output
+  test("a blocked result that fails validation takes the repair path", async () => {
+    const dir = tmpTaskDir();
+    await prepare({ taskDir: dir, taskId: "TASK-018", steps, now: NOW });
+    writeFileSync(
+      join(dir, "STEP-001-analyze", "output.json"),
+      JSON.stringify({ ...blockedOutput, result: { resultType: "blocked", reason: "needs-splitting" } })
+    );
+
+    const result = (await ingest({ taskDir: dir, taskId: "TASK-018", steps, now: NOW })) as any;
+    expect(result.blocked).toBeUndefined();
+    expect(result.valid).toBe(false);
+    expect(readJson<TaskState>(join(dir, "state.json")).status).toBe("in-progress");
+    expect(readJson<TaskState>(join(dir, "state.json")).reopenCount).toBe(1);
+  });
+
+  // once blocked, the supervisor refuses to advance the task
+  test("prepare and dryRun both refuse to advance a blocked task", async () => {
+    const dir = tmpTaskDir();
+    writeFileSync(
+      join(dir, "state.json"),
+      JSON.stringify({ ...midBudgetState("analyze", 0), status: "blocked" })
+    );
+
+    const desc = (await prepare({ taskDir: dir, taskId: "TASK-018", steps, now: NOW })) as any;
+    expect(desc).toEqual({ blocked: true, status: "blocked" });
+    expect(existsSync(join(dir, "STEP-001-analyze"))).toBe(false);
+
+    const plan = (await dryRun({ taskDir: dir, taskId: "TASK-018", steps, now: NOW })) as any;
+    expect(plan).toEqual({ blocked: true, status: "blocked" });
   });
 });

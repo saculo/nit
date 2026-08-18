@@ -95,6 +95,38 @@ learns what to build, so omit them only when the task genuinely has none. `inter
 `modified`, `deleted`. A non-zero exit from the validator means the output is malformed — fix and
 re-write before finishing.
 
+## When you cannot proceed
+
+If the task cannot be designed as it stands, do NOT stop with prose and do NOT design around the
+problem. Emit a `blocked` result instead — it is a valid `output.json`, so the supervisor parks the
+task at `blocked` for a human instead of crashing or re-running you against the same wall:
+
+```json
+{
+  "taskId": "TASK-018",
+  "stepId": "design",
+  "stepType": "design",
+  "result": {
+    "resultType": "blocked",
+    "reason": "needs-splitting",
+    "explanation": "The task requires both a backend endpoint and the form that calls it; one design cannot cover both task types.",
+    "detail": { "taskTypes": ["backend", "frontend"] }
+  }
+}
+```
+
+`reason` is one of:
+
+| reason | Use when |
+|---|---|
+| `needs-splitting` | The task spans two task types. Put the types in `detail.taskTypes`. |
+| `contradictory-input` | The analysis, the acceptance criteria, or a prior ADR contradict each other. Name what conflicts in `detail.conflictsWith`. |
+| `criterion-unsatisfiable` | An acceptance criterion cannot be met as written. Name it in `detail.criterionId`. |
+
+`explanation` is required and must be specific enough to act on — it is the whole basis for the
+human's decision. Validate the blocked output exactly as you would a design result. Do not report
+`no-output`; that reason is the supervisor's, for a step that wrote nothing at all.
+
 ## Rules
 
 - Do NOT implement — no production code. The implement step owns the code; you own its shape.
@@ -104,5 +136,5 @@ re-write before finishing.
 - Emit an `adrCandidate` when a decision affects tasks beyond this one, is hard to reverse, or
   represents a significant trade-off. Do NOT write files into `.nit/adr/` yourself — promoting a
   candidate to a numbered ADR happens behind the approval gate.
-- If the task turns out to span two task types (e.g. backend and frontend), stop and report that it
-  needs splitting instead of designing across both.
+- If the task turns out to span two task types (e.g. backend and frontend), emit a `needs-splitting`
+  blocked result instead of designing across both — see "When you cannot proceed".
