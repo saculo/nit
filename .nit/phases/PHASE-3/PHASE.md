@@ -55,6 +55,7 @@
   - Rewrite nit:status for v2 artifacts — state.json, task.json, phase.json — and the v2 command set (TASK-024)
   - Rewrite nit:orchestrate to drive the supervisor rather than dispatch steps itself (TASK-025; sequence after the step skills it drives)
   - Stop nit:init scaffolding v1 artifact types, and remove the orphaned hooks and duplicated .nit/ trees (TASK-026; sequence last, once the final artifact list is known)
+  - Fix rejection routing that targets a removed step, and validate the invariant at archetype resolution (TASK-027; reachable now that the review step works)
   - Implement boundary enforcement in validation hooks (modules.json allowedDependencies + dependency-rules.json)
   - Create dependency-rules.json format and schema
   - Create adr-triggers.json with trigger conditions and integrate into supervisor post-step flow
