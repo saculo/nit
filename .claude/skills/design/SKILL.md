@@ -119,9 +119,9 @@ task at `blocked` for a human instead of crashing or re-running you against the 
 
 | reason | Use when |
 |---|---|
-| `needs-splitting` | The task spans two task types. Put the types in `detail.taskTypes`. |
-| `contradictory-input` | The analysis, the acceptance criteria, or a prior ADR contradict each other. Name what conflicts in `detail.conflictsWith`. |
-| `criterion-unsatisfiable` | An acceptance criterion cannot be met as written. Name it in `detail.criterionId`. |
+| `needs-splitting` | The task spans two task types. **Requires** `detail.taskTypes` — the types the split would produce. |
+| `contradictory-input` | The analysis, the acceptance criteria, or a prior ADR contradict each other. **Requires** `detail.conflictsWith`. |
+| `criterion-unsatisfiable` | An acceptance criterion cannot be met as written. **Requires** `detail.criterionId`. |
 
 `explanation` is required and must be specific enough to act on — it is the whole basis for the
 human's decision. Validate the blocked output exactly as you would a design result. Do not report

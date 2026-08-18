@@ -79,10 +79,11 @@ It is a valid `output.json`, so the supervisor parks the task at `blocked` for a
 }
 ```
 
-`reason` is one of `needs-splitting` (the task spans two task types — put them in
-`detail.taskTypes`), `contradictory-input` (acceptance criteria or context conflict — name the
-conflict in `detail.conflictsWith`), or `criterion-unsatisfiable` (a criterion cannot be met as
-written — name it in `detail.criterionId`). `explanation` is required and must be specific enough to
+`reason` is one of `needs-splitting` (the task spans two task types), `contradictory-input`
+(acceptance criteria or context conflict), or `criterion-unsatisfiable` (a criterion cannot be met as
+written). Each requires its own `detail` field — `taskTypes`, `conflictsWith`, and `criterionId`
+respectively — and the schema rejects the result without it, so the human resolving the block gets
+the facts rather than only the verdict. `explanation` is required too and must be specific enough to
 act on. Do not report `no-output`; that reason is the supervisor's, for a step that wrote nothing.
 
 Blocking is for a task that cannot be analysed at all — not for one that is merely ambiguous. Record

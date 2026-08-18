@@ -393,6 +393,44 @@ describe("supervisor — blocked-step escalation", () => {
     expect(defaultValidateOutput(badReason).length).toBeGreaterThan(0);
   });
 
+  // AC-1 — a specialist-reported reason must carry its own detail, so the
+  // human resolving the block gets the facts and not just the verdict.
+  test.each([
+    ["needs-splitting", { taskTypes: ["backend", "frontend"] }],
+    ["contradictory-input", { conflictsWith: "AC-2 vs AC-4" }],
+    ["criterion-unsatisfiable", { criterionId: "AC-3" }],
+  ])("%s requires its reason-specific detail", (reason, detail) => {
+    const withDetail = { ...blockedOutput, result: { resultType: "blocked", reason, explanation: "x", detail } };
+    expect(defaultValidateOutput(withDetail)).toHaveLength(0);
+
+    const withoutDetail = { ...blockedOutput, result: { resultType: "blocked", reason, explanation: "x" } };
+    expect(defaultValidateOutput(withoutDetail).length).toBeGreaterThan(0);
+
+    // another reason's detail does not satisfy this one
+    const wrongDetail = {
+      ...blockedOutput,
+      result: { resultType: "blocked", reason, explanation: "x", detail: { unrelated: "value" } },
+    };
+    expect(defaultValidateOutput(wrongDetail).length).toBeGreaterThan(0);
+  });
+
+  test("needs-splitting rejects an empty taskTypes list", () => {
+    const empty = {
+      ...blockedOutput,
+      result: { resultType: "blocked", reason: "needs-splitting", explanation: "x", detail: { taskTypes: [] } },
+    };
+    expect(defaultValidateOutput(empty).length).toBeGreaterThan(0);
+  });
+
+  // no-output is the supervisor's own reason; it has no detail to supply
+  test("no-output validates without detail", () => {
+    const noOutput = {
+      ...blockedOutput,
+      result: { resultType: "blocked", reason: "no-output", explanation: "the step produced no result" },
+    };
+    expect(defaultValidateOutput(noOutput)).toHaveLength(0);
+  });
+
   // AC-2
   test("ingesting a blocked output parks at blocked, preserving the reopen budget", async () => {
     const dir = tmpTaskDir();

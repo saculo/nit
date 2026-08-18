@@ -72,6 +72,36 @@ is reported as `no-output` and records the miss in `validation.json` with `actio
 touches `reopenCount` and neither schedules a repair — re-running the step would not help. Surface
 the reason to the user and stop.
 
+## Unblocking a blocked task
+
+There is no `nit unblock` command yet (PHASE-4). Until there is, this is the one sanctioned manual
+transition, and it is the only edit to `state.json` permitted anywhere in this workflow.
+
+**Fix the cause first.** A blocked task re-dispatched unchanged will block again on the same step:
+split the task for `needs-splitting`, correct the acceptance criterion or the design for
+`contradictory-input` and `criterion-unsatisfiable`, and for `no-output` establish why the specialist
+wrote nothing. Only then transition the state.
+
+To resume the same step, edit `state.json` so that:
+
+| field | value | why |
+|---|---|---|
+| `status` | `"in-progress"` | the only status `prepare` will act on |
+| `currentStepId` | unchanged, or an earlier step to redo | must be a member of `stepOrder` |
+| `repairRequired` | `false` | there are no `repairErrors` to hand back |
+| `reopenCount` | leave as-is | blocking never spent budget; resetting it hides earlier repairs |
+
+Leave `stepOrder`, `taskId`, and `timestamps.createdAt` alone. Then confirm the edit before running
+the supervisor again — an invalid `state.json` fails every later step:
+
+```bash
+bun run ./cli/src/cli.ts validate --schema task-state \
+  .nit/phases/PHASE-N/tasks/TASK-NNN/state.json
+```
+
+Setting `currentStepId` to a value not in `stepOrder` is the one edit that breaks the supervisor
+outright: `prepare` resolves the step by index and will fail on the next run.
+
 ## Dry run
 
 ```bash
@@ -83,10 +113,10 @@ the next step — writing nothing and dispatching no agent.
 
 ## Rules
 
-- Do NOT hand-edit `state.json` — only the CLI transitions it.
+- Do NOT hand-edit `state.json` — only the CLI transitions it. The sole exception is unblocking, in
+  the narrow form documented below; you may not hand-edit any other status.
 - Dispatch exactly the role and skills the descriptor names; do not substitute.
 - After an escalation, stop and surface the accumulated errors to the user — do not loop further.
-- After a block, stop and surface the reason and explanation — do not re-dispatch the step. Resolving
-  a blocked task is a human decision (split it, fix the criterion, edit `state.json`).
+- After a block, stop and surface the reason and explanation — do not re-dispatch the step.
 - Approve/reject is a separate command (`/nit:approve`, `/nit:reject`, TASK-016); this skill parks a
   valid step at `awaiting_approval` and advances only once the prior step is approved.

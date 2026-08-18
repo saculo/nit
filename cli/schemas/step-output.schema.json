@@ -244,25 +244,60 @@
         },
         "detail": {
           "type": "object",
-          "description": "Reason-specific detail. Open-ended so each reason can carry what it needs.",
+          "description": "Reason-specific detail. Required for every specialist-reported reason; see the conditionals below.",
           "properties": {
             "taskTypes": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
               "description": "For needs-splitting: the task types the split would produce."
             },
             "criterionId": {
               "type": "string",
+              "minLength": 1,
               "description": "For criterion-unsatisfiable: the acceptance criterion that cannot be met."
             },
             "conflictsWith": {
               "type": "string",
+              "minLength": 1,
               "description": "For contradictory-input: what the input contradicts."
             }
           }
         }
       },
-      "required": ["resultType", "reason", "explanation"]
+      "required": ["resultType", "reason", "explanation"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "reason": { "const": "needs-splitting" } },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": { "detail": { "type": "object", "required": ["taskTypes"] } },
+            "required": ["detail"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reason": { "const": "contradictory-input" } },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": { "detail": { "type": "object", "required": ["conflictsWith"] } },
+            "required": ["detail"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reason": { "const": "criterion-unsatisfiable" } },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": { "detail": { "type": "object", "required": ["criterionId"] } },
+            "required": ["detail"]
+          }
+        }
+      ]
     },
     "adr-candidate": {
       "type": "object",

@@ -138,9 +138,9 @@ crashing or re-running you against the same wall:
 
 | reason | Use when |
 |---|---|
-| `contradictory-input` | The design contradicts the acceptance criteria, a prior ADR, or itself. Name what conflicts in `detail.conflictsWith`. |
-| `criterion-unsatisfiable` | An acceptance criterion cannot be met as written. Name it in `detail.criterionId`. |
-| `needs-splitting` | The work turns out to span two task types. Put the types in `detail.taskTypes`. |
+| `contradictory-input` | The design contradicts the acceptance criteria, a prior ADR, or itself. **Requires** `detail.conflictsWith`. |
+| `criterion-unsatisfiable` | An acceptance criterion cannot be met as written. **Requires** `detail.criterionId`. |
+| `needs-splitting` | The work turns out to span two task types. **Requires** `detail.taskTypes`. |
 
 `explanation` is required and must be specific enough to act on. Commit whatever complete, working
 source you have before reporting; leave partial work uncommitted. Validate the blocked output exactly
