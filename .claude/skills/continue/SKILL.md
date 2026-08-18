@@ -42,7 +42,8 @@ resolved `skillList`), and prints a dispatch descriptor:
 
 If it prints `{"blocked": true, "status": "awaiting_approval"}` the current step still needs approval
 (run `/nit:approve`); `{"blocked": true, "status": "escalated"}` means the reopen budget was exceeded
-— resolve manually. `{"done": true}` means all steps are complete.
+and `{"blocked": true, "status": "blocked"}` means a specialist reported it cannot proceed — both
+need a human, not another dispatch. `{"done": true}` means all steps are complete.
 
 ### 2. Dispatch the specialist (LLM step)
 
@@ -64,6 +65,13 @@ increments `reopenCount`, and either reopens the step with the errors embedded i
 `maxReopenCount`, sets the task to `escalated` and reports the accumulated errors. On a reopen,
 return to step 2 with the updated `input.json`.
 
+Two outcomes park the task at `blocked` instead, both printing `{"blocked": true, "status":
+"blocked", "reason": "..."}`. A schema-valid `blocked` result means the specialist reported it cannot
+proceed (`needs-splitting`, `contradictory-input`, `criterion-unsatisfiable`); a missing `output.json`
+is reported as `no-output` and records the miss in `validation.json` with `action: "block"`. Neither
+touches `reopenCount` and neither schedules a repair — re-running the step would not help. Surface
+the reason to the user and stop.
+
 ## Dry run
 
 ```bash
@@ -78,5 +86,7 @@ the next step — writing nothing and dispatching no agent.
 - Do NOT hand-edit `state.json` — only the CLI transitions it.
 - Dispatch exactly the role and skills the descriptor names; do not substitute.
 - After an escalation, stop and surface the accumulated errors to the user — do not loop further.
+- After a block, stop and surface the reason and explanation — do not re-dispatch the step. Resolving
+  a blocked task is a human decision (split it, fix the criterion, edit `state.json`).
 - Approve/reject is a separate command (`/nit:approve`, `/nit:reject`, TASK-016); this skill parks a
   valid step at `awaiting_approval` and advances only once the prior step is approved.
