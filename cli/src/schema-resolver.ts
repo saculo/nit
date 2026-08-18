@@ -11,6 +11,7 @@ const SCHEMA_MAP: Record<string, string> = {
   workspace: "workspace.schema.json",
   supervisor: "supervisor.schema.json",
   phase: "phase.schema.json",
+  "phase-summary": "phase-summary.schema.json",
   task: "task.schema.json",
   "task-state": "task-state.schema.json",
   "step-input": "step-input.schema.json",

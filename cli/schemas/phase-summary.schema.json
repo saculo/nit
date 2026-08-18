@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/phase-summary.schema.json",
+  "title": "Phase Summary",
+  "description": "Machine-readable outcome of a phase completion analysis: milestone verification plus everything the phase's tasks reported, aggregated and traceable to the task that reported it.",
+  "type": "object",
+  "properties": {
+    "phaseId": {
+      "type": "string",
+      "description": "The phase this summarises, e.g. PHASE-3."
+    },
+    "title": {
+      "type": "string",
+      "description": "The phase title, copied from phase.json."
+    },
+    "milestone": {
+      "type": "object",
+      "description": "Whether the phase's milestone was reached, criterion by criterion.",
+      "properties": {
+        "reached": {
+          "type": "boolean",
+          "description": "True only when every criterion is met. The phase status may be set to done only when this is true."
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "result": { "type": "string", "enum": ["met", "unmet"] },
+              "evidence": {
+                "type": "string",
+                "description": "What was checked, and where. For an unmet criterion, what remains outstanding."
+              },
+              "taskIds": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "The tasks this criterion was traced to."
+              }
+            },
+            "required": ["id", "result", "evidence"]
+          }
+        }
+      },
+      "required": ["reached", "criteria"]
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Per-task roll-up: one entry for every task in the phase, readable or not.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "type": "string" },
+          "readable": {
+            "type": "boolean",
+            "description": "False when the task's artifacts could not be read as v2 step outputs; see unreadable[] for why."
+          }
+        },
+        "required": ["taskId", "status"]
+      }
+    },
+    "deviations": {
+      "type": "array",
+      "description": "Every implementation-result.deviations entry across the phase, each carrying the task that reported it.",
+      "items": { "$ref": "#/$defs/attributed-item" }
+    },
+    "techDebt": {
+      "type": "array",
+      "description": "Every implementation-result.techDebt entry across the phase.",
+      "items": { "$ref": "#/$defs/attributed-item" }
+    },
+    "reviewFindings": {
+      "type": "array",
+      "description": "Review comments worth carrying forward — typically the error and warning severities.",
+      "items": { "$ref": "#/$defs/attributed-item" }
+    },
+    "qaIssues": {
+      "type": "array",
+      "description": "Every qa-result.issues entry across the phase.",
+      "items": { "$ref": "#/$defs/attributed-item" }
+    },
+    "adrCandidates": {
+      "type": "array",
+      "description": "Candidates emitted by the phase's steps. Collecting them here does not promote them; writing a numbered ADR stays a human decision.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "string" },
+          "title": { "type": "string" },
+          "context": { "type": "string" },
+          "decision": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["proposed", "accepted", "rejected", "superseded"]
+          },
+          "promotedTo": {
+            "type": "string",
+            "description": "Path of the ADR this became, when a human promoted it."
+          }
+        },
+        "required": ["taskId", "title", "context", "decision"]
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Impact on later phases. Each names the phase it affects, so it can be acted on when that phase is planned.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phaseId": { "type": "string" },
+          "scopeItem": {
+            "type": "string",
+            "description": "The specific scope item affected, when the impact is on one."
+          },
+          "recommendation": { "type": "string" },
+          "reason": {
+            "type": "string",
+            "description": "What in this phase prompted it — a deviation, an item of debt, a review finding."
+          }
+        },
+        "required": ["phaseId", "recommendation"]
+      }
+    },
+    "unreadable": {
+      "type": "array",
+      "description": "Tasks whose artifacts could not be read as v2 step outputs. Present so a partial summary declares its own gaps instead of silently omitting them.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "string" },
+          "reason": { "type": "string" },
+          "found": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "What was found instead, e.g. v1 prose artifacts."
+          }
+        },
+        "required": ["taskId", "reason"]
+      }
+    },
+    "plr": {
+      "type": "string",
+      "description": "Path of the Phase Learning Record written for this phase."
+    }
+  },
+  "required": ["phaseId", "milestone"],
+  "additionalProperties": false,
+  "$defs": {
+    "attributed-item": {
+      "type": "object",
+      "description": "An item reported by one task, kept attributed so every aggregate stays traceable to its source.",
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "description": "The task that reported it."
+        },
+        "item": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The reported text, verbatim from the step output."
+        },
+        "category": {
+          "type": "string",
+          "description": "Optional grouping, e.g. code-quality, test-coverage, architecture."
+        },
+        "affectsPhase": {
+          "type": "string",
+          "description": "A later phase this bears on. Set it when the item is the reason for a recommendation."
+        }
+      },
+      "required": ["taskId", "item"]
+    }
+  }
+}
