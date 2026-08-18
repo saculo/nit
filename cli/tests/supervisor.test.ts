@@ -545,12 +545,14 @@ describe("supervisor — blocked-step escalation", () => {
 // of bugfix and cross-module-change could not be dispatched at all.
 describe("supervisor — $detect resolution", () => {
   let bugfixSteps: ArchetypeStep[];
+  let crossModuleSteps: ArchetypeStep[];
 
   beforeAll(async () => {
     bugfixSteps = (await resolveArchetype("bugfix")).steps as ArchetypeStep[];
+    crossModuleSteps = (await resolveArchetype("cross-module-change")).steps as ArchetypeStep[];
   });
 
-  function taskDirWithType(type?: string): string {
+  function taskDirWithType(type?: string, stepOrder = ["design", "implement", "review", "qa"]): string {
     const dir = tmpTaskDir();
     if (type !== undefined) {
       writeFileSync(
@@ -563,7 +565,7 @@ describe("supervisor — $detect resolution", () => {
       JSON.stringify({
         taskId: "TASK-028",
         currentStepId: "implement",
-        stepOrder: ["design", "implement", "review", "qa"],
+        stepOrder,
         status: "in-progress",
         reopenCount: 0,
         timestamps: { createdAt: NOW, updatedAt: NOW },
@@ -584,6 +586,26 @@ describe("supervisor — $detect resolution", () => {
     const dir = taskDirWithType(type);
     const desc = (await prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })) as any;
     expect(desc.role).toBe(expected);
+  });
+
+  // AC-2 — both archetypes that defer to $detect, not just bugfix
+  test("cross-module-change resolves $detect the same way", async () => {
+    const dir = taskDirWithType("frontend", [
+      "analyze",
+      "design",
+      "implement",
+      "boundary-check",
+      "review",
+      "qa",
+    ]);
+    const desc = (await prepare({
+      taskDir: dir,
+      taskId: "TASK-028",
+      steps: crossModuleSteps,
+      now: NOW,
+    })) as any;
+    expect(desc.stepId).toBe("implement");
+    expect(desc.role).toBe("frontend-engineer");
   });
 
   test("every resolved engineer role has an agent definition on disk", () => {

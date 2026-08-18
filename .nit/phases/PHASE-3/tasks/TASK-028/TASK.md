@@ -8,7 +8,7 @@
     <title>Resolve $detect to a Concrete Engineer Role at Dispatch</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>
