@@ -58,6 +58,7 @@
   - Fix rejection routing that targets a removed step, and validate the invariant at archetype resolution (TASK-027; reachable now that the review step works)
   - Resolve $detect to a concrete engineer role at dispatch (TASK-028; bugfix and cross-module-change cannot dispatch their implement step today)
   - Honour the per-step approval flag, which the supervisor never reads, so every step is gated regardless of the archetype (TASK-029)
+  - Give phase success criteria a home in phase.json; they are discussed at planning and then discarded, leaving milestone verification nothing to verify against (TASK-030)
   - Implement boundary enforcement in validation hooks (modules.json allowedDependencies + dependency-rules.json)
   - Create dependency-rules.json format and schema
   - Create adr-triggers.json with trigger conditions and integrate into supervisor post-step flow

@@ -58,6 +58,14 @@ from", and a summary that cannot answer it will not be trusted twice.
    tasks that should deliver it and check their step outputs for evidence. Mark `met` or `unmet` with
    the evidence, and put the tasks in `taskIds` so the trace is explicit. Guessing is not verifying: a
    criterion you cannot check against a step output is `unmet`.
+
+   **Where the criteria come from.** `phase.json` carries only `milestone` — one sentence — and
+   `businessValue`; it has no `successCriteria` field, and its schema rejects unknown fields, so there
+   is no v2 source for a criteria list yet (TASK-030). Until there is, take them in this order:
+   the phase's `PHASE.md` `<success-criteria>` if the workspace still has one; otherwise derive one
+   criterion per distinct outcome named in `milestone`, and say so in the evidence. Either way the
+   `id` you assign must be stable enough to mean the same thing on a re-run — prefer the `SC-N` ids
+   from `PHASE.md` when they exist.
 3. **Aggregate**, per the table above, attributing every item.
 4. **Look for the pattern.** Four tasks each deviating in the same direction is a finding about the
    design, not four findings about four tasks. Say so in the PLR, and raise it as an `adrCandidate` if
