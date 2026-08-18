@@ -46,6 +46,7 @@
   </dependencies>
 
   <draft-tasks>
+  - Add the blocked-step escalation contract to step-output and supervisor ingest (TASK-018; must land before the review/qa rewrites)
   - Rewrite nit:review skill for JSON step output with review-result schema
   - Create nit:qa step skill with qa-result schema
   - Implement boundary enforcement in validation hooks (modules.json allowedDependencies + dependency-rules.json)
@@ -57,7 +58,6 @@
   - Build nit:resolve-routing command
   - Build nit:skills listing command
   - Rewrite nit:phase-summary for JSON output
-  - Add the blocked-step escalation contract to step-output and supervisor ingest (TASK-018; sequence before the review/qa rewrites)
   </draft-tasks>
 
   <success-criteria>
@@ -71,6 +71,7 @@
   - nit:explain-routing displays the complete skill composition chain (base + language + custom + step-scoped + global) for a given task
   - nit:skills lists all registered skills organized by layer and module association
   - nit:phase-summary produces structured JSON output and PLR
+  - A blocked step output validates against step-output.schema.json, transitions the task to `blocked` on ingest, leaves reopenCount unchanged, and writes no repair input.json; a step directory with no output.json takes the same path instead of throwing
   </success-criteria>
 
   <risks>

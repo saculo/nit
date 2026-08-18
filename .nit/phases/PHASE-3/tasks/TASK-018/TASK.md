@@ -19,7 +19,7 @@
 
   <scope>
     <in-scope>
-    - A `blocked` representation in `step-output.schema.json`: a reason code (at minimum `needs-splitting`, `contradictory-input`, `criterion-unsatisfiable`), a human-readable explanation, and reason-specific detail (e.g. the task types a split would produce)
+    - A `blocked` representation in `step-output.schema.json`: a reason code (at minimum `needs-splitting`, `contradictory-input`, `criterion-unsatisfiable`, and `no-output` for the supervisor-synthesized case), a human-readable explanation, and reason-specific detail (e.g. the task types a split would produce)
     - Supervisor `ingest` handling: a blocked output is neither valid-and-approvable nor a repair case — it transitions the task to `blocked` (already in `task-state.schema.json`) without incrementing `reopenCount`
     - A graceful path when a step directory has no `output.json` at all: `ingest` currently throws `No output.json in <dir>`, which is what a specialist that "stops and reports" produces today
     - Update `nit:design` and `nit:implement` to emit the blocked output instead of stopping with prose: the split-task rule (`design/SKILL.md`) and the major-deviation and unsatisfiable-criterion rules (`implement/SKILL.md`)
@@ -47,7 +47,7 @@
     <criterion id="AC-3">
       Given a step directory with no output.json,
       When the supervisor ingests it,
-      Then it reports the missing output as a blocked or escalated state rather than throwing an unhandled error.
+      Then the task state becomes `blocked` with reason code `no-output` rather than throwing an unhandled error, reopenCount is unchanged, no repair input.json is written, and validation.json is written recording the missing output as the failure.
     </criterion>
     <criterion id="AC-4">
       Given a design step for a task that spans two task types,
@@ -86,14 +86,14 @@
     - Sequenced before the nit:review and nit:qa rewrites in this phase, so those skills are written against the contract rather than retrofitted (AC-6)
   </dependencies>
 
-  <open-questions>
-    <question id="Q-1">
-      Where the blocked report lives structurally: a sibling of `result` at the root, or a `blocked-result` branch in the root `oneOf`. The latter fits the existing per-step-type `$defs` pattern; the former keeps a partial result readable alongside the block. To settle at design.
-    </question>
-    <question id="Q-2">
-      Whether `blocked` should gate on approval like a completed step does, or park immediately. Parking immediately is the intent of the `blocked` state, but the existing `awaiting_approval` machinery may already be the right surface for a human to look at it.
-    </question>
-  </open-questions>
+  <decisions>
+    <decision id="D-1">
+      The blocked report is a `blocked-result` branch in the `result` `oneOf`, discriminated by `resultType: "blocked"`, following the existing per-step-type `$defs` pattern. `result` therefore stays required and every step type can emit it without a per-step-type variant. Supervisor detection is `result.resultType === "blocked"`. A partial result is not carried alongside the block; anything worth keeping goes in the explanation or the reason-specific detail.
+    </decision>
+    <decision id="D-2">
+      A blocked output parks immediately: `ingest` transitions the task straight to `blocked` and does not route through `awaiting_approval`. That is the intent of the `blocked` state and what AC-2 requires — the approval machinery gates completed work, not work that cannot proceed.
+    </decision>
+  </decisions>
 
   <notes>
     **Origin.** Raised in the TASK-017 review. `design/SKILL.md` tells the architect to "stop and report that it needs splitting", and `implement/SKILL.md` says the same for a major deviation or an unsatisfiable criterion — but step-output.schema.json has no way to represent either. `design-result` requires `resultType`, `summary`, and `decisions`; `blocked` and `escalated` exist only in task-state.schema.json, not in step output. A specialist following those rules literally leaves the step directory without an output.json, and `ingest` (cli/src/supervisor.ts) then throws `No output.json in <dir>`.

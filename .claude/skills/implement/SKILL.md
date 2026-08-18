@@ -59,7 +59,7 @@ Commit source changes before reporting; do not push and do not open a PR — tha
 2. Stage the source files you changed. Do NOT stage `.nit/` step artifacts.
 3. Commit with:
 
-   ```
+   ```text
    TASK-<id>: Short task title
 
    - What was implemented
@@ -68,6 +68,9 @@ Commit source changes before reporting; do not push and do not open a PR — tha
    Phase: PHASE-N
    Type: backend|frontend|devops|qa
    ```
+
+   `Type:` is the task's `type` from `task.json` — one of `backend`, `frontend`, `devops`, `qa` — not
+   the engineer role that ran the step. The `infra` engineer works tasks of type `devops`.
 
 ## Output shape
 

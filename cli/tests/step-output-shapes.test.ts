@@ -174,6 +174,7 @@ describe("adrCandidates", () => {
       taskId: "TASK-017",
       stepId: "design",
       stepType: "design",
+      result: { resultType: "design", summary: "s", decisions: [] },
       adrCandidates: [{ title: "t", context: "c" }],
     });
     expect(valid).toBe(false);
