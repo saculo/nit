@@ -30,6 +30,8 @@
     - Rewrite nit:phase-summary for JSON output with PLR generation
     - Cross-module-change archetype boundary-check step (already defined in PHASE-2 archetype, now enforced)
     - Blocked-step escalation contract: a schema-valid way for a specialist to report it cannot proceed (needs splitting, contradictory input, unsatisfiable criterion), with supervisor ingest handling (TASK-018)
+    - Complete the v1 to v2 skill migration, so no skill still reads or writes the prose artifacts ADR-0005 retired: nit:status on v2 artifacts (TASK-024), nit:orchestrate on the supervisor rather than DESIGN.md type routing (TASK-025), and nit:init scaffolding only artifact types the v2 pipeline writes (TASK-026)
+    - Remove the machinery the migration orphans: the v1 argument-validation hooks superseded by supervisor dispatch, and the duplicated .nit/skills/ and .nit/hooks/ trees stale since PHASE-1 (TASK-026, settling design Q-4)
     </in-scope>
     <out-of-scope>
     - nit:add-skill interactive creation (PHASE-4)
@@ -47,8 +49,12 @@
 
   <draft-tasks>
   - Add the blocked-step escalation contract to step-output and supervisor ingest (TASK-018; must land before the review/qa rewrites)
-  - Rewrite nit:review skill for JSON step output with review-result schema (must emit the TASK-018 blocked result when it cannot complete its step, rather than a skill-specific convention)
-  - Create nit:qa step skill with qa-result schema (same blocked-contract conformance requirement)
+  - Rewrite nit:review skill for JSON step output with review-result schema (TASK-021; must emit the TASK-018 blocked result when it cannot complete its step, rather than a skill-specific convention)
+  - Create nit:qa step skill with qa-result schema (TASK-022; same blocked-contract conformance requirement)
+  - Rewrite nit:phase-summary for JSON output with PLR generation (TASK-023; aggregates the review and qa results above)
+  - Rewrite nit:status for v2 artifacts — state.json, task.json, phase.json — and the v2 command set (TASK-024)
+  - Rewrite nit:orchestrate to drive the supervisor rather than dispatch steps itself (TASK-025; sequence after the step skills it drives)
+  - Stop nit:init scaffolding v1 artifact types, and remove the orphaned hooks and duplicated .nit/ trees (TASK-026; sequence last, once the final artifact list is known)
   - Implement boundary enforcement in validation hooks (modules.json allowedDependencies + dependency-rules.json)
   - Create dependency-rules.json format and schema
   - Create adr-triggers.json with trigger conditions and integrate into supervisor post-step flow
@@ -57,7 +63,6 @@
   - Build nit:explain-routing command
   - Build nit:resolve-routing command
   - Build nit:skills listing command
-  - Rewrite nit:phase-summary for JSON output
   </draft-tasks>
 
   <success-criteria>
@@ -73,6 +78,10 @@
   - nit:phase-summary produces structured JSON output and PLR
   - A blocked step output validates against step-output.schema.json, transitions the task to `blocked` on ingest, leaves reopenCount unchanged, and writes no repair input.json; a step directory with no output.json takes the same path instead of throwing
   - Every step skill in the phase — analyze, design, implement, review, qa — reports an unworkable step through the blocked contract rather than a skill-specific convention
+  - No skill reads or writes DESIGN.md, STEPS.md, IMPLEMENTATION.md, REVIEW.md, or CLARIFICATIONS.md except to state that v2 does not produce them
+  - nit:status reports a v2 workspace accurately, distinguishing awaiting_approval, blocked, and escalated, and suggests only v2 commands
+  - A freshly initialised workspace declares only artifact types the v2 pipeline writes, and every generated file validates against its schema
+  - No orphaned hook or duplicated skill tree remains; design Q-4 is settled and recorded
   </success-criteria>
 
   <risks>
