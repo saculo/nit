@@ -8,7 +8,7 @@
     <title>Dedicated nit:qa Step Skill</title>
     <type>qa</type>
     <module>.claude/skills</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>
