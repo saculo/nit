@@ -8,7 +8,7 @@
     <title>Rewrite nit:phase-summary for JSON Output and PLR</title>
     <type>devops</type>
     <module>.claude/skills</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>

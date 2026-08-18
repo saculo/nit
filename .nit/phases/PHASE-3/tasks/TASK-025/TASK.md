@@ -24,6 +24,7 @@
     - Read routing decisions from `state.json` and the resolved archetype, never from `<type>` in a `DESIGN.md`
     - Handle every terminal supervisor state: `awaiting_approval` gates to the user, `blocked` and `escalated` stop the loop and surface the reason rather than retrying
     - Retain the project-level responsibilities the supervisor does not cover: the clarify → phases → tasks chain, the per-phase task loop, phase-boundary approval gates, and phase close via `nit:phase-summary`
+    - Correct the phase-close artifact references: TASK-023 replaced `SUMMARY.md` with `summary.json`, so both the produces-list and the state-reading table name a file v2 never writes
     - Task splitting flow: when a task is blocked with reason `needs-splitting`, route back to `nit:tasks` in splitting mode
     - Correct the engineer routing table — it names a `devops-engineer` agent that does not exist under that name
     - Reconcile the "only the orchestrator dispatches agents" rule with the supervisor, which dispatches the specialist itself

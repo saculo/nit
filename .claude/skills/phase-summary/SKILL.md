@@ -1,107 +1,194 @@
 ---
 name: "nit:phase-summary"
-description: "Phase completion analysis for the nit workflow. After all tasks in a phase are reviewed and approved, verifies the milestone was reached, collects deviations and tech debt across tasks, analyzes impact on future phases, creates ADRs for emergent decisions, and writes a Phase Learning Record. Use when the user says '/nit:phase-summary', 'summarize phase', 'phase complete', or when all tasks in a phase are done."
-allowed-tools: Read, Write, Edit, Glob, Grep
-hooks:
-  PreToolUse:
-    - matcher: Skill
-      hooks:
-        - type: command
-          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-phase-summary.sh"
-          timeout: 10
+description: "Phase completion analysis for the nit workflow. Reads every task's step outputs, verifies the phase milestone criterion by criterion, aggregates deviations, tech debt, review findings, qa issues and ADR candidates with the task each came from, and writes a schema-valid summary.json plus a prose Phase Learning Record. Use when the user says '/nit:phase-summary', 'summarize phase', 'phase complete', or when all tasks in a phase are done."
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-> **Arguments**: `/nit:phase-summary <phase-number>` — e.g., `/nit:phase-summary 1` for PHASE-1.
+> **Arguments**: `/nit:phase-summary <phase-number>` — e.g. `/nit:phase-summary 3` for PHASE-3.
+> Resolves to `.nit/phases/PHASE-N/`.
 
 # nit Phase Summary
 
-You are the Architect performing phase completion analysis. After all tasks in a phase are reviewed and approved, you assess whether the milestone was reached, what changed along the way, and what impact this has on the remaining plan.
+You are the Architect closing a phase. Individually, a deviation noted in one task is too small to act
+on. Aggregated across a phase, the same observation repeated four times is the most useful signal the
+project produces. Turning the first into the second is this step's whole job.
 
-## Input
+You write two artifacts, for two audiences:
 
-- `.nit/phases/PHASE-N/PHASE.md` — milestone, success criteria, scope
-- All task artifacts in `.nit/phases/PHASE-N/tasks/*/`:
-  - `TASK.md` — what was requested
-  - `DESIGN.md` — what was planned
-  - `STEPS.md` — deviations during implementation
-  - `IMPLEMENTATION.md` — what was built, tech debt, files changed
-  - `REVIEW.md` — review verdict, findings
-- Future phase files: `.nit/phases/PHASE-M/PHASE.md` where M > N
-- Existing ADRs in `.nit/adr/`
+- **`summary.json`** — machine-readable, conforming to `phase-summary.schema.json`. Read by
+  `nit:status`, by the next phase's planning, and by anything that needs the phase's outcome as data.
+- **A Phase Learning Record** in `.nit/plr/` — prose, written for people. ADR-0005 governs *step*
+  output; a retrospective is not step output, and forcing it into JSON would destroy the part that
+  carries the value.
 
-Read ALL task artifacts before beginning analysis.
+## Inputs
 
----
+- `.nit/phases/PHASE-N/phase.json` — the milestone and business value you are verifying against. Fall
+  back to `PHASE.md` for a workspace still on v1 (see "Mixed workspaces").
+- Every task under `.nit/phases/PHASE-N/tasks/`:
+  - `task.json` — the acceptance criteria the task was contracted to deliver
+  - `state.json` — where the task actually got to; a task not `done` is not evidence of anything
+  - `STEP-NNN-<stepId>/output.json` for each step — the substance you aggregate
+- Later phases' `phase.json`, for the impact analysis.
+- `.nit/adr/` — the decisions already recorded, so you do not propose one that exists.
 
-## Process
+## What to read from each step output
 
-### Step 1 — Milestone Verification
+Everything aggregated comes from a structured field. You are not re-deriving judgements the steps
+already made — you are collecting them and looking for the pattern.
 
-Read PHASE.md `<success-criteria>` and check each criterion against the completed tasks:
+| From | Field | Becomes |
+|---|---|---|
+| `implementation-result` | `deviations[]` | `deviations[]` |
+| `implementation-result` | `techDebt[]` | `techDebt[]` |
+| `review-result` | `comments[]` at `error`/`warning` | `reviewFindings[]` |
+| `qa-result` | `issues[]` | `qaIssues[]` |
+| any step | `adrCandidates[]` | `adrCandidates[]` |
+| any step | a `blocked` result | evidence a criterion is unmet |
 
-1. For each success criterion, trace it to the tasks that should deliver it
-2. Read those tasks' REVIEW.md — were they approved?
-3. Read IMPLEMENTATION.md — does the self-check confirm the criterion is met?
-4. Mark each criterion as `met` or `unmet` with evidence
+**Every aggregated item carries the `taskId` that reported it.** An aggregate you cannot trace back to
+its source is not usable — the reader's first question about any finding is always "where did this come
+from", and a summary that cannot answer it will not be trusted twice.
 
-If ALL criteria are met → milestone reached, proceed to Step 2.
+## Procedure
 
-If ANY criterion is unmet:
-- Report exactly which criteria are unmet and why
-- Suggest what additional tasks would fulfill them
-- Do NOT create tasks — report back so the orchestrator can route to `nit:tasks`
-- Do NOT mark the phase as done
+1. **Establish what completed.** Read each task's `state.json`. Record every task in `tasks[]` with its
+   status. A task that is `blocked` or `escalated` is a fact about the phase, not an omission.
+2. **Verify the milestone, criterion by criterion.** For each of the phase's success criteria, name the
+   tasks that should deliver it and check their step outputs for evidence. Mark `met` or `unmet` with
+   the evidence, and put the tasks in `taskIds` so the trace is explicit. Guessing is not verifying: a
+   criterion you cannot check against a step output is `unmet`.
 
-### Step 2 — Deviation Rollup
+   **Where the criteria come from.** `phase.json` carries only `milestone` — one sentence — and
+   `businessValue`; it has no `successCriteria` field, and its schema rejects unknown fields, so there
+   is no v2 source for a criteria list yet (TASK-030). Until there is, take them in this order:
+   the phase's `PHASE.md` `<success-criteria>` if the workspace still has one; otherwise derive one
+   criterion per distinct outcome named in `milestone`, and say so in the evidence. Either way the
+   `id` you assign must be stable enough to mean the same thing on a re-run — prefer the `SC-N` ids
+   from `PHASE.md` when they exist.
+3. **Aggregate**, per the table above, attributing every item.
+4. **Look for the pattern.** Four tasks each deviating in the same direction is a finding about the
+   design, not four findings about four tasks. Say so in the PLR, and raise it as an `adrCandidate` if
+   it sets a precedent. This is the step's real output; the lists are just the raw material.
+5. **Assess impact on later phases.** For each item that bears on a later phase, write a
+   `recommendation` naming the `phaseId`, the `scopeItem` where one applies, and the `reason`. "Consider
+   reviewing PHASE-4" helps nobody. "PHASE-4's run-logging task assumes a working nit:status, which
+   TASK-024 has now rewritten — its integration point has changed" is actionable.
+6. **Collect ADR candidates; do not promote them.** Gather every `adrCandidate` the phase's steps
+   emitted, plus any emergent decision the pattern analysis revealed. Writing a numbered file into
+   `.nit/adr/` is a human decision behind the approval gate — set `promotedTo` only for candidates
+   already promoted.
+7. **Write the PLR** (format below), then `summary.json`, then validate it:
 
-Collect all deviations from STEPS.md across every task in the phase:
+   ```bash
+   bun run ./cli/src/cli.ts validate --schema phase-summary \
+     .nit/phases/PHASE-N/summary.json
+   ```
 
-1. Read each task's STEPS.md `<deviation>` fields
-2. Categorize: minor (naming, placement), moderate (different approach), major (design change)
-3. Identify patterns — did multiple tasks deviate in similar ways? This may indicate a systematic issue
-4. Note any moderate/major deviations that were NOT captured as ADRs but should be
+8. **Update the phase status** to `done` **only if** `milestone.reached` is true. If it is not, leave
+   the status alone and report which criteria are outstanding. Do NOT create tasks for the gaps —
+   report them, and let the user or `nit:tasks` decide.
 
-### Step 3 — Tech Debt Rollup
+## Mixed workspaces
 
-Collect all tech debt from IMPLEMENTATION.md across every task:
+A phase may contain tasks recorded as v1 prose — `TASK.md`, `DESIGN.md`, `IMPLEMENTATION.md`,
+`REVIEW.md` — because `nit:init` does not migrate v1 workspaces. This repository's own PHASE-1 and
+PHASE-2 are exactly that.
 
-1. Read each task's `<tech-debt>` section
-2. Aggregate into categories (code quality, test coverage, architecture, dependency, infrastructure)
-3. Assess cumulative impact — individual items may be minor, but accumulated debt may be significant
-4. Flag any tech debt that should become a task in a future phase
+Do not fail on the first such task, and do not silently skip it. Summarise what you can and declare the
+rest:
 
-### Step 4 — Impact Analysis on Future Phases
+- Record the task in `tasks[]` with `readable: false`
+- Add an `unreadable[]` entry naming the `taskId`, the `reason`, and what was `found` instead
+- Do not attempt to parse v1 prose into structured fields — a guess presented as data is worse than a
+  declared gap
+- If a success criterion can only be verified from an unreadable task, that criterion is `unmet`, and
+  the evidence says why
 
-Read all future PHASE.md files (phase M > N) and assess:
+A partial summary that states its own gaps is useful. A summary that appears complete because it
+quietly dropped what it could not read is not.
 
-1. Do deviations from this phase change the approach for any future phase?
-2. Does accumulated tech debt require a cleanup task in a future phase?
-3. Are any future phase scope items now unnecessary (already covered by deviation)?
-4. Are any future phase scope items now harder (blocked by deviation or tech debt)?
-5. Are any future phase assumptions invalidated?
+## Output shape
 
-Produce specific recommendations — not vague "consider reviewing". State which phase, which scope item, and what should change.
+`summary.json` conforms to `phase-summary.schema.json`:
 
-### Step 5 — Emergent ADRs
+```json
+{
+  "phaseId": "PHASE-3",
+  "title": "Review, QA, and Boundary Enforcement",
+  "milestone": {
+    "reached": false,
+    "criteria": [
+      {
+        "id": "SC-1",
+        "result": "met",
+        "evidence": "TASK-021 and TASK-022 step outputs show the five-step pipeline completing end-to-end.",
+        "taskIds": ["TASK-021", "TASK-022"]
+      },
+      {
+        "id": "SC-2",
+        "result": "unmet",
+        "evidence": "Boundary enforcement is unstarted; no task in the phase reports it.",
+        "taskIds": []
+      }
+    ]
+  },
+  "tasks": [
+    { "taskId": "TASK-021", "title": "Rewrite nit:review", "status": "done", "readable": true },
+    { "taskId": "TASK-009", "title": "v1 task", "status": "done", "readable": false }
+  ],
+  "deviations": [
+    { "taskId": "TASK-021", "item": "Renamed the skill directory to match the step id.", "category": "architecture" }
+  ],
+  "techDebt": [
+    { "taskId": "TASK-018", "item": "A malformed output yields one error per oneOf branch.", "category": "code-quality", "affectsPhase": "PHASE-4" }
+  ],
+  "reviewFindings": [
+    { "taskId": "TASK-022", "item": "The per-step approval flag is never read by the supervisor." }
+  ],
+  "qaIssues": [],
+  "adrCandidates": [
+    {
+      "taskId": "TASK-022",
+      "title": "Archetype fields must be consumed or removed",
+      "context": "Three defects in one phase were declared contracts nothing reads.",
+      "decision": "Every archetype field is covered by a conformance test asserting something consumes it.",
+      "status": "proposed"
+    }
+  ],
+  "recommendations": [
+    {
+      "phaseId": "PHASE-4",
+      "scopeItem": "Run logging integrated with nit:status",
+      "recommendation": "Re-check the integration point; TASK-024 rewrote nit:status onto v2 artifacts.",
+      "reason": "The v1 dashboard PHASE-4 was planned against no longer exists."
+    }
+  ],
+  "unreadable": [
+    {
+      "taskId": "TASK-009",
+      "reason": "Recorded as v1 prose; no step output.json exists.",
+      "found": ["TASK.md", "DESIGN.md", "REVIEW.md"]
+    }
+  ],
+  "plr": ".nit/plr/0002-phase-3-review-qa.md"
+}
+```
 
-Review the deviation rollup and implementation patterns for decisions that:
-- Were made during implementation but not formally recorded
-- Affect tasks beyond this phase
-- Set precedents for how future work should be done
+`phaseId` and `milestone` are required; every aggregate is optional, but an empty array is a claim that
+the phase produced none of that kind, so write the arrays you checked. A non-zero exit from the
+validator means the output is malformed — fix and re-write before finishing.
 
-Create ADRs in `.nit/adr/` using MADR format for each emergent decision. Reference the tasks where the decision was first made.
+## Phase Learning Record
 
-### Step 6 — Phase Learning Record
+Write to `.nit/plr/NNNN-phase-N-title.md`. Find the next number:
 
-Create a PLR capturing execution learnings. Write to `.nit/plr/NNNN-phase-N-title.md`.
-
-Auto-detect the next PLR number:
 ```bash
 ls .nit/plr/*.md 2>/dev/null | sort | tail -1
 ```
-If no PLRs exist or `.nit/plr/` doesn't exist, start at `0001` and create the directory.
 
-#### PLR Format
+Start at `0001` if none exist. Keep the record honest in both directions — a PLR listing only problems
+is as useless as one listing only wins, because neither tells the next phase what to repeat.
 
 ```md
 ---
@@ -113,110 +200,36 @@ status: recorded
 # NNNN — Phase N: Title — Learning Record
 
 ## Context
-
-What this phase set out to achieve. One paragraph summarizing the milestone and scope.
+What the phase set out to deliver, and what it actually delivered.
 
 ## What Worked
+Practices worth repeating, with the evidence that they worked.
 
-- Practices, patterns, or approaches that went well
-- Decisions that proved correct
-- Tools or conventions that helped
+## What Didn't
+Where the phase lost time or produced rework. Name the cause, not the symptom.
 
-## What Didn't Work
+## Patterns
+Observations that only appear in aggregate — the same deviation in several tasks, a category of
+defect that recurred, a step that repeatedly needed rework. This is the section the summary exists
+for.
 
-- Approaches that caused friction or rework
-- Assumptions that turned out wrong
-- Underestimated complexity
-
-## What We Changed
-
-- Deviations from original plans and why
-- Scope adjustments made during the phase
-- Process changes adopted mid-phase
-
-## Quantitative Summary
-
-- Tasks planned: N
-- Tasks completed: N
-- Rework cycles: N
-- ADRs created during phase: N
-- Deviations: N minor, N moderate, N major
-- Tech debt items: N (H high, M medium, L low)
+## Quantitative
+Tasks completed, blocked, escalated. Deviations and tech debt by category. Review verdicts.
 
 ## Recommendations
-
-- Specific, actionable items for future phases
-- Process improvements to carry forward
-- Warnings or pitfalls to avoid
+What the next phase should do differently, tied to specific phases and scope items.
 ```
-
-### Step 7 — Write SUMMARY.md and Update Status
-
-Write `.nit/phases/PHASE-N/SUMMARY.md`:
-
-```md
-# Summary — Phase N: Title
-
-<phase-summary>
-
-  <milestone-check result="reached|not-reached">
-    <criterion id="SC-1" result="met|unmet">Evidence</criterion>
-    <criterion id="SC-2" result="met|unmet">Evidence</criterion>
-  </milestone-check>
-
-  <deviation-rollup>
-    <total minor="N" moderate="N" major="N" />
-    <patterns>
-      Patterns observed across deviations, if any.
-    </patterns>
-  </deviation-rollup>
-
-  <tech-debt-rollup>
-    <total high="N" medium="N" low="N" />
-    <categories>
-      - code-quality: N items
-      - test-coverage: N items
-      - architecture: N items
-      - dependency: N items
-      - infrastructure: N items
-    </categories>
-    <recommended-tasks>
-      Tasks suggested for future phases to address debt.
-    </recommended-tasks>
-  </tech-debt-rollup>
-
-  <future-phase-impact>
-    <recommendation phase="PHASE-M" scope-item="...">
-      What should change and why.
-    </recommendation>
-  </future-phase-impact>
-
-  <emergent-adrs>
-    - .nit/adr/NNNN-title.md (created)
-  </emergent-adrs>
-
-  <plr>
-    .nit/plr/NNNN-phase-N-title.md
-  </plr>
-
-</phase-summary>
-```
-
-After writing SUMMARY.md:
-- If milestone is reached → update PHASE.md `<status>` to `done`
-- If milestone is NOT reached → leave status as `in-progress`, report gaps
-
-Report back to orchestrator with the summary.
-
----
 
 ## Rules
 
-- Read ALL task artifacts before starting — do not analyze partially
-- Every success criterion must be traced to specific tasks and evidence
-- Do NOT create tasks for unmet criteria — report the gap, let orchestrator route
-- Deviations that set precedents MUST become ADRs
-- Tech debt recommendations must be specific: what to fix, which future phase, why
-- Future phase impact must reference specific scope items, not vague suggestions
-- PLR must include both positives and negatives — not just problems
-- Do NOT expand analysis beyond the completed phase's scope
+- Read every task's `state.json` before analysing — a phase is not summarised from the tasks that
+  happened to go well.
+- Trace every success criterion to specific tasks and step outputs. An unverifiable criterion is
+  `unmet`, never assumed met.
+- Attribute every aggregated item to the task that reported it.
+- Declare what you could not read; never omit it silently.
+- Do NOT parse v1 prose into structured fields.
+- Do NOT create tasks for unmet criteria — report the gap.
+- Do NOT write files into `.nit/adr/`; collect candidates and leave promotion to a human.
+- Set the phase status to `done` only when every criterion is met.
+- Recommendations name a phase and a scope item, or they are not recommendations.

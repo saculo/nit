@@ -19,7 +19,8 @@
 
   <scope>
     <in-scope>
-    - Rewrite `.claude/skills/status/SKILL.md` to read `prd/summary.json`, `phase.json`, `task.json`, and each task's `state.json`
+    - Rewrite `.claude/skills/status/SKILL.md` to read `prd/summary.json`, `phase.json`, `task.json`, each task's `state.json`, and a completed phase's `summary.json`
+    - Replace the v1 `SUMMARY.md` reference in the next-step logic: TASK-023 changed the phase summary artifact to `summary.json`, so the existing check looks for a file v2 never writes
     - Report per-task pipeline position from `state.json`: `currentStepId`, `status`, `reopenCount`, and which steps have an `output.json` and an approved `approval.json`
     - Surface the states that need a human distinctly — `awaiting_approval`, `blocked` (with its reason from the step output), and `escalated` — because these are the entire reason to run the command
     - Rewrite the "next step" suggestion against the v2 command set: `/nit:continue`, `/nit:approve`, `/nit:reject`, not `/nit:design N M`
