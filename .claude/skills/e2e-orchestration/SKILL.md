@@ -1,216 +1,178 @@
 ---
 name: "nit:orchestrate"
-description: "Central orchestration for the nit workflow. Single point of dispatch for all agents. Manages the full project lifecycle: clarification → phases → tasks → design → implementation. Handles approval gates, per-task loops, per-phase loops, type-based engineer routing, task splitting, and rework. Use when the user says '/nit:orchestrate', 'start workflow', 'run e2e nit', 'orchestrate workflow', or at the beginning of any nit workflow."
-allowed-tools: Read, Glob, Grep, Agent
-hooks:
-  PreToolUse:
-    - matcher: Skill
-      hooks:
-        - type: command
-          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-orchestrate.sh"
-          timeout: 10
+description: "Project-lifecycle orchestration for the nit workflow. Drives the full v2 lifecycle — clarify, phases, tasks, then the deterministic supervisor per task, then phase close — gating the user at every boundary. Decides which task runs next; the supervisor decides which step. Use when the user says '/nit:orchestrate', 'start workflow', 'run e2e nit', 'orchestrate workflow', or at the beginning of any nit workflow."
+allowed-tools: Read, Glob, Grep, Skill
 ---
 
-> **Arguments**: `/nit:orchestrate [prd-path]` — PRD path is optional; auto-detected from project root if omitted.
+> **Arguments**: `/nit:orchestrate [prd-path]` — PRD path optional; auto-detected from the project root
+> when omitted, or skipped entirely if `.nit/prd/summary.json` already exists.
 
 # nit Orchestration
 
-You are the Orchestrator. You are the SINGLE point of dispatch in the nit workflow. You coordinate all agents and manage all approval gates. You do NOT write or edit any files — you only read state and dispatch agents.
+You run the project. You do not run the steps.
 
-## Core Rules
+That division is the whole design, and it is the thing this skill got wrong in v1. The deterministic
+supervisor (`nit:continue`, ADR-0004) owns everything inside a task: which step is next, which
+specialist to dispatch, whether the output validates, whether to repair or escalate. You own everything
+around it: which task runs next, when to stop and ask a person, and when a phase is finished.
 
-1. **Only you dispatch agents** — no lower-level skill or agent dispatches other agents
-2. **You never write files** — agents produce artifacts, you read them to decide next steps
-3. **Every dispatch is followed by an approval gate** — the user must approve before proceeding
-4. **You route based on state** — read artifacts to determine what to do next
+| | Orchestrator (you) | Supervisor (`nit:continue`) |
+|---|---|---|
+| Decides | which **task** runs next | which **step** runs next |
+| Dispatches | nothing | the specialist for the current step |
+| Transitions | nothing | `state.json`, via the CLI |
+| Gates | phase and task boundaries | parks at `awaiting_approval` |
 
----
+**You never dispatch a step agent and you never write state.** If you find yourself deciding which
+engineer should implement something, stop — the archetype decided that, and the supervisor reads it.
 
-## Full Workflow
+## Core rules
 
-### Step 1 — Clarification
+1. **Delegate every task to the supervisor.** Task execution is `/nit:continue`, `/nit:approve`, and
+   `/nit:reject`. Nothing else.
+2. **Never write or edit a file.** You read state and invoke commands. This is enforced, not merely
+   asked: `allowed-tools` grants `Read`, `Glob`, `Grep`, and `Skill` only — no `Write`, no `Edit`, no
+   `Bash`. The one exception in the whole workflow, the manual unblock transition, belongs to a human.
+3. **Never skip an approval gate.** Every gate the v1 skill had is still a gate.
+4. **One task at a time, sequentially.** Never run two tasks in parallel.
+5. **Route from `state.json` and the resolved archetype**, never from a task's prose.
 
-Dispatch `requirement-gatherer` agent with instruction to run `nit:clarify` skill.
+## Phase 1 — Clarify
 
-**Input to agent**: path to PRD file
-**Agent produces**: `.nit/CLARIFICATIONS.md`
+Skip if `.nit/prd/summary.json` exists and every `clarifications[].answer` is non-empty.
 
-**Approval gate**: present clarification summary to user. Proceed only when user approves.
+Otherwise invoke `nit:clarify` with the PRD path. It is interactive by design — it works through
+unknowns, risks, and assumptions with the user one at a time — so invoke the skill directly rather than
+dispatching a subagent, which would put an agent between the user and their own questions.
 
----
+**Produces**: `.nit/prd/summary.json`, `.nit/prd/glossary.json`, `.nit/prd/source.md`.
+**Gate**: present the resolved clarifications. Proceed on approval.
 
-### Step 2 — Phase Planning
+## Phase 2 — Plan phases
 
-Dispatch `architect` agent with instruction to run `nit:phases` skill.
+Skip if `.nit/phases/PHASE-*/phase.json` already exist.
 
-**Input to agent**: PRD path + `.nit/CLARIFICATIONS.md`
-**Brownfield**: also provide `.nit/project/initial-state.md`
-**Agent produces**: `.nit/phases/PHASE-N/PHASE.md` for each phase
+Invoke `nit:phases`. Also interactive.
 
-**Approval gate**: present phase summary to user. Proceed only when user approves.
+**Produces**: `.nit/phases/PHASE-N/phase.json` per phase.
+**Gate**: present the phases and the ordering rationale. Proceed on approval.
 
----
+## Phase 3 — Per-phase loop
 
-### Step 3 — Per-Phase Loop
+For each phase in order, starting with the first whose `phase.json.status` is not `done`:
 
-For each phase (starting with PHASE-1), execute steps 3a through 3d.
+### 3a — Create tasks
 
-#### Step 3a — Task Creation
+Skip if the phase already has tasks. Otherwise invoke `nit:tasks <N>`. Interactive, one task at a time.
 
-Dispatch `requirement-gatherer` agent with instruction to run `nit:tasks` skill.
+**Produces**: `.nit/phases/PHASE-N/tasks/TASK-NNN/task.json`, each with a `targetModule` and an
+`archetype`.
+**Gate**: present the task list and dependency order. Proceed on approval.
 
-**Input to agent**: path to current phase's `PHASE.md`
-**Agent produces**: `.nit/phases/PHASE-N/tasks/TASK-00M/TASK.md` for each task
+### 3b — Per-task loop
 
-**Approval gate**: present task list to user. Proceed only when user approves.
+For each task, in dependency order, repeat until its `state.json.status` is `done`:
 
----
+1. **Advance one step**: `/nit:continue <phase> <task>`.
 
-#### Step 3b — Per-Task Loop
+   The supervisor prepares the step, dispatches the specialist, and ingests the result. You do not
+   choose the role, the skills, or the step — read what it reports.
 
-For each task in the phase, execute steps 3b-i through 3b-iii.
+2. **Read `state.json.status`** and act on it. This table is the whole per-task loop:
 
-##### Step 3b-i — Task Design
+   | status | Do |
+   |---|---|
+   | `in-progress` | Call `/nit:continue` again. The supervisor is mid-task; nothing needs you. |
+   | `awaiting_approval` | **Gate.** Present the step's `output.json` and ask. Then `/nit:approve` or `/nit:reject <p> <t> --comment "<why>"`, and continue the loop. |
+   | `blocked` | **Stop this task.** Go to *Blocked tasks* below. |
+   | `escalated` | **Stop this task.** The reopen budget is spent; surface the accumulated errors from `validation.json` and hand it to the user. Do not retry — the supervisor already tried `maxReopenCount` times. |
+   | `done` | Move to the next task. |
 
-Dispatch `architect` agent with instruction to run `nit:design` skill.
+3. Never advance to the next task while the current one is `blocked` or `escalated`. An unresolved
+   task is the phase's problem, and carrying on hides it.
 
-**Input to agent**: path to `TASK.md` for the current task
-**Agent produces**: `DESIGN.md` co-located with `TASK.md`, optionally ADRs in `.nit/adr/`
+### 3c — Blocked tasks
 
-**Read DESIGN.md** after agent completes. Check `<type>`:
-- If the architect reports the task needs splitting (spans multiple types) → go to **Task Splitting Flow**
+A blocked task has an `output.json` whose `result.resultType` is `blocked`, carrying a `reason` and an
+`explanation`. Route on the reason:
 
-**Approval gate**: present design summary to user. Proceed only when user approves.
-
-##### Step 3b-ii — Implementation
-
-Read `<type>` from `DESIGN.md` and dispatch the appropriate engineer agent:
-
-| Type | Agent |
+| reason | Do |
 |---|---|
-| `backend` | `backend-engineer` |
-| `frontend` | `frontend-engineer` |
-| `devops` | `devops-engineer` |
-| `qa` | `qa-engineer` |
+| `needs-splitting` | Invoke `nit:tasks` in splitting mode, pointing it at the original `task.json` and the blocked step's `output.json`. It reads `detail.taskTypes` and produces `TASK-NNNa` / `TASK-NNNb`. **Gate** on the subtasks, then run them through 3b in place of the original. The original stays `blocked` — it is superseded, not completed, and closing it is the user's call. |
+| `contradictory-input` | Surface `explanation` and `detail.conflictsWith`. The fix is a human decision — usually amending the acceptance criteria or the design. |
+| `criterion-unsatisfiable` | Surface `explanation` and `detail.criterionId`. Usually the criterion needs rewriting, which is a change to `task.json`, not something a re-run fixes. |
+| `no-output` | The specialist wrote nothing. Surface the `validation.json` entry; this usually means the dispatch itself failed. |
 
-Dispatch with instruction to run `nit:implement` skill.
+In every case, resuming is the manual `state.json` transition documented in `nit:continue`, performed
+by a person. You surface and wait; you do not perform it.
 
-**Input to agent**: path to task directory (contains TASK.md and DESIGN.md)
-**Agent produces**: `STEPS.md` and `IMPLEMENTATION.md` co-located with TASK.md
+### 3d — Close the phase
 
-**Approval gate**: present implementation summary to user. Proceed only when user approves.
+When every task in the phase is `done`, invoke `nit:phase-summary <N>`.
 
-##### Step 3b-iii — Review
+**Produces**: `.nit/phases/PHASE-N/summary.json` and a Phase Learning Record in `.nit/plr/`.
 
-Dispatch `reviewer` agent with instruction to run `nit:review` skill.
+Read `summary.json.milestone.reached`:
 
-**Input to agent**: phase number and task number
-**Agent reads**: TASK.md, DESIGN.md, STEPS.md, IMPLEMENTATION.md, and changed files
-**Agent produces**: `REVIEW.md` co-located with TASK.md
+- **true** — `nit:phase-summary` has set the phase status to `done`. **Gate**, then move to the next phase.
+- **false** — the milestone was not met. Present the `unmet` criteria. The phase status stays as it is.
+  Do not create tasks for the gaps yourself; ask the user whether to add tasks (back to 3a) or accept
+  the phase as it stands.
 
-**Read REVIEW.md** after agent completes. Check `<verdict>`:
-- `approved` → reviewer creates a PR targeting `main` (branch: `feature/TASK-<id>` or `bugfix/TASK-<id>`), records the PR URL in REVIEW.md, then task is done — continue to next task
-- `rework-requested` → go to **Step 3c — Rework Flow** (no PR is created; branch remains for rework)
+## Phase 4 — Next phase
 
-**Approval gate**: present review summary to user. Proceed only when user approves.
+Repeat Phase 3 until every `phase.json.status` is `done`, then report the project complete.
 
----
+## Reading state
 
-#### Step 3c — Rework Flow
+Everything you route on is machine-readable. Never infer from prose:
 
-If review returns `rework-requested`:
+| Question | Read |
+|---|---|
+| Where is this task? | `state.json` — `status`, `currentStepId`, `stepOrder`, `reopenCount` |
+| What did this step produce? | `STEP-NNN-<stepId>/output.json` |
+| Why is it blocked? | that step's `output.json` `result.reason` and `result.explanation` |
+| Why did it escalate? | that step's `validation.json` `errors[]` |
+| Was a step approved? | `STEP-NNN-<stepId>/approval.json` |
+| What is the phase's outcome? | `summary.json` — `milestone.reached`, `criteria[]` |
+| What is unplanned or unstarted? | `/nit:status` |
 
-1. Read `<rework-items>` from REVIEW.md
-2. Determine if rework is:
-   - **Implementation issue** → re-dispatch the same engineer agent with rework items
-   - **Design issue** → re-dispatch `architect` with `nit:design` skill, then engineer
-3. After rework → re-dispatch `reviewer` agent with `nit:review` skill
-4. Loop until verdict is `approved`
+There is no engineer routing table here any more. In v1 this skill read `<type>` from `DESIGN.md` and
+chose an agent. In v2 the archetype declares the role for every step — concretely, as `$engineer`
+resolved from the archetype's `engineerRole`, or as `$detect`, which `bugfix` and
+`cross-module-change` use to defer the choice to the task's own `type`. The supervisor resolves all
+three at dispatch. Choosing an engineer is not your decision to make.
 
----
+## Gates
 
-#### Step 3d — Phase Completion
+At every gate, give the user four things and then stop:
 
-After all tasks in the current phase have verdict `approved`:
+1. **What was produced** — the artifact, and where it is.
+2. **What it says** — the substance, not a restatement of the filename.
+3. **What happens next** — the specific next command.
+4. **The ask** — "Approve to proceed, or tell me what to change."
 
-Dispatch `architect` agent with instruction to run `nit:phase-summary` skill.
+If the user asks for changes, re-run the step that produced the artifact — for a task step that means
+`/nit:reject` with their reasoning as the comment, which reopens the archetype's rejection-routing
+target. Never hand-edit the artifact to satisfy the feedback yourself.
 
-**Input to agent**: phase number
-**Agent reads**: all PHASE.md, TASK.md, DESIGN.md, REVIEW.md artifacts for the phase
-**Agent produces**: `.nit/phases/PHASE-N/SUMMARY.md` and `.nit/plr/NNNN-PHASE-N-title.md`
+## Known limitations
 
-The agent will:
-- Verify the phase milestone was reached
-- Collect deviations and tech debt across tasks
-- Analyze impact on future phases and flag recommendations
-- Create ADRs for emergent architectural decisions
-- Write a Phase Learning Record (PLR)
-- Update PHASE.md status to `done` if milestone reached
+State these when they apply rather than failing opaquely:
 
-**Approval gate**: present phase summary to user. Proceed only when user approves.
-
----
-
-### Step 4 — Next Phase
-
-After all tasks in the current phase are complete:
-1. Move to the next phase
-2. Go back to **Step 3a** (task creation for new phase)
-3. Repeat until all phases are complete
-
----
-
-## Task Splitting Flow
-
-When the architect reports a task spans multiple types:
-
-1. Note the splitting rationale from the architect
-2. Dispatch `requirement-gatherer` agent with instruction to run `nit:tasks` skill in splitting mode
-3. **Input**: original TASK.md path + splitting rationale
-4. **Agent produces**: `TASK-00Ma/TASK.md` and `TASK-00Mb/TASK.md` (subtasks)
-5. **Approval gate**: present subtasks to user
-6. Continue the per-task loop with the subtasks instead of the original task
-
----
-
-## State Reading
-
-To determine current state, read these artifacts (never modify them):
-
-```
-.nit/CLARIFICATIONS.md           → clarification status
-.nit/phases/PHASE-N/PHASE.md     → phase definitions, milestone
-.nit/phases/PHASE-N/tasks/       → task list for a phase
-TASK-00M/TASK.md                 → task requirements, status, type
-TASK-00M/DESIGN.md               → design, type classification
-TASK-00M/STEPS.md                → implementation progress
-TASK-00M/IMPLEMENTATION.md       → implementation summary
-TASK-00M/REVIEW.md               → review verdict, rework items
-.nit/phases/PHASE-N/SUMMARY.md   → phase completion summary
-.nit/adr/                        → architectural decisions
-.nit/plr/                        → phase learning records
-```
-
-## Approval Gate Format
-
-At every approval gate, present to the user:
-
-1. **What was produced** — brief summary of the artifact(s) created
-2. **Key decisions made** — highlight important choices
-3. **What happens next** — what the next step will be
-4. **Ask for approval** — "Approve to proceed, or provide feedback for adjustments"
-
-If user provides feedback:
-1. Re-dispatch the same agent with the feedback as additional context
-2. After agent completes, present updated results
-3. Repeat until approved
+- **Every step gates.** The per-step `approval` flag in the archetype is not read by the supervisor, so
+  a five-step task asks for five approvals rather than the two `base.json` declares (TASK-029).
+- **`architecture-decision` cannot be rejected at review.** Its rejection routing targets the
+  `implement` step, which that archetype removes (TASK-027).
 
 ## Rules
 
-- NEVER write or edit files — only read and dispatch
-- NEVER skip an approval gate
-- NEVER dispatch two agents in parallel — sequential only, one at a time
-- ALWAYS read the produced artifact after each dispatch to inform the next step
-- ALWAYS route engineer dispatch based on `<type>` from DESIGN.md
-- If a task needs splitting, route through task-creator before continuing
-- If state is unclear, ask the user rather than guessing
+- NEVER dispatch a step specialist — that is the supervisor's job, and duplicating it puts two
+  components in charge of one decision.
+- NEVER write or edit a file, including `state.json`.
+- NEVER skip an approval gate, and never auto-approve.
+- NEVER run two tasks in parallel.
+- NEVER advance past a `blocked` or `escalated` task.
+- ALWAYS read `state.json` after each `/nit:continue`; it is what the next action is derived from.
+- ALWAYS route on structured fields, never on prose.
+- If the state is one this skill does not describe, stop and ask rather than guessing.

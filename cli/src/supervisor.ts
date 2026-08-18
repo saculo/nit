@@ -3,7 +3,7 @@ import { mkdirSync } from "fs";
 import { createAjv } from "./ajv";
 import { resolveSchema } from "./schema-resolver";
 import { baseSkillForStep } from "./routing-resolver";
-import type { ArchetypeStep } from "./archetype-resolver";
+import { engineerRoleForTaskType, type ArchetypeStep } from "./archetype-resolver";
 
 /** Runtime state for a task's step progression (task-state.schema.json). */
 export interface TaskState {
@@ -110,6 +110,36 @@ export function advanceState(state: TaskState, now: string): TaskState {
     repairRequired: false,
     timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now },
   };
+}
+
+/**
+ * Resolve a step's role for dispatch. `$engineer` is substituted at archetype
+ * resolution, but `$detect` survives it deliberately — the archetype has no task
+ * context — so it is resolved here from the task's own `type`.
+ *
+ * A descriptor must never carry a `$`-prefixed role: `nit:continue` passes the
+ * role straight to the Agent tool as `subagent_type`, and no agent answers to a
+ * placeholder (TASK-028).
+ */
+export async function resolveStepRole(
+  step: ArchetypeStep,
+  taskDir: string
+): Promise<ArchetypeStep> {
+  if (!step.role.startsWith("$")) return step;
+  if (step.role !== "$detect") {
+    throw new Error(
+      `Unresolved placeholder role "${step.role}" at step "${step.id}"; ` +
+        `only $engineer and $detect are defined.`
+    );
+  }
+  const task = await readJson<{ type?: string }>(join(taskDir, "task.json"));
+  if (!task?.type) {
+    throw new Error(
+      `Cannot resolve $detect at step "${step.id}": no task.json with a "type" in ${taskDir}. ` +
+        `The archetype defers the engineer to the task, so the task must declare one.`
+    );
+  }
+  return { ...step, role: engineerRoleForTaskType(task.type, step.id) };
 }
 
 /** Build the step input payload for a specialist. */
@@ -350,7 +380,7 @@ export async function prepare(
   }
 
   const idx = currentIndex(state);
-  const step = opts.steps[idx]!;
+  const step = await resolveStepRole(opts.steps[idx]!, opts.taskDir);
   const dir = join(opts.taskDir, stepDirName(idx, step.id));
   mkdirSync(dir, { recursive: true });
 
@@ -393,7 +423,10 @@ export async function ingest(
   if (!state) throw new Error(`No state.json in ${opts.taskDir}; run prepare first`);
 
   const idx = currentIndex(state);
-  const step = opts.steps[idx]!;
+  // Resolved here too: the reopen path below rebuilds input.json, and an
+  // unresolved $detect would be written back into it (the TASK-017 RW-1 lesson —
+  // prepare, dryRun and ingest must not diverge).
+  const step = await resolveStepRole(opts.steps[idx]!, opts.taskDir);
   const dir = join(opts.taskDir, stepDirName(idx, step.id));
   const output = await readJson<unknown>(join(dir, "output.json"));
 
@@ -521,7 +554,7 @@ export async function dryRun(opts: SupervisorOptions): Promise<DryRunPlan | { do
   }
 
   const idx = currentIndex(state);
-  const step = opts.steps[idx]!;
+  const step = await resolveStepRole(opts.steps[idx]!, opts.taskDir);
   const skillList = resolveSkillList(step);
   const repairErrors = state.repairRequired
     ? (await readJson<ValidationResult>(join(opts.taskDir, stepDirName(idx, step.id), "validation.json")))?.errors

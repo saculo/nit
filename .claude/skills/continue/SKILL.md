@@ -47,6 +47,11 @@ need a human, not another dispatch. `{"done": true}` means all steps are complet
 
 ### 2. Dispatch the specialist (LLM step)
 
+The descriptor's `role` is always a concrete agent with a definition in `.claude/agents/` — never a
+placeholder. `$engineer` is substituted at archetype resolution, and `$detect` at dispatch from the
+task's own `type` (TASK-028); an unresolvable one fails the command rather than reaching you. Dispatch
+it as given.
+
 Read `input.json`, then use the **Agent** tool with `subagent_type` = the descriptor's `role`. In the
 prompt, instruct the agent to load the skills listed in `skillList` (it reads the referenced
 `SKILL.md` files itself — per U-1) and to write its result to `output.json` in the step directory,

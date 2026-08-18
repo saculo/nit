@@ -8,7 +8,7 @@
     <title>Rewrite nit:orchestrate for the v2 Pipeline</title>
     <type>devops</type>
     <module>.claude/skills</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>
