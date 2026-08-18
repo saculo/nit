@@ -20,6 +20,8 @@ import {
   dryRun,
   priorOutputs,
   defaultValidateOutput,
+  stepIsGated,
+  approveStep,
   type TaskState,
 } from "../src/supervisor";
 
@@ -102,8 +104,10 @@ const validAnalysisOutput = {
 const invalidOutput = { taskId: "TASK-015" }; // missing stepId/stepType
 
 describe("supervisor — fs orchestration", () => {
-  // AC-1
-  test("first run creates state, scaffolds STEP-001-analyze, and ingest parks awaiting_approval", async () => {
+  // AC-1 — analyze is declared `approval: false` in base.json, so since TASK-029
+  // a valid output advances rather than parking. The gated path is covered by
+  // the design-step tests below.
+  test("first run creates state, scaffolds STEP-001-analyze, and ingest advances the ungated step", async () => {
     const dir = tmpTaskDir();
     const desc = (await prepare({ taskDir: dir, taskId: "TASK-015", steps, now: NOW })) as any;
     expect(desc.stepId).toBe("analyze");
@@ -122,11 +126,19 @@ describe("supervisor — fs orchestration", () => {
     writeFileSync(join(dir, "STEP-001-analyze", "output.json"), JSON.stringify(validAnalysisOutput));
     const result = (await ingest({ taskDir: dir, taskId: "TASK-015", steps, now: NOW })) as any;
     expect(result.valid).toBe(true);
-    expect(result.status).toBe("awaiting_approval");
+    expect(result.gated).toBe(false);
+    expect(result.advancedTo).toBe("design");
 
-    const approval = readJson<{ status: string }>(join(dir, "STEP-001-analyze", "approval.json"));
-    expect(approval.status).toBe("pending");
-    expect(readJson<TaskState>(statePath).status).toBe("awaiting_approval");
+    // the record still exists, auto-approved, so a step's files look the same shape
+    const approval = readJson<{ status: string; approvedBy: string }>(
+      join(dir, "STEP-001-analyze", "approval.json")
+    );
+    expect(approval.status).toBe("approved");
+    expect(approval.approvedBy).toBe("supervisor");
+
+    const advanced = readJson<TaskState>(statePath);
+    expect(advanced.status).toBe("in-progress");
+    expect(advanced.currentStepId).toBe("design");
   });
 
   // AC-2
@@ -672,5 +684,162 @@ describe("supervisor — $detect resolution", () => {
     const dir = tmpTaskDir();
     const desc = (await prepare({ taskDir: dir, taskId: "TASK-028", steps, now: NOW })) as any;
     expect(desc.role).toBe("analyst");
+  });
+});
+
+// TASK-029 — the archetype declares per-step gating and the supervisor never
+// read it, so every step parked at awaiting_approval. A five-step task demanded
+// five approvals rather than the two base.json describes, and bugfix's only
+// override — ungating design — was inert.
+describe("supervisor — per-step approval gating", () => {
+  let bugfixSteps: ArchetypeStep[];
+
+  beforeAll(async () => {
+    bugfixSteps = (await resolveArchetype("bugfix")).steps as ArchetypeStep[];
+  });
+
+  function stateAtStep(stepId: string, order: string[]): TaskState {
+    return {
+      taskId: "TASK-029",
+      currentStepId: stepId,
+      stepOrder: order,
+      status: "in-progress",
+      reopenCount: 0,
+      timestamps: { createdAt: NOW, updatedAt: NOW },
+    };
+  }
+
+  const BASE_ORDER = ["analyze", "design", "implement", "review", "qa"];
+
+  function outputFor(stepId: string): unknown {
+    return { taskId: "TASK-029", stepId, stepType: stepId, result: { resultType: "analysis", findings: ["f"] } };
+  }
+
+  async function ingestAt(dir: string, stepIdx: number, stepId: string, useSteps = steps) {
+    writeFileSync(join(dir, "state.json"), JSON.stringify(stateAtStep(stepId, useSteps.map((s) => s.id))));
+    const stepDir = join(dir, stepDirName(stepIdx, stepId));
+    mkdirSync(stepDir, { recursive: true });
+    writeFileSync(join(stepDir, "output.json"), JSON.stringify(outputFor(stepId)));
+    return (await ingest({ taskDir: dir, taskId: "TASK-029", steps: useSteps, now: NOW })) as any;
+  }
+
+  test("stepIsGated reads the flag, defaulting to gated when it is absent", () => {
+    expect(stepIsGated({ id: "s", role: "r", approval: true })).toBe(true);
+    expect(stepIsGated({ id: "s", role: "r", approval: false })).toBe(false);
+    // an archetype that omits the flag must not silently skip human review
+    expect(stepIsGated({ id: "s", role: "r" })).toBe(true);
+  });
+
+  // AC-1 — a gated step behaves exactly as before
+  test("a gated step parks at awaiting_approval with a pending approval", async () => {
+    const dir = tmpTaskDir();
+    const result = await ingestAt(dir, 1, "design");
+    expect(result.status).toBe("awaiting_approval");
+    expect(result.gated).toBeUndefined();
+
+    const approval = readJson<{ status: string }>(join(dir, "STEP-002-design", "approval.json"));
+    expect(approval.status).toBe("pending");
+    expect(readJson<TaskState>(join(dir, "state.json")).status).toBe("awaiting_approval");
+  });
+
+  // AC-2 — an ungated step advances without a human decision
+  test("an ungated step advances, and prepare then dispatches the next step", async () => {
+    const dir = tmpTaskDir();
+    const result = await ingestAt(dir, 2, "implement");
+    expect(result.gated).toBe(false);
+    expect(result.advancedTo).toBe("review");
+
+    const state = readJson<TaskState>(join(dir, "state.json"));
+    expect(state.status).toBe("in-progress");
+    expect(state.currentStepId).toBe("review");
+
+    const desc = (await prepare({ taskDir: dir, taskId: "TASK-029", steps, now: NOW })) as any;
+    expect(desc.stepId).toBe("review");
+    expect(existsSync(join(dir, "STEP-004-review", "input.json"))).toBe(true);
+  });
+
+  test("an ungated step records an auto-approved approval for the audit trail", async () => {
+    const dir = tmpTaskDir();
+    await ingestAt(dir, 2, "implement");
+    const approval = readJson<{ status: string; approvedBy: string; comment: string }>(
+      join(dir, "STEP-003-implement", "approval.json")
+    );
+    expect(approval.status).toBe("approved");
+    expect(approval.approvedBy).toBe("supervisor");
+    expect(approval.comment).toContain("not gated");
+  });
+
+  // AC-3 — bugfix's only override is ungating design; it must now have an effect
+  test("bugfix's ungated design step advances, making its override observable", async () => {
+    expect(bugfixSteps.find((s) => s.id === "design")?.approval).toBe(false);
+
+    const dir = tmpTaskDir();
+    const result = await ingestAt(dir, 0, "design", bugfixSteps);
+    expect(result.gated).toBe(false);
+    expect(result.advancedTo).toBe("implement");
+  });
+
+  // AC-4 — the last step completes the task under either mode
+  test("an ungated final step completes the task with a timestamp", async () => {
+    const dir = tmpTaskDir();
+    const result = await ingestAt(dir, 4, "qa");
+    expect(result.status).toBe("done");
+    expect(result.advancedTo).toBeUndefined();
+
+    const state = readJson<TaskState>(join(dir, "state.json"));
+    expect(state.status).toBe("done");
+    expect(state.timestamps?.completedAt).toBe(NOW);
+  });
+
+  test("a gated final step still completes through approve", async () => {
+    const dir = tmpTaskDir();
+    // review is gated; approving the last step of a truncated order completes it
+    writeFileSync(join(dir, "state.json"), JSON.stringify(stateAtStep("review", ["implement", "review"])));
+    mkdirSync(join(dir, "STEP-002-review"), { recursive: true });
+    writeFileSync(
+      join(dir, "STEP-002-review", "output.json"),
+      JSON.stringify({ taskId: "TASK-029", stepId: "review", stepType: "review", result: { resultType: "review", verdict: "approved" } })
+    );
+    const twoStep = [steps[2]!, steps[3]!];
+    const result = (await ingest({ taskDir: dir, taskId: "TASK-029", steps: twoStep, now: NOW })) as any;
+    expect(result.status).toBe("awaiting_approval");
+
+    const after = await approveStep({ taskDir: dir, now: NOW, approvedBy: "reviewer" });
+    expect(after.done).toBe(true);
+    expect(readJson<TaskState>(join(dir, "state.json")).timestamps?.completedAt).toBe(NOW);
+  });
+
+  // gating must not affect the paths that are not approval questions
+  test("blocked and escalated are unaffected by the gating flag", async () => {
+    const blockedDir = tmpTaskDir();
+    writeFileSync(join(blockedDir, "state.json"), JSON.stringify(stateAtStep("implement", BASE_ORDER)));
+    mkdirSync(join(blockedDir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(
+      join(blockedDir, "STEP-003-implement", "output.json"),
+      JSON.stringify({
+        taskId: "TASK-029",
+        stepId: "implement",
+        stepType: "implement",
+        result: { resultType: "blocked", reason: "criterion-unsatisfiable", explanation: "x", detail: { criterionId: "AC-1" } },
+      })
+    );
+    const blocked = (await ingest({ taskDir: blockedDir, taskId: "TASK-029", steps, now: NOW })) as any;
+    expect(blocked.status).toBe("blocked");
+
+    const escDir = tmpTaskDir();
+    writeFileSync(
+      join(escDir, "state.json"),
+      JSON.stringify({ ...stateAtStep("implement", BASE_ORDER), reopenCount: 3, repairRequired: true })
+    );
+    mkdirSync(join(escDir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(escDir, "STEP-003-implement", "output.json"), JSON.stringify(invalidOutput));
+    const esc = (await ingest({ taskDir: escDir, taskId: "TASK-029", steps, now: NOW, maxReopenCount: 3 })) as any;
+    expect(esc.status).toBe("escalated");
+  });
+
+  // the shipped archetypes must declare what base.json intends
+  test("base.json gates exactly design and review", () => {
+    const gated = steps.filter(stepIsGated).map((s) => s.id);
+    expect(gated).toEqual(["design", "review"]);
   });
 });
