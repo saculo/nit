@@ -24,7 +24,8 @@
         { "$ref": "#/$defs/design-result" },
         { "$ref": "#/$defs/implementation-result" },
         { "$ref": "#/$defs/review-result" },
-        { "$ref": "#/$defs/qa-result" }
+        { "$ref": "#/$defs/qa-result" },
+        { "$ref": "#/$defs/blocked-result" }
       ]
     },
     "artifacts": {
@@ -220,6 +221,83 @@
         }
       },
       "required": ["resultType", "testsRun", "testsPassed", "testsFailed"]
+    },
+    "blocked-result": {
+      "type": "object",
+      "description": "Emitted by any step type when the specialist cannot proceed. The supervisor detects it by resultType and parks the task at `blocked` without consuming the reopen budget.",
+      "properties": {
+        "resultType": { "type": "string", "const": "blocked" },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "needs-splitting",
+            "contradictory-input",
+            "criterion-unsatisfiable",
+            "no-output"
+          ],
+          "description": "Why the step cannot proceed. `no-output` is reserved for the supervisor-synthesized case where a step directory has no output.json at all."
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable account of the block, addressed to whoever has to resolve it."
+        },
+        "detail": {
+          "type": "object",
+          "description": "Reason-specific detail. Required for every specialist-reported reason; see the conditionals below.",
+          "properties": {
+            "taskTypes": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
+              "description": "For needs-splitting: the task types the split would produce."
+            },
+            "criterionId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "For criterion-unsatisfiable: the acceptance criterion that cannot be met."
+            },
+            "conflictsWith": {
+              "type": "string",
+              "minLength": 1,
+              "description": "For contradictory-input: what the input contradicts."
+            }
+          }
+        }
+      },
+      "required": ["resultType", "reason", "explanation"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "reason": { "const": "needs-splitting" } },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": { "detail": { "type": "object", "required": ["taskTypes"] } },
+            "required": ["detail"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reason": { "const": "contradictory-input" } },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": { "detail": { "type": "object", "required": ["conflictsWith"] } },
+            "required": ["detail"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reason": { "const": "criterion-unsatisfiable" } },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": { "detail": { "type": "object", "required": ["criterionId"] } },
+            "required": ["detail"]
+          }
+        }
+      ]
     },
     "adr-candidate": {
       "type": "object",

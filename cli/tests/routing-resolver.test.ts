@@ -4,8 +4,11 @@ import {
   resolveRouting,
   orderedSkillList,
   baseSkillForStep,
+  skillFileExists,
+  skillFilePath,
   type ModuleEntry,
 } from "../src/routing-resolver";
+import { resolveArchetype } from "../src/archetype-resolver";
 import { resolveSchema } from "../src/schema-resolver";
 import { createAjv } from "../src/ajv";
 
@@ -182,5 +185,51 @@ describe("nit route (command)", () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain("Module registry not found");
     expect(stderr).toContain("/nit:init");
+  });
+});
+
+// TASK-021 — the base step skill is resolved from the step id by convention, so
+// a skill directory whose name does not match its step id is silently dropped:
+// routing treats a missing skill file as normal, not as an error. That is how
+// `nit:review` came to resolve to a directory that did not exist. This pins the
+// convention against the archetypes actually shipped.
+describe("every shipped step id resolves to a skill on disk", () => {
+  const SKILLS_DIR = join(dirname(import.meta.path), "..", "..", ".claude", "skills");
+
+  // Steps with no SKILL.md yet, each owned by a named task. Shrinks to empty as
+  // the migration lands; the second assertion below stops it going stale.
+  const NOT_YET_IMPLEMENTED: Record<string, string> = {
+    qa: "TASK-022",
+    "boundary-check": "PHASE-3 boundary enforcement",
+  };
+
+  const ARCHETYPES = [
+    "backend-feature",
+    "frontend-feature",
+    "infra-change",
+    "bugfix",
+    "cross-module-change",
+    "architecture-decision",
+  ];
+
+  test("resolved archetype steps map to existing SKILL.md files", async () => {
+    const missing: string[] = [];
+    for (const name of ARCHETYPES) {
+      const { steps } = await resolveArchetype(name);
+      for (const step of steps) {
+        if (step.id in NOT_YET_IMPLEMENTED) continue;
+        if (!skillFileExists(baseSkillForStep(step.id), SKILLS_DIR)) {
+          missing.push(`${name}/${step.id} -> ${skillFilePath(baseSkillForStep(step.id), SKILLS_DIR)}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  test("the not-yet-implemented list contains nothing that now exists", () => {
+    const stale = Object.keys(NOT_YET_IMPLEMENTED).filter((step) =>
+      skillFileExists(baseSkillForStep(step), SKILLS_DIR)
+    );
+    expect(stale).toEqual([]);
   });
 });

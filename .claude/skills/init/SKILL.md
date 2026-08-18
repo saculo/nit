@@ -155,7 +155,7 @@ Write `.nit/config/role-routing.json`:
     { "role": "backend-engineer", "skills": ["implement"] },
     { "role": "frontend-engineer","skills": ["implement"] },
     { "role": "infra-engineer",   "skills": ["implement"] },
-    { "role": "reviewer",         "skills": ["task-review"] },
+    { "role": "reviewer",         "skills": ["review"] },
     { "role": "qa",               "skills": ["implement"] }
   ]
 }

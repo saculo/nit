@@ -150,6 +150,99 @@ describe("nit:implement output (implementation-result)", () => {
 });
 
 // AC-4 — adrCandidates travel alongside either result type
+// TASK-021 — the review step's output shape
+describe("nit:review output (review-result)", () => {
+  // the worked example documented in .claude/skills/review/SKILL.md
+  const documentedExample = {
+    taskId: "TASK-017",
+    stepId: "review",
+    stepType: "review",
+    result: {
+      resultType: "review",
+      verdict: "changes-requested",
+      comments: [
+        { severity: "info", message: "AC-1: pass — validated against the schema." },
+        {
+          severity: "error",
+          path: "cli/src/supervisor.ts",
+          line: 403,
+          message: "AC-2: fails — the reopen path rebuilds input.json without priorOutputs.",
+        },
+        { severity: "warning", path: "cli/src/supervisor.ts", message: "KD-3: paths are not task-relative." },
+      ],
+    },
+  };
+
+  // AC-1 / AC-4 — an agent copying the skill's example must not get a rejection
+  test("the shape documented in the skill validates", () => {
+    const { valid, errors } = validateStepOutput(documentedExample);
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+  });
+
+  test.each(["approved", "changes-requested", "rejected"])("verdict %s is accepted", (verdict) => {
+    const { valid } = validateStepOutput({
+      taskId: "TASK-017",
+      stepId: "review",
+      stepType: "review",
+      result: { resultType: "review", verdict },
+    });
+    expect(valid).toBe(true);
+  });
+
+  test("a verdict outside the enum is rejected", () => {
+    const { valid } = validateStepOutput({
+      taskId: "TASK-017",
+      stepId: "review",
+      stepType: "review",
+      result: { resultType: "review", verdict: "rework-requested" },
+    });
+    expect(valid).toBe(false);
+  });
+
+  test("a review-result without a verdict is rejected", () => {
+    const { valid } = validateStepOutput({
+      taskId: "TASK-017",
+      stepId: "review",
+      stepType: "review",
+      result: { resultType: "review", comments: [{ severity: "info", message: "m" }] },
+    });
+    expect(valid).toBe(false);
+  });
+
+  // AC-2 — every comment carries a message and a severity
+  test.each([
+    ["without a severity", { message: "AC-1: fails" }],
+    ["without a message", { severity: "error" }],
+    ["with an unknown severity", { severity: "critical", message: "AC-1: fails" }],
+  ])("a comment %s is rejected", (_label, comment) => {
+    const { valid } = validateStepOutput({
+      taskId: "TASK-017",
+      stepId: "review",
+      stepType: "review",
+      result: { resultType: "review", verdict: "changes-requested", comments: [comment] },
+    });
+    expect(valid).toBe(false);
+  });
+
+  // AC-3 — the reviewer uses the shared blocked contract, not its own convention
+  test("the review step can emit the blocked contract", () => {
+    const { valid, errors } = validateStepOutput({
+      taskId: "TASK-017",
+      stepId: "review",
+      stepType: "review",
+      result: {
+        resultType: "blocked",
+        reason: "contradictory-input",
+        explanation: "filesChanged names files absent from the working tree; nothing to review.",
+        detail: { conflictsWith: "implementation-result.filesChanged vs the working tree" },
+      },
+    });
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+  });
+});
+
 describe("adrCandidates", () => {
   test("a design-result may carry adrCandidates", () => {
     const { valid } = validateStepOutput({

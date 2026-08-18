@@ -38,7 +38,28 @@ export interface ValidationResult {
   schemaValid: boolean;
   policyValid: boolean;
   errors: ValidationError[];
-  action: "repair" | "proceed";
+  action: "repair" | "proceed" | "block";
+}
+
+/** Why a step cannot proceed (step-output.schema.json #/$defs/blocked-result). */
+export type BlockedReason =
+  | "needs-splitting"
+  | "contradictory-input"
+  | "criterion-unsatisfiable"
+  | "no-output";
+
+/** A specialist's report that it cannot complete its step. */
+export interface BlockedResult {
+  resultType: "blocked";
+  reason: BlockedReason;
+  explanation: string;
+  detail?: Record<string, unknown>;
+}
+
+/** True when a step output carries a blocked result rather than a step result. */
+export function blockedResultOf(output: unknown): BlockedResult | undefined {
+  const result = (output as { result?: unknown } | undefined)?.result as BlockedResult | undefined;
+  return result?.resultType === "blocked" ? result : undefined;
 }
 
 const pad3 = (n: number): string => String(n).padStart(3, "0");
@@ -123,6 +144,21 @@ export interface Approval {
   approvedBy?: string;
   timestamp?: string;
   comment?: string;
+}
+
+/**
+ * Result of ingesting a blocked step output. The task parks at `blocked` for a
+ * human decision: the step did not fail validation, it reported that it cannot
+ * succeed, so re-running it would waste the reopen budget. `reopenCount` is
+ * therefore left untouched and no repair is scheduled (TASK-018 AC-2, D-2).
+ */
+export function ingestBlocked(state: TaskState, now: string): TaskState {
+  return {
+    ...state,
+    status: "blocked",
+    repairRequired: false,
+    timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now },
+  };
 }
 
 /**
@@ -268,7 +304,7 @@ async function assembleContext(
  * Prepare the next step: create or advance state.json, scaffold the step
  * directory, write input.json, and return the dispatch descriptor. Blocks
  * (returns a status without writing) when the current step is still awaiting an
- * un-granted approval, or when the task is escalated/done.
+ * un-granted approval, or when the task is blocked/escalated/done.
  */
 export async function prepare(
   opts: SupervisorOptions
@@ -286,6 +322,8 @@ export async function prepare(
     action = "start";
   } else if (state.status === "escalated") {
     return { blocked: true, status: "escalated" };
+  } else if (state.status === "blocked") {
+    return { blocked: true, status: "blocked" };
   } else if (state.status === "done") {
     return { done: true };
   } else if (state.status === "awaiting_approval") {
@@ -329,6 +367,14 @@ export async function prepare(
 /** Result of ingesting a step's output.json. */
 export type IngestResult =
   | { valid: true; status: "awaiting_approval"; stepId: string }
+  | {
+      valid: boolean;
+      blocked: true;
+      status: "blocked";
+      stepId: string;
+      reason: BlockedReason;
+      explanation: string;
+    }
   | { valid: false; escalated: boolean; status: string; stepId: string; errors: ValidationError[] };
 
 /**
@@ -350,9 +396,49 @@ export async function ingest(
   const step = opts.steps[idx]!;
   const dir = join(opts.taskDir, stepDirName(idx, step.id));
   const output = await readJson<unknown>(join(dir, "output.json"));
-  if (output === undefined) throw new Error(`No output.json in ${dir}`);
+
+  // A step that stopped without writing anything is blocked, not broken: there
+  // is nothing to repair, so record the miss and park for a human (AC-3).
+  if (output === undefined) {
+    // Name the step directory relatively: validation.json is a committed
+    // artifact, and an absolute --task-dir would bake a machine-specific path
+    // into it (the TASK-017 RW-2 lesson).
+    const explanation = `No output.json in ${stepDirName(idx, step.id)}; the step produced no result.`;
+    const validation: ValidationResult = {
+      schemaValid: false,
+      policyValid: true,
+      errors: [{ path: "/", message: explanation, severity: "error" }],
+      action: "block",
+    };
+    await writeJson(join(dir, "validation.json"), validation, "validation-result");
+    await writeJson(statePath, ingestBlocked(state, now), "task-state");
+    return {
+      valid: false,
+      blocked: true,
+      status: "blocked",
+      stepId: step.id,
+      reason: "no-output",
+      explanation,
+    };
+  }
 
   const errors = (opts.validateOutput ?? defaultValidateOutput)(output);
+
+  // A schema-valid blocked result: the specialist ran and reported it cannot
+  // proceed. No validation.json — nothing failed validation (AC-2). A malformed
+  // blocked result falls through to the repair path like any other bad output.
+  const blocked = errors.length === 0 ? blockedResultOf(output) : undefined;
+  if (blocked) {
+    await writeJson(statePath, ingestBlocked(state, now), "task-state");
+    return {
+      valid: true,
+      blocked: true,
+      status: "blocked",
+      stepId: step.id,
+      reason: blocked.reason,
+      explanation: blocked.explanation,
+    };
+  }
 
   if (errors.length === 0) {
     const { state: next, approval } = ingestValid(state, now);
@@ -385,7 +471,8 @@ export async function ingest(
   };
 }
 
-function defaultValidateOutput(output: unknown): ValidationError[] {
+/** Validate a step output against step-output.schema.json. */
+export function defaultValidateOutput(output: unknown): ValidationError[] {
   const schemaPath = resolveSchema("step-output");
   const ajv = createAjv();
   const validate = ajv.compile(require(schemaPath!));
@@ -420,6 +507,8 @@ export async function dryRun(opts: SupervisorOptions): Promise<DryRunPlan | { do
     state = initialState(opts.taskId, opts.steps, now);
   } else if (existing.status === "escalated") {
     return { blocked: true, status: "escalated" };
+  } else if (existing.status === "blocked") {
+    return { blocked: true, status: "blocked" };
   } else if (existing.status === "done") {
     return { done: true };
   } else if (existing.status === "awaiting_approval") {
