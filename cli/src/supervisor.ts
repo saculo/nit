@@ -222,6 +222,49 @@ function defaultContext(state: TaskState, step: ArchetypeStep, repairErrors?: Va
 }
 
 /**
+ * Map every completed step that produced an output.json to its path, keyed by
+ * step id. Threaded into the step input so a specialist reads earlier results
+ * (e.g. implement reading the design output) without re-deriving the
+ * STEP-NNN-<id> directory convention itself.
+ *
+ * Paths are relative to the task directory, so input.json stays portable across
+ * checkouts even when the caller passes an absolute --task-dir.
+ */
+export async function priorOutputs(
+  taskDir: string,
+  steps: ArchetypeStep[],
+  currentIdx: number
+): Promise<Record<string, string>> {
+  const outputs: Record<string, string> = {};
+  for (let i = 0; i < currentIdx; i++) {
+    const step = steps[i]!;
+    const relative = join(stepDirName(i, step.id), "output.json");
+    if (await Bun.file(join(taskDir, relative)).exists()) outputs[step.id] = relative;
+  }
+  return outputs;
+}
+
+/**
+ * Assemble the specialist context for a step: the caller's (or default) context
+ * plus the prior-step outputs. Shared by prepare and dryRun so the two cannot
+ * report different inputs for the same step. A context that already carries
+ * priorOutputs is left untouched.
+ */
+async function assembleContext(
+  opts: SupervisorOptions,
+  state: TaskState,
+  step: ArchetypeStep,
+  stepIdx: number,
+  repairErrors?: ValidationError[]
+): Promise<Record<string, unknown>> {
+  const buildContext = opts.buildContext ?? defaultContext;
+  const context = buildContext(state, step, repairErrors);
+  if (context.priorOutputs !== undefined) return context;
+  const outputs = await priorOutputs(opts.taskDir, opts.steps, stepIdx);
+  return Object.keys(outputs).length > 0 ? { ...context, priorOutputs: outputs } : context;
+}
+
+/**
  * Prepare the next step: create or advance state.json, scaffold the step
  * directory, write input.json, and return the dispatch descriptor. Blocks
  * (returns a status without writing) when the current step is still awaiting an
@@ -232,7 +275,6 @@ export async function prepare(
 ): Promise<DispatchDescriptor | { blocked: true; status: string } | { done: true }> {
   const now = opts.now ?? new Date().toISOString();
   const resolveSkillList = opts.resolveSkillList ?? defaultSkillList;
-  const buildContext = opts.buildContext ?? defaultContext;
   const statePath = join(opts.taskDir, "state.json");
 
   let state = await readJson<TaskState>(statePath);
@@ -275,7 +317,7 @@ export async function prepare(
   mkdirSync(dir, { recursive: true });
 
   const skillList = resolveSkillList(step);
-  const context = buildContext(state, step, repairErrors);
+  const context = await assembleContext(opts, state, step, idx, repairErrors);
   const input = buildStepInput(state.taskId, step, skillList, context);
   const inputPath = join(dir, "input.json");
   await writeJson(inputPath, input, "step-input");
@@ -298,7 +340,6 @@ export async function ingest(
   opts: SupervisorOptions & { maxReopenCount?: number; validateOutput?: (output: unknown) => ValidationError[] }
 ): Promise<IngestResult> {
   const now = opts.now ?? new Date().toISOString();
-  const buildContext = opts.buildContext ?? defaultContext;
   const resolveSkillList = opts.resolveSkillList ?? defaultSkillList;
   const statePath = join(opts.taskDir, "state.json");
 
@@ -327,8 +368,11 @@ export async function ingest(
   await writeJson(statePath, next, "task-state");
 
   if (!escalated) {
-    // Reopen the same step with the errors embedded in a fresh input.json.
-    const input = buildStepInput(next.taskId, step, resolveSkillList(step), buildContext(next, step, errors));
+    // Reopen the same step with the errors embedded in a fresh input.json. The
+    // context is assembled the same way prepare does it, so reopening never
+    // strips the prior-step outputs the specialist still needs.
+    const context = await assembleContext(opts, next, step, idx, errors);
+    const input = buildStepInput(next.taskId, step, resolveSkillList(step), context);
     await writeJson(join(dir, "input.json"), input, "step-input");
   }
 
@@ -369,7 +413,6 @@ export interface DryRunPlan {
 export async function dryRun(opts: SupervisorOptions): Promise<DryRunPlan | { done: true } | { blocked: true; status: string }> {
   const now = opts.now ?? new Date().toISOString();
   const resolveSkillList = opts.resolveSkillList ?? defaultSkillList;
-  const buildContext = opts.buildContext ?? defaultContext;
   const existing = await readJson<TaskState>(join(opts.taskDir, "state.json"));
 
   let state: TaskState;
@@ -391,7 +434,11 @@ export async function dryRun(opts: SupervisorOptions): Promise<DryRunPlan | { do
   const idx = currentIndex(state);
   const step = opts.steps[idx]!;
   const skillList = resolveSkillList(step);
-  const input = buildStepInput(state.taskId, step, skillList, buildContext(state, step));
+  const repairErrors = state.repairRequired
+    ? (await readJson<ValidationResult>(join(opts.taskDir, stepDirName(idx, step.id), "validation.json")))?.errors
+    : undefined;
+  const context = await assembleContext(opts, state, step, idx, repairErrors);
+  const input = buildStepInput(state.taskId, step, skillList, context);
   return { taskId: state.taskId, resolvedSteps: opts.steps, currentStepId: step.id, skillList, input };
 }
 

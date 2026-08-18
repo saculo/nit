@@ -13,6 +13,7 @@ import {
   prepare,
   ingest,
   dryRun,
+  priorOutputs,
   type TaskState,
 } from "../src/supervisor";
 
@@ -216,5 +217,131 @@ describe("supervisor — fs orchestration", () => {
     // no side effects
     expect(existsSync(join(dir, "state.json"))).toBe(false);
     expect(existsSync(join(dir, "STEP-001-analyze"))).toBe(false);
+  });
+});
+
+// TASK-017 AC-3 — a step reads earlier results through context.priorOutputs
+describe("supervisor — prior step outputs", () => {
+  const validDesignOutput = {
+    taskId: "TASK-017",
+    stepId: "design",
+    stepType: "design",
+    result: { resultType: "design", summary: "the design", decisions: [] },
+  };
+
+  function stateAt(stepId: string): TaskState {
+    return {
+      taskId: "TASK-017",
+      currentStepId: stepId,
+      stepOrder: ["analyze", "design", "implement", "review", "qa"],
+      status: "in-progress",
+      reopenCount: 0,
+      timestamps: { createdAt: NOW, updatedAt: NOW },
+    };
+  }
+
+  test("priorOutputs maps completed steps that produced an output, keyed by step id", async () => {
+    const dir = tmpTaskDir();
+    mkdirSync(join(dir, "STEP-001-analyze"), { recursive: true });
+    mkdirSync(join(dir, "STEP-002-design"), { recursive: true });
+    writeFileSync(join(dir, "STEP-001-analyze", "output.json"), JSON.stringify(validAnalysisOutput));
+    writeFileSync(join(dir, "STEP-002-design", "output.json"), JSON.stringify(validDesignOutput));
+
+    const outputs = await priorOutputs(dir, steps, 2);
+    expect(Object.keys(outputs).sort()).toEqual(["analyze", "design"]);
+    // RW-2 — paths are relative to the task directory, so input.json stays portable
+    expect(outputs.design).toBe(join("STEP-002-design", "output.json"));
+  });
+
+  test("priorOutputs skips steps that produced no output and never includes the current step", async () => {
+    const dir = tmpTaskDir();
+    mkdirSync(join(dir, "STEP-002-design"), { recursive: true });
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-002-design", "output.json"), JSON.stringify(validDesignOutput));
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify({}));
+
+    const outputs = await priorOutputs(dir, steps, 2);
+    expect(Object.keys(outputs)).toEqual(["design"]);
+  });
+
+  test("prepare threads the design output path into the implement step's input", async () => {
+    const dir = tmpTaskDir();
+    writeFileSync(join(dir, "state.json"), JSON.stringify(stateAt("implement")));
+    mkdirSync(join(dir, "STEP-002-design"), { recursive: true });
+    writeFileSync(join(dir, "STEP-002-design", "output.json"), JSON.stringify(validDesignOutput));
+
+    const desc = (await prepare({ taskDir: dir, taskId: "TASK-017", steps, now: NOW })) as any;
+    expect(desc.stepId).toBe("implement");
+
+    const input = readJson<{ context: { priorOutputs?: Record<string, string> } }>(
+      join(dir, "STEP-003-implement", "input.json")
+    );
+    expect(input.context.priorOutputs?.design).toBe(join("STEP-002-design", "output.json"));
+    // the relative path resolves against the task directory
+    expect(readJson<typeof validDesignOutput>(join(dir, input.context.priorOutputs!.design!)).result.summary).toBe("the design");
+  });
+
+  test("priorOutputs is omitted at the first step, where nothing precedes it", async () => {
+    const dir = tmpTaskDir();
+    await prepare({ taskDir: dir, taskId: "TASK-017", steps, now: NOW });
+    const input = readJson<{ context: Record<string, unknown> }>(
+      join(dir, "STEP-001-analyze", "input.json")
+    );
+    expect(input.context.priorOutputs).toBeUndefined();
+  });
+
+  // RW-1 — prepare, dryRun, and the reopen path must report the same context
+  test("dryRun reports the same priorOutputs prepare would write", async () => {
+    const dir = tmpTaskDir();
+    writeFileSync(join(dir, "state.json"), JSON.stringify(stateAt("implement")));
+    mkdirSync(join(dir, "STEP-002-design"), { recursive: true });
+    writeFileSync(join(dir, "STEP-002-design", "output.json"), JSON.stringify(validDesignOutput));
+
+    const plan = (await dryRun({ taskDir: dir, taskId: "TASK-017", steps, now: NOW })) as any;
+    expect(plan.currentStepId).toBe("implement");
+    expect(plan.input.context.priorOutputs.design).toBe(join("STEP-002-design", "output.json"));
+
+    // and it matches what prepare actually writes
+    await prepare({ taskDir: dir, taskId: "TASK-017", steps, now: NOW });
+    const written = readJson<{ context: unknown }>(join(dir, "STEP-003-implement", "input.json"));
+    expect(plan.input.context).toEqual(written.context);
+  });
+
+  test("reopening a step keeps priorOutputs alongside the repair errors", async () => {
+    const dir = tmpTaskDir();
+    writeFileSync(join(dir, "state.json"), JSON.stringify(stateAt("implement")));
+    mkdirSync(join(dir, "STEP-002-design"), { recursive: true });
+    writeFileSync(join(dir, "STEP-002-design", "output.json"), JSON.stringify(validDesignOutput));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(invalidOutput));
+
+    const result = (await ingest({ taskDir: dir, taskId: "TASK-017", steps, now: NOW })) as any;
+    expect(result.valid).toBe(false);
+    expect(result.escalated).toBe(false);
+
+    const input = readJson<{ context: { priorOutputs?: Record<string, string>; repairErrors?: unknown[] } }>(
+      join(dir, "STEP-003-implement", "input.json")
+    );
+    expect(input.context.repairErrors?.length).toBeGreaterThan(0);
+    expect(input.context.priorOutputs?.design).toBe(join("STEP-002-design", "output.json"));
+  });
+
+  test("a caller-supplied buildContext keeps control of priorOutputs", async () => {
+    const dir = tmpTaskDir();
+    writeFileSync(join(dir, "state.json"), JSON.stringify(stateAt("implement")));
+    mkdirSync(join(dir, "STEP-002-design"), { recursive: true });
+    writeFileSync(join(dir, "STEP-002-design", "output.json"), JSON.stringify(validDesignOutput));
+
+    await prepare({
+      taskDir: dir,
+      taskId: "TASK-017",
+      steps,
+      now: NOW,
+      buildContext: () => ({ priorOutputs: { design: "elsewhere/output.json" } }),
+    });
+    const input = readJson<{ context: { priorOutputs: Record<string, string> } }>(
+      join(dir, "STEP-003-implement", "input.json")
+    );
+    expect(input.context.priorOutputs.design).toBe("elsewhere/output.json");
   });
 });
