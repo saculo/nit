@@ -243,6 +243,89 @@ describe("nit:review output (review-result)", () => {
   });
 });
 
+// TASK-022 — the qa step's output shape
+describe("nit:qa output (qa-result)", () => {
+  // the worked example documented in .claude/skills/qa/SKILL.md
+  const documentedExample = {
+    taskId: "TASK-022",
+    stepId: "qa",
+    stepType: "qa",
+    result: {
+      resultType: "qa",
+      testsRun: 120,
+      testsPassed: 119,
+      testsFailed: 1,
+      coverage: 87.4,
+      issues: [
+        "AC-2: the CLI exits 0 on a malformed config; the criterion requires exit 2.",
+        "tests: a suite the implement step reported passing fails on a clean checkout.",
+      ],
+    },
+  };
+
+  // AC-1 / AC-4 — an agent copying the skill's example must not get a rejection
+  test("the shape documented in the skill validates", () => {
+    const { valid, errors } = validateStepOutput(documentedExample);
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+  });
+
+  test("the three count fields are the minimum", () => {
+    const { valid } = validateStepOutput({
+      taskId: "TASK-022",
+      stepId: "qa",
+      stepType: "qa",
+      result: { resultType: "qa", testsRun: 0, testsPassed: 0, testsFailed: 0 },
+    });
+    expect(valid).toBe(true);
+  });
+
+  test.each(["testsRun", "testsPassed", "testsFailed"])("a qa-result without %s is rejected", (field) => {
+    const result: Record<string, unknown> = {
+      resultType: "qa",
+      testsRun: 10,
+      testsPassed: 10,
+      testsFailed: 0,
+    };
+    delete result[field];
+    const { valid } = validateStepOutput({ taskId: "T", stepId: "qa", stepType: "qa", result });
+    expect(valid).toBe(false);
+  });
+
+  // AC-2 — counts are real counts, not free-form
+  test.each([
+    ["a negative count", { testsRun: -1, testsPassed: 0, testsFailed: 0 }],
+    ["a fractional count", { testsRun: 1.5, testsPassed: 1, testsFailed: 0 }],
+    ["coverage above 100", { testsRun: 1, testsPassed: 1, testsFailed: 0, coverage: 101 }],
+    ["coverage below 0", { testsRun: 1, testsPassed: 1, testsFailed: 0, coverage: -1 }],
+  ])("%s is rejected", (_label, fields) => {
+    const { valid } = validateStepOutput({
+      taskId: "T",
+      stepId: "qa",
+      stepType: "qa",
+      result: { resultType: "qa", ...fields },
+    });
+    expect(valid).toBe(false);
+  });
+
+  // AC-3 — the qa step uses the shared blocked contract, not a zero-test "pass"
+  test("the qa step can emit the blocked contract", () => {
+    const { valid, errors } = validateStepOutput({
+      taskId: "TASK-022",
+      stepId: "qa",
+      stepType: "qa",
+      result: {
+        resultType: "blocked",
+        reason: "criterion-unsatisfiable",
+        explanation: "AC-4 needs a running service and the task ships no way to start one.",
+        detail: { criterionId: "AC-4" },
+      },
+    });
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+  });
+});
+
 describe("adrCandidates", () => {
   test("a design-result may carry adrCandidates", () => {
     const { valid } = validateStepOutput({

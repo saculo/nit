@@ -199,7 +199,6 @@ describe("every shipped step id resolves to a skill on disk", () => {
   // Steps with no SKILL.md yet, each owned by a named task. Shrinks to empty as
   // the migration lands; the second assertion below stops it going stale.
   const NOT_YET_IMPLEMENTED: Record<string, string> = {
-    qa: "TASK-022",
     "boundary-check": "PHASE-3 boundary enforcement",
   };
 
