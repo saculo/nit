@@ -1,7 +1,7 @@
 ---
 name: "nit:orchestrate"
 description: "Project-lifecycle orchestration for the nit workflow. Drives the full v2 lifecycle — clarify, phases, tasks, then the deterministic supervisor per task, then phase close — gating the user at every boundary. Decides which task runs next; the supervisor decides which step. Use when the user says '/nit:orchestrate', 'start workflow', 'run e2e nit', 'orchestrate workflow', or at the beginning of any nit workflow."
-allowed-tools: Read, Glob, Grep, Bash, Skill
+allowed-tools: Read, Glob, Grep, Skill
 ---
 
 > **Arguments**: `/nit:orchestrate [prd-path]` — PRD path optional; auto-detected from the project root
@@ -30,8 +30,9 @@ engineer should implement something, stop — the archetype decided that, and th
 
 1. **Delegate every task to the supervisor.** Task execution is `/nit:continue`, `/nit:approve`, and
    `/nit:reject`. Nothing else.
-2. **Never write or edit a file.** You read state and invoke commands. The one exception in the whole
-   workflow — the manual unblock transition — belongs to a human, not to you.
+2. **Never write or edit a file.** You read state and invoke commands. This is enforced, not merely
+   asked: `allowed-tools` grants `Read`, `Glob`, `Grep`, and `Skill` only — no `Write`, no `Edit`, no
+   `Bash`. The one exception in the whole workflow, the manual unblock transition, belongs to a human.
 3. **Never skip an approval gate.** Every gate the v1 skill had is still a gate.
 4. **One task at a time, sequentially.** Never run two tasks in parallel.
 5. **Route from `state.json` and the resolved archetype**, never from a task's prose.
@@ -97,7 +98,7 @@ A blocked task has an `output.json` whose `result.resultType` is `blocked`, carr
 
 | reason | Do |
 |---|---|
-| `needs-splitting` | Invoke `nit:tasks` in splitting mode with the original `task.json` and `detail.taskTypes`. It produces `TASK-NNNa` / `TASK-NNNb`. **Gate** on the subtasks, then run them through 3b in place of the original. |
+| `needs-splitting` | Invoke `nit:tasks` in splitting mode, pointing it at the original `task.json` and the blocked step's `output.json`. It reads `detail.taskTypes` and produces `TASK-NNNa` / `TASK-NNNb`. **Gate** on the subtasks, then run them through 3b in place of the original. The original stays `blocked` — it is superseded, not completed, and closing it is the user's call. |
 | `contradictory-input` | Surface `explanation` and `detail.conflictsWith`. The fix is a human decision — usually amending the acceptance criteria or the design. |
 | `criterion-unsatisfiable` | Surface `explanation` and `detail.criterionId`. Usually the criterion needs rewriting, which is a change to `task.json`, not something a re-run fixes. |
 | `no-output` | The specialist wrote nothing. Surface the `validation.json` entry; this usually means the dispatch itself failed. |

@@ -95,3 +95,35 @@ describe("nit:orchestrate conformance", () => {
     expect(steps.some((s) => s.role === "$detect")).toBe(true);
   });
 });
+
+// TASK-025 review — the orchestrator's central constraint is "never write", so
+// its granted capabilities must not include writing. A rule the frontmatter
+// contradicts is not a constraint.
+describe("nit:orchestrate capability conformance", () => {
+  const skill = readFileSync(SKILL, "utf8");
+  const allowed = skill.match(/^allowed-tools:\s*(.+)$/m)?.[1]?.split(",").map((t) => t.trim()) ?? [];
+
+  test.each(["Write", "Edit", "Bash", "NotebookEdit"])("does not hold the %s tool", (tool) => {
+    expect(allowed).not.toContain(tool);
+  });
+
+  test("holds what it needs to read state and invoke skills", () => {
+    expect(allowed).toEqual(expect.arrayContaining(["Read", "Skill"]));
+  });
+});
+
+// AC-3 — the split route lands on a skill that understands the blocked contract
+describe("nit:tasks splitting mode receives the blocked contract", () => {
+  const createTasks = readFileSync(join(ROOT, ".claude", "skills", "create-tasks", "SKILL.md"), "utf8");
+
+  test.each(["needs-splitting", "detail.taskTypes", "resultType"])(
+    "splitting mode reads %s",
+    (token) => {
+      expect(createTasks).toContain(token);
+    }
+  );
+
+  test("does not describe the rationale as prose from the architect", () => {
+    expect(createTasks).not.toContain("the architect's splitting rationale");
+  });
+});

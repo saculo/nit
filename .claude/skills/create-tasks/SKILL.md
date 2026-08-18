@@ -169,15 +169,29 @@ If a task spans two types, split it into subtasks:
 
 Each subtask gets its own `task.json` in its own directory.
 
-## Task Splitting (from design stage)
+## Task Splitting (from a blocked step)
 
-The task-designer (architect) may report that a task needs splitting because it spans multiple types. When this happens:
+Any step skill may report that a task spans more than one task type and cannot proceed. It does so
+through the blocked contract (TASK-018), not through prose: the step's `output.json` carries a
+`result` with `resultType: "blocked"`, `reason: "needs-splitting"`, an `explanation`, and
+`detail.taskTypes` naming the types the split should produce. The task is parked at `blocked`.
 
-1. Read the original `task.json` and the architect's splitting rationale
-2. Create subtask directories: `.nit/phases/PHASE-N/tasks/TASK-00Ma/`, `.nit/phases/PHASE-N/tasks/TASK-00Mb/`
-3. Write a `task.json` for each subtask with its own type, targetModule, archetype, and acceptance criteria
-4. Set dependency between subtasks if needed (discussed with the user)
-5. Present to user for approval
+When routed here with such a task:
+
+1. Read the original `task.json`, and the blocked result from the step's `output.json` — its
+   `explanation` is the rationale and `detail.taskTypes` is the intended split
+2. Create one subtask directory per reported type: `.nit/phases/PHASE-N/tasks/TASK-NNNa/`,
+   `TASK-NNNb/`, …
+3. Write a `task.json` for each, with its own `type` from `detail.taskTypes`, plus `targetModule`,
+   `archetype`, and acceptance criteria carved from the original's
+4. Every acceptance criterion of the original must land in exactly one subtask, or be dropped
+   deliberately with the user's agreement — a split that silently loses a criterion changes the
+   contract
+5. Set a dependency between subtasks if one needs the other first (discuss with the user)
+6. Present to the user for approval
+
+The original task stays `blocked`. It is superseded, not completed, and closing it is a human
+decision — do not edit its `state.json` or `task.json` to say otherwise.
 
 ## Module Detection
 
