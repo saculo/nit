@@ -103,6 +103,38 @@ export function replacePlaceholders(
 }
 
 /**
+ * The engineer role that implements each task type. `$detect` archetypes defer
+ * this choice to the task, so it cannot be resolved at archetype-resolution
+ * time — the archetype has no task context. The supervisor applies it at
+ * dispatch, where task.json is available.
+ *
+ * Keys are the `type` enum from task.schema.json; values are agent names with a
+ * definition in .claude/agents/.
+ */
+export const ENGINEER_ROLE_FOR_TASK_TYPE: Readonly<Record<string, string>> = Object.freeze({
+  backend: "backend-engineer",
+  frontend: "frontend-engineer",
+  devops: "infra-engineer",
+  qa: "qa",
+});
+
+/**
+ * Resolve a task type to its engineer role. Throws naming the type and the
+ * known set rather than returning a role no agent answers to.
+ */
+export function engineerRoleForTaskType(taskType: string, stepId?: string): string {
+  const role = ENGINEER_ROLE_FOR_TASK_TYPE[taskType];
+  if (!role) {
+    const where = stepId ? ` at step "${stepId}"` : "";
+    throw new Error(
+      `Cannot resolve $detect${where}: task type "${taskType}" has no engineer role. ` +
+        `Known task types: ${Object.keys(ENGINEER_ROLE_FOR_TASK_TYPE).join(", ")}.`
+    );
+  }
+  return role;
+}
+
+/**
  * Apply overrides to a parent step list.
  * Order: removeSteps first, then step property modifications, then addSteps.
  */

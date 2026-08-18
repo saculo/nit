@@ -138,9 +138,10 @@ Everything you route on is machine-readable. Never infer from prose:
 | What is unplanned or unstarted? | `/nit:status` |
 
 There is no engineer routing table here any more. In v1 this skill read `<type>` from `DESIGN.md` and
-chose an agent. In v2 the archetype declares the role for every step — concretely, or as `$engineer`
-resolved from the archetype's `engineerRole` — and the supervisor dispatches it. Choosing an engineer
-is not your decision to make.
+chose an agent. In v2 the archetype declares the role for every step — concretely, as `$engineer`
+resolved from the archetype's `engineerRole`, or as `$detect`, which `bugfix` and
+`cross-module-change` use to defer the choice to the task's own `type`. The supervisor resolves all
+three at dispatch. Choosing an engineer is not your decision to make.
 
 ## Gates
 
@@ -159,9 +160,6 @@ target. Never hand-edit the artifact to satisfy the feedback yourself.
 
 State these when they apply rather than failing opaquely:
 
-- **`$detect` archetypes cannot run.** `bugfix` and `cross-module-change` declare their implement
-  step's role as `$detect`, and nothing resolves it, so the dispatch descriptor names a role no agent
-  answers to (TASK-028). Until that lands, a task on either archetype will fail at its implement step.
 - **Every step gates.** The per-step `approval` flag in the archetype is not read by the supervisor, so
   a five-step task asks for five approvals rather than the two `base.json` declares (TASK-029).
 - **`architecture-decision` cannot be rejected at review.** Its rejection routing targets the

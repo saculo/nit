@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
-import { resolveArchetype } from "../src/archetype-resolver";
+import {
+  resolveArchetype,
+  engineerRoleForTaskType,
+  ENGINEER_ROLE_FOR_TASK_TYPE,
+} from "../src/archetype-resolver";
 
 const ROOT = dirname(dirname(dirname(import.meta.path)));
 const SKILL = join(ROOT, ".claude", "skills", "e2e-orchestration", "SKILL.md");
@@ -82,17 +86,25 @@ describe("nit:orchestrate conformance", () => {
     expect(skill).toContain("milestone.reached");
   });
 
-  // the limitations it states must be real, not stale
-  test("the archetypes it says cannot run are the ones using $detect", () => {
-    const cannotRun = ["bugfix", "cross-module-change"];
-    for (const name of cannotRun) {
-      expect(skill).toContain(name);
-    }
+  // TASK-028 closed the $detect gap, so the skill must no longer claim those
+  // archetypes cannot run. A stale limitation is worse than none: it tells the
+  // user to avoid something that works.
+  test("does not claim $detect archetypes are unrunnable", () => {
+    expect(skill).not.toContain("cannot run");
   });
 
-  test("$detect really is unresolved, as the limitation claims", async () => {
-    const { steps } = await resolveArchetype("bugfix");
-    expect(steps.some((s) => s.role === "$detect")).toBe(true);
+  test("$detect is resolved at dispatch, so both archetypes are runnable", async () => {
+    for (const name of ["bugfix", "cross-module-change"]) {
+      const { steps } = await resolveArchetype(name);
+      const detect = steps.filter((s) => s.role === "$detect");
+      expect(detect.length).toBeGreaterThan(0); // the archetype still defers
+      for (const step of detect) {
+        // and every task type it can be deferred to resolves to a real agent
+        for (const type of Object.keys(ENGINEER_ROLE_FOR_TASK_TYPE)) {
+          expect(engineerRoleForTaskType(type, step.id)).toBeTruthy();
+        }
+      }
+    }
   });
 });
 

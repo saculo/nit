@@ -1,8 +1,13 @@
 import { describe, expect, test, beforeAll } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "fs";
 import { tmpdir } from "os";
-import { join } from "path";
-import { resolveArchetype, type ArchetypeStep } from "../src/archetype-resolver";
+import { join, dirname } from "path";
+import {
+  resolveArchetype,
+  engineerRoleForTaskType,
+  ENGINEER_ROLE_FOR_TASK_TYPE,
+  type ArchetypeStep,
+} from "../src/archetype-resolver";
 import {
   initialState,
   advanceState,
@@ -530,5 +535,120 @@ describe("supervisor — blocked-step escalation", () => {
 
     const plan = (await dryRun({ taskDir: dir, taskId: "TASK-018", steps, now: NOW })) as any;
     expect(plan).toEqual({ blocked: true, status: "blocked" });
+  });
+});
+
+// TASK-028 — $detect survives archetype resolution deliberately (the archetype
+// has no task context), so the supervisor resolves it at dispatch. Before this,
+// prepare emitted "role": "$detect" and nit:continue passed it to the Agent
+// tool as subagent_type, where no agent answers to it — so the implement step
+// of bugfix and cross-module-change could not be dispatched at all.
+describe("supervisor — $detect resolution", () => {
+  let bugfixSteps: ArchetypeStep[];
+
+  beforeAll(async () => {
+    bugfixSteps = (await resolveArchetype("bugfix")).steps as ArchetypeStep[];
+  });
+
+  function taskDirWithType(type?: string): string {
+    const dir = tmpTaskDir();
+    if (type !== undefined) {
+      writeFileSync(
+        join(dir, "task.json"),
+        JSON.stringify({ id: "TASK-028", phase: "PHASE-3", title: "t", type, status: "draft" })
+      );
+    }
+    writeFileSync(
+      join(dir, "state.json"),
+      JSON.stringify({
+        taskId: "TASK-028",
+        currentStepId: "implement",
+        stepOrder: ["design", "implement", "review", "qa"],
+        status: "in-progress",
+        reopenCount: 0,
+        timestamps: { createdAt: NOW, updatedAt: NOW },
+      })
+    );
+    return dir;
+  }
+
+  // AC-2 — each task type maps to an engineer role with a definition on disk
+  test.each([
+    ["backend", "backend-engineer"],
+    ["frontend", "frontend-engineer"],
+    ["devops", "infra-engineer"],
+    ["qa", "qa"],
+  ])("a %s task resolves $detect to %s", async (type, expected) => {
+    expect(engineerRoleForTaskType(type)).toBe(expected);
+
+    const dir = taskDirWithType(type);
+    const desc = (await prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })) as any;
+    expect(desc.role).toBe(expected);
+  });
+
+  test("every resolved engineer role has an agent definition on disk", () => {
+    const agentsDir = join(dirname(dirname(import.meta.dir)), ".claude", "agents");
+    for (const role of Object.values(ENGINEER_ROLE_FOR_TASK_TYPE)) {
+      expect(existsSync(join(agentsDir, `${role}.md`))).toBe(true);
+    }
+  });
+
+  // AC-1 — no artifact may carry a placeholder role
+  test("neither the descriptor nor input.json carries $detect", async () => {
+    const dir = taskDirWithType("backend");
+    const desc = (await prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })) as any;
+    expect(desc.role.startsWith("$")).toBe(false);
+
+    const input = readJson<{ role: string }>(join(dir, "STEP-002-implement", "input.json"));
+    expect(input.role).toBe("backend-engineer");
+    expect(input.role.startsWith("$")).toBe(false);
+  });
+
+  // AC-1 — dryRun must report what prepare would dispatch
+  test("dryRun resolves $detect the same way prepare does", async () => {
+    const dir = taskDirWithType("frontend");
+    const plan = (await dryRun({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })) as any;
+    expect(plan.input.role).toBe("frontend-engineer");
+
+    await prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW });
+    const written = readJson<{ role: string }>(join(dir, "STEP-002-implement", "input.json"));
+    expect(plan.input.role).toBe(written.role);
+  });
+
+  // the reopen path rebuilds input.json — it must not write the placeholder back
+  test("reopening a $detect step keeps the resolved role", async () => {
+    const dir = taskDirWithType("devops");
+    await prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW });
+    writeFileSync(join(dir, "STEP-002-implement", "output.json"), JSON.stringify(invalidOutput));
+
+    await ingest({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW });
+    const input = readJson<{ role: string }>(join(dir, "STEP-002-implement", "input.json"));
+    expect(input.role).toBe("infra-engineer");
+  });
+
+  // AC-3 — an unmappable type fails naming the type and the step
+  test("an unknown task type fails naming the type and the step", async () => {
+    const dir = taskDirWithType("mobile");
+    await expect(
+      prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })
+    ).rejects.toThrow(/task type "mobile" has no engineer role/);
+    await expect(
+      prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })
+    ).rejects.toThrow(/at step "implement"/);
+  });
+
+  // AC-3 — a missing task.json fails rather than dispatching a placeholder
+  test("a missing task.json fails rather than dispatching $detect", async () => {
+    const dir = taskDirWithType(undefined);
+    await expect(
+      prepare({ taskDir: dir, taskId: "TASK-028", steps: bugfixSteps, now: NOW })
+    ).rejects.toThrow(/no task.json with a "type"/);
+  });
+
+  // concrete roles are untouched
+  test("a concrete role is passed through unchanged", async () => {
+    const dir = tmpTaskDir();
+    const desc = (await prepare({ taskDir: dir, taskId: "TASK-028", steps, now: NOW })) as any;
+    expect(desc.role).toBe("analyst");
   });
 });
