@@ -66,6 +66,21 @@ them in it:
 
 If none exist, say so explicitly — "nothing is waiting on you" is information.
 
+## Reading a closed phase
+
+When a phase has a `summary.json`, it has been through `nit:phase-summary`, and two of its fields
+change what you show:
+
+- `milestone.reached: false` — the phase was summarised and came up short. Show the phase as
+  `milestone not reached` and list the `unmet` criteria beneath it. This is the one phase-level thing
+  that needs a person, so it belongs with the tasks that do.
+- `unreadable[]` — the summary itself declared tasks it could not read. Carry those into **NOT READ**
+  rather than re-deriving them; the summary already did that work.
+
+A phase whose `phase.json` says `done` while its `summary.json` says `milestone.reached: false` is a
+contradiction — `nit:phase-summary` sets the status only when the milestone is reached, so one of the
+two was hand-edited. Report both values and say they disagree; do not pick a winner.
+
 ## Output
 
 ```
@@ -79,7 +94,8 @@ WAITING ON YOU
   TASK-029  blocked            step 2/5 design     → needs-splitting: spans backend and frontend
   TASK-031  escalated          step 3/5 implement  → reopened 4× on schema errors
 
-PHASE-2  Deterministic Supervisor and Core Pipeline               done
+PHASE-2  Deterministic Supervisor and Core Pipeline    in-progress · milestone not reached
+  SC-3 unmet  2 of 10 validation hooks are not executable
   TASK-017  Rewrite nit:design and nit:implement    backend   done       5/5
 PHASE-3  Review, QA, and Boundary Enforcement                     in-progress
   TASK-021  Rewrite nit:review for JSON output      devops    done       5/5
@@ -123,7 +139,7 @@ Name exactly one action — the most immediate. Work down this list and stop at 
 | 3 | Any task `blocked` | manual: resolve the reason, then the transition in `nit:continue` |
 | 4 | Any task `awaiting_approval` | `/nit:approve <p> <t>` (or `/nit:reject`) |
 | 5 | No `prd/summary.json` | `/nit:clarify <prd>` |
-| 6 | `summary.json` has an empty `answer` | `/nit:clarify` |
+| 6 | `prd/summary.json` has an empty `answer` | `/nit:clarify` |
 | 7 | No `phase.json` anywhere | `/nit:phases` |
 | 8 | The active phase has no tasks | `/nit:tasks N` |
 | 9 | A task has no `state.json` | `/nit:continue N M` — it has not started |

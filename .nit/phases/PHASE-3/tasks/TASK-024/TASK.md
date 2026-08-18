@@ -8,7 +8,7 @@
     <title>Rewrite nit:status for v2 Artifacts</title>
     <type>devops</type>
     <module>.claude/skills</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>
