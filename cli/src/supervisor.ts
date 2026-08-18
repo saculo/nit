@@ -400,7 +400,10 @@ export async function ingest(
   // A step that stopped without writing anything is blocked, not broken: there
   // is nothing to repair, so record the miss and park for a human (AC-3).
   if (output === undefined) {
-    const explanation = `No output.json in ${dir}; the step produced no result.`;
+    // Name the step directory relatively: validation.json is a committed
+    // artifact, and an absolute --task-dir would bake a machine-specific path
+    // into it (the TASK-017 RW-2 lesson).
+    const explanation = `No output.json in ${stepDirName(idx, step.id)}; the step produced no result.`;
     const validation: ValidationResult = {
       schemaValid: false,
       policyValid: true,

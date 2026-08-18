@@ -8,7 +8,7 @@
     <title>Blocked-Step Escalation Contract for Step Skills</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>in-progress</status>
+    <status>done</status>
   </meta>
 
   <user-story>

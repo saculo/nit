@@ -490,6 +490,10 @@ describe("supervisor — blocked-step escalation", () => {
     expect(validation.schemaValid).toBe(false);
     expect(validation.action).toBe("block");
     expect(validation.errors).toHaveLength(1);
+    // the recorded message names the step dir relatively — validation.json is
+    // committed, so an absolute --task-dir must not leak into it (RW-2)
+    expect((validation.errors[0] as { message: string }).message).toContain("STEP-001-analyze");
+    expect((validation.errors[0] as { message: string }).message).not.toContain(dir);
     const input = readJson<{ context: { repairErrors?: unknown[] } }>(
       join(dir, "STEP-001-analyze", "input.json")
     );
