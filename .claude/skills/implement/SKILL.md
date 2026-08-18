@@ -32,17 +32,19 @@ report what you did. Your output is a machine-readable `implementation-result` e
 ## Procedure
 
 1. Read the design result from `context.priorOutputs.design`. If it is missing or contradicts the
-   task's acceptance criteria, stop and report rather than guessing.
+   task's acceptance criteria, emit a blocked result rather than guessing — see "When you cannot
+   proceed".
 2. Derive an ordered plan from the design's `filePlan` and `components` — dependency order, tests
    included. Keep it in working memory; it is not a persisted artifact.
 3. Implement, following the project's conventions for its ecosystem and the skills in `skillList`.
 4. Record any departure from the design as you go:
    - **minor** (naming, file placement) — proceed, note it in `deviations`
    - **moderate** (different approach, extra component) — proceed, note it in `deviations`
-   - **major** (the design is wrong, or scope must change) — STOP and report; do not implement past it
+   - **major** (the design is wrong, or scope must change) — STOP; emit a blocked result and do not
+     implement past it
 5. Run the test suite. Capture the command and the outcome for the `tests` field.
 6. Verify each acceptance criterion against actual behaviour, not intent. If one cannot be satisfied,
-   stop and report.
+   emit a `criterion-unsatisfiable` blocked result.
 7. Commit the source changes (see Git below).
 8. Write `output.json` in the step directory and validate it:
 
@@ -110,6 +112,43 @@ commit reference go in `artifacts[]` (ADR-0005).
 result the reviewer needs, not something to hide. `deviations` and `techDebt` may be empty arrays but
 should be present so their emptiness is a deliberate claim. A non-zero exit from the validator means
 the output is malformed — fix and re-write before finishing.
+
+## When you cannot proceed
+
+A major deviation, a design that contradicts the acceptance criteria, or a criterion you cannot
+satisfy all mean the same thing: stop implementing. Do NOT stop with prose — emit a `blocked` result,
+which is a valid `output.json`, so the supervisor parks the task at `blocked` for a human rather than
+crashing or re-running you against the same wall:
+
+```json
+{
+  "taskId": "TASK-018",
+  "stepId": "implement",
+  "stepType": "implement",
+  "result": {
+    "resultType": "blocked",
+    "reason": "criterion-unsatisfiable",
+    "explanation": "AC-3 requires sub-100ms p99, but the upstream service's own SLO is 250ms; no implementation on this path can satisfy it.",
+    "detail": { "criterionId": "AC-3" }
+  }
+}
+```
+
+`reason` is one of:
+
+| reason | Use when |
+|---|---|
+| `contradictory-input` | The design contradicts the acceptance criteria, a prior ADR, or itself. **Requires** `detail.conflictsWith`. |
+| `criterion-unsatisfiable` | An acceptance criterion cannot be met as written. **Requires** `detail.criterionId`. |
+| `needs-splitting` | The work turns out to span two task types. **Requires** `detail.taskTypes`. |
+
+`explanation` is required and must be specific enough to act on. Commit whatever complete, working
+source you have before reporting; leave partial work uncommitted. Validate the blocked output exactly
+as you would an implementation result. Do not report `no-output` — that reason is the supervisor's,
+for a step that wrote nothing at all.
+
+A blocked report is not a substitute for a `deviation`. Minor and moderate deviations are noted and
+the work continues; only a major one blocks.
 
 ## Rules
 

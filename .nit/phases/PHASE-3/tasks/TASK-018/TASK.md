@@ -8,7 +8,7 @@
     <title>Blocked-Step Escalation Contract for Step Skills</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>in-progress</status>
   </meta>
 
   <user-story>
@@ -23,13 +23,14 @@
     - Supervisor `ingest` handling: a blocked output is neither valid-and-approvable nor a repair case — it transitions the task to `blocked` (already in `task-state.schema.json`) without incrementing `reopenCount`
     - A graceful path when a step directory has no `output.json` at all: `ingest` currently throws `No output.json in <dir>`, which is what a specialist that "stops and reports" produces today
     - Update `nit:design` and `nit:implement` to emit the blocked output instead of stopping with prose: the split-task rule (`design/SKILL.md`) and the major-deviation and unsatisfiable-criterion rules (`implement/SKILL.md`)
-    - Apply the same contract to `nit:analyze`, and to `nit:review` and `nit:qa` as they are written in this phase
+    - Apply the same contract to `nit:analyze`
     - Tests: blocked ingest, missing-output ingest, and reopen-budget interaction
     </in-scope>
     <out-of-scope>
     - Acting on a `needs-splitting` report — creating the split tasks, rewriting the backlog, or re-archetyping (a human/orchestrator decision; this task only makes the report expressible and routable)
     - Repair/reopen flow refinement beyond leaving `reopenCount` untouched for blocked outputs (PHASE-4)
-    - Unblocking commands (`nit:unblock` or similar) — a blocked task is resumed by the existing approval/reject machinery or by direct state edit until PHASE-4
+    - Blocked-contract conformance in `nit:review` and `nit:qa` — neither exists on the v2 contract yet, so conformance is an acceptance criterion of the two rewrite tasks in this phase, not of this one
+    - Unblocking commands (`nit:unblock` or similar) — until PHASE-4 a blocked task is resumed by the documented manual `state.json` transition in `continue/SKILL.md`, which is the one sanctioned hand-edit
     </out-of-scope>
   </scope>
 
@@ -60,9 +61,9 @@
       Then it writes and validates an output.json reporting the corresponding reason code, before stopping.
     </criterion>
     <criterion id="AC-6">
-      Given the rewritten nit:review and nit:qa skills,
-      When either cannot complete its step,
-      Then it uses the same blocked contract rather than a skill-specific convention.
+      Given the analyze, design, and implement step skills,
+      When any of them cannot complete its step,
+      Then each uses the same blocked contract rather than a skill-specific convention.
     </criterion>
   </acceptance-criteria>
 
