@@ -14,14 +14,15 @@ PHASE-3 was planned as the phase that adds the pipeline's quality gates: rewrite
 It delivered something adjacent and larger. A survey at the start found that four skills still read the
 prose artifacts ADR-0005 retired, one step skill did not exist at all, and `nit:init` was scaffolding
 v1 artifact types into every new project. The phase became the v1-to-v2 migration, and then — because
-every review found something — the phase that fixed six defects nobody had planned for.
+every review found something — the phase that fixed five defects nobody had planned for.
 
 **Delivered**: the complete migration (TASK-021 through TASK-026), the blocked-step contract
-(TASK-018), and four defect fixes (TASK-027 through TASK-029, with TASK-030 and TASK-031 filed).
+(TASK-018), and five defect fixes (TASK-027, TASK-028, TASK-029, TASK-031, with TASK-030 filed and
+open).
 **Not delivered**: boundary enforcement, ADR trigger automation, and the three routing introspection
 commands — six of sixteen success criteria, none of them started.
 
-Ten tasks done, two filed and open. Ten reviews, one rework cycle. 242 tests, up from 96.
+Eleven tasks done, one open. Eleven reviews, one rework cycle. 263 tests, up from 96.
 
 ## What Worked
 
@@ -41,12 +42,13 @@ tests could not have.
 **Filing findings as tasks instead of absorbing them.** Six of the twelve tasks in this phase were
 filed by a review rather than planned: 027, 028, 029, 030, 031, and the AC-6 rescope in 018. Each was
 recorded with a reproduction and acceptance criteria at the moment it was understood, which is when the
-context is cheapest. None was fixed inside the task that found it, and that restraint is why the
-diffs stayed reviewable.
+context is cheapest, and none was fixed inside the task that found it — that restraint is why the diffs
+stayed reviewable. Four of the five filed tasks have since been closed, which is the evidence the
+practice works: a finding recorded with a reproduction is one somebody can pick up later.
 
-**Small, sequenced tasks with a review between each.** Ten tasks, ten reviews, one rework cycle. The
-low rework rate is not evidence of low defect density — 58 findings were raised — it is evidence that
-finding them at review is cheaper than finding them at rework.
+**Small, sequenced tasks with a review between each.** Eleven tasks, eleven reviews, one rework cycle.
+The low rework rate is not evidence of low defect density — 63 findings were raised — it is evidence
+that finding them at review is cheaper than finding them at rework.
 
 ## What Didn't
 
@@ -58,8 +60,8 @@ and passed. The interaction was found by probing beyond the criteria, not by the
 
 **The reviewer and the implementer were the same session, throughout.** Every review states this, and
 the mitigation cited — CodeRabbit as the external pass — stopped being true at TASK-021. CodeRabbit has
-reported "Review skipped: manual review required for this OSS repository" for eight consecutive pull
-requests. The reviews found 58 findings and fixed or filed all of them, so the process has value, but
+reported "Review skipped: manual review required for this OSS repository" for ten consecutive pull
+requests. The reviews found 63 findings and fixed or filed all of them, so the process has value, but
 no independent reader has seen any code in this phase. This is the phase's largest unmitigated risk and
 it was carried, not solved.
 
@@ -95,24 +97,33 @@ passing suite, says the schemas and the code drift apart by default and nothing 
 a conformance test per declared field asserting something consumes it — the same shape of test this
 phase adopted for skill prose, applied to data.
 
-**A second pattern, smaller: guarantees documented in the wrong place.** TASK-028's resolved-role
-guarantee existed in code but not in `nit:continue`, where the consumer reads. TASK-027's rejection
-invariant was enforced in the resolver but absent from `archetype.schema.json`, where an author looks.
-TASK-023's `summary.json` was declared as an input to `nit:status` and never used. Each was found by
-asking "where would someone look for this?" rather than "is this correct?".
+**A second pattern, and it kept recurring: guarantees documented in the wrong place.** TASK-028's
+resolved-role guarantee existed in code but not in `nit:continue`, where the consumer reads. TASK-027's
+rejection invariant was enforced in the resolver but absent from `archetype.schema.json`, where an
+author looks. TASK-023's `summary.json` was declared as an input to `nit:status` and never used.
+TASK-031's rework context was threaded into state and skills but not into `nit:continue`, in the very
+task that fixed the primary pattern. Each was found by asking "where would someone look for this?"
+rather than "is this correct?".
 
-**Reviews found roughly six findings per task, consistently** — 58 across ten reviews, ranging from
+**And its inverse, found last: documentation that asserts a behaviour the code does not have.**
+TASK-031 exists because `nit:reject` had always said its `--comment` "is the specialist's rework
+context". It never reached the specialist. Nobody noticed across two phases because the sentence read
+as a description rather than an unfulfilled promise. Prose asserting behaviour is a claim that can be
+false, and nothing tests prose by default — which is precisely what the conformance tests adopted in
+this phase exist to change.
+
+**Reviews found roughly six findings per task, consistently** — 63 across eleven reviews, ranging from
 four to seven, with no downward trend as the phase progressed. The rate did not fall as the codebase
 got healthier, which suggests the reviews were finding what was there rather than exhausting a fixed
 backlog of defects.
 
 ## Quantitative
 
-- **Tasks**: 12 total — 10 done, 2 open (TASK-030, TASK-031). None blocked or escalated.
-- **Origin**: 6 planned at phase start, 6 filed by reviews mid-phase.
-- **Reviews**: 10, all `approved`. 1 rework cycle (TASK-017, carried in from PHASE-2).
-- **Findings**: 58 raised. 15 fixed within the reviewing task, 6 routed or filed as new tasks, the rest recorded as notes.
-- **Tests**: 96 → 242 (+146). 12 test files, up from 8. Zero failures at every commit.
+- **Tasks**: 12 total — 11 done, 1 open (TASK-030). None blocked or escalated.
+- **Origin**: 6 planned at phase start, 6 filed by reviews mid-phase; 5 of those 6 closed.
+- **Reviews**: 11, all `approved`. 1 rework cycle (TASK-017, carried in from PHASE-2).
+- **Findings**: 63 raised. 16 fixed within the reviewing task, 6 routed or filed as new tasks, the rest recorded as notes.
+- **Tests**: 96 → 263 (+167). 12 test files, up from 8. Zero failures at every commit.
 - **Success criteria**: 16 total — 10 met, 6 unmet, all six unmet being unstarted planned scope.
 - **ADRs**: 1 written (ADR-0006, settling design Q-4 after two deferrals), 1 candidate proposed.
 
@@ -123,11 +134,6 @@ milestone is not reached. The honest options are to continue the phase with the 
 and routing work, or to re-scope PHASE-3 to what it actually became — the migration phase — and move
 the remainder to a new phase. Either is defensible; drifting into PHASE-4 without choosing is not.
 
-**Close TASK-031 before the pipeline is used in earnest.** `nit:reject` documents its `--comment` as
-"the specialist's rework context" and it never reaches the specialist. TASK-029 removed the human
-checkpoint that used to compensate, so a rejected review now sends a blind rework straight back to the
-same reviewer. This is the one open defect that degrades the pipeline's day-to-day behaviour.
-
 **Close TASK-030 before running another phase summary.** This summary had to derive its criteria from
 `PHASE.md` prose because `phase.json` has nowhere to put them. Every future phase hits the same wall.
 
@@ -137,6 +143,11 @@ field would have caught three of them before they shipped.
 
 **PHASE-4's `nit:status` run-log integration must be re-planned.** TASK-024 rewrote that skill onto v2
 artifacts; the v1 dashboard PHASE-4 was planned against no longer exists.
+
+**Close the `context` shape before it grows further.** It now carries five fields — `taskId`,
+`stepId`, `priorOutputs`, `repairErrors`, `reworkFrom` — and `step-input.schema.json` declares it as an
+open object, so none of them is schema-enforced. A misspelled field name in a skill produces no
+validation error. Not urgent, but each addition raises the cost of closing it.
 
 **PHASE-4's distribution work now has no source tree to copy.** ADR-0006 deleted `.nit/skills/` and
 `.nit/agents/`, and `nit:init` no longer populates skills or agents anywhere. `bunx @nit/cli install`

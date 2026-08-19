@@ -43,6 +43,12 @@ report the gap when a criterion has nothing exercising it.
   task directory.
 - `context.repairErrors`, when present — schema errors from your previous attempt at this step. Fix
   exactly those and re-emit.
+- `context.reworkFrom`, when present — this step was reopened because a **later** step was rejected,
+  not because your output was malformed. It carries `stepId` (the step that was rejected), `comment`
+  (the reviewer's reason — the whole point of the rejection), and `output` (that step's `output.json`,
+  relative to the task directory, since a rejection routes backwards and `priorOutputs` cannot reach
+  it). Read the comment and the rejected step's findings, and fix what they name. Re-doing the step
+  without reading them sends the same work back to the same reviewer.
 - `task.json` for the task — the acceptance criteria you are verifying. This is the contract.
 - The language and project skills in `skillList`; load them for the project's test conventions.
 - **Brownfield only**: `.nit/project/initial-state.md` for how this codebase is built and run.

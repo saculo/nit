@@ -8,7 +8,7 @@
     <title>Rework Context Must Reach the Reopened Step</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>

@@ -15,7 +15,9 @@
     },
     "stepOrder": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Ordered list of step IDs defining the execution sequence."
     },
     "status": {
@@ -43,13 +45,52 @@
     "timestamps": {
       "type": "object",
       "properties": {
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "completedAt": { "type": "string", "format": "date-time" }
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
-      "required": ["createdAt", "updatedAt"]
+      "required": [
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "reworkFrom": {
+      "type": "object",
+      "description": "Set when a rejection routed work backwards, and cleared once the reopened step succeeds. Carries why the step was reopened, which repairErrors cannot express: a repair means the output was malformed, a rework means it was well-formed and unsatisfactory.",
+      "properties": {
+        "stepId": {
+          "type": "string",
+          "description": "The step that was rejected."
+        },
+        "comment": {
+          "type": "string",
+          "description": "The rejection comment \u2014 the specialist's rework context."
+        },
+        "output": {
+          "type": "string",
+          "description": "Path to the rejecting step's output.json, relative to the task directory. It is not reachable through priorOutputs, which maps only steps before the current index."
+        }
+      },
+      "required": [
+        "stepId"
+      ]
     }
   },
-  "required": ["taskId", "currentStepId", "stepOrder", "status", "reopenCount"],
+  "required": [
+    "taskId",
+    "currentStepId",
+    "stepOrder",
+    "status",
+    "reopenCount"
+  ],
   "additionalProperties": false
 }

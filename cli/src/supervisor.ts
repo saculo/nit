@@ -13,7 +13,26 @@ export interface TaskState {
   status: "pending" | "in-progress" | "awaiting_approval" | "blocked" | "escalated" | "done" | "failed";
   reopenCount: number;
   repairRequired?: boolean;
+  reworkFrom?: ReworkFrom;
   timestamps?: { createdAt: string; updatedAt: string; completedAt?: string };
+}
+
+/**
+ * Why a step was reopened by a rejection rather than by a validation failure.
+ * `repairErrors` says the output was malformed; this says it was well-formed and
+ * unsatisfactory, which calls for a different response (TASK-031).
+ */
+export interface ReworkFrom {
+  /** The step that was rejected. */
+  stepId: string;
+  /** The rejection comment — the specialist's rework context. */
+  comment?: string;
+  /**
+   * The rejecting step's output.json, relative to the task directory. Not
+   * reachable through priorOutputs, which maps only steps before the current
+   * index — and a rejection routes backwards, so the cause is always after.
+   */
+  output?: string;
 }
 
 /** Input payload handed to a specialist (step-input.schema.json). */
@@ -94,16 +113,19 @@ export function initialState(taskId: string, steps: ArchetypeStep[], now: string
  */
 export function advanceState(state: TaskState, now: string): TaskState {
   const next = state.stepOrder[currentIndex(state) + 1];
+  // Advancing means the current step succeeded, so any rework it was carrying is
+  // discharged. Leaving it would resurface a stale rejection on a later reopen.
+  const { reworkFrom: _discharged, ...cleared } = state;
   if (next === undefined) {
     return {
-      ...state,
+      ...cleared,
       status: "done",
       repairRequired: false,
       timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now, completedAt: now },
     };
   }
   return {
-    ...state,
+    ...cleared,
     currentStepId: next,
     status: "in-progress",
     reopenCount: 0,
@@ -163,8 +185,9 @@ export function buildStepInput(
 
 /** Result of ingesting a valid step output. */
 export function ingestValid(state: TaskState, now: string): { state: TaskState; approval: Approval } {
+  const { reworkFrom: _discharged, ...cleared } = state;
   const updated: TaskState = {
-    ...state,
+    ...cleared,
     status: "awaiting_approval",
     repairRequired: false,
     timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now },
@@ -334,9 +357,15 @@ async function assembleContext(
 ): Promise<Record<string, unknown>> {
   const buildContext = opts.buildContext ?? defaultContext;
   const context = buildContext(state, step, repairErrors);
-  if (context.priorOutputs !== undefined) return context;
+  // A rejection routes backwards, so the rejecting step is always *after* this
+  // one and priorOutputs structurally cannot reach it. Thread it separately.
+  const withRework =
+    state.reworkFrom !== undefined && context.reworkFrom === undefined
+      ? { ...context, reworkFrom: state.reworkFrom }
+      : context;
+  if (withRework.priorOutputs !== undefined) return withRework;
   const outputs = await priorOutputs(opts.taskDir, opts.steps, stepIdx);
-  return Object.keys(outputs).length > 0 ? { ...context, priorOutputs: outputs } : context;
+  return Object.keys(outputs).length > 0 ? { ...withRework, priorOutputs: outputs } : withRework;
 }
 
 /**
@@ -608,7 +637,8 @@ export async function dryRun(opts: SupervisorOptions): Promise<DryRunPlan | { do
 export function rejectState(
   state: TaskState,
   rejectionRouting: Record<string, string>,
-  now: string
+  now: string,
+  rework?: Omit<ReworkFrom, "stepId">
 ): TaskState {
   const target = rejectionRouting[state.currentStepId];
   if (!target) throw new Error(`No rejection routing for step "${state.currentStepId}"`);
@@ -627,6 +657,10 @@ export function rejectState(
     status: "in-progress",
     repairRequired: false,
     reopenCount: 0,
+    // The rejection's reasoning has to travel with the state: it is written into
+    // the *rejected* step's approval.json, but the *reopened* step is the one
+    // that needs it, and nothing else carries it across (TASK-031).
+    reworkFrom: { stepId: state.currentStepId, ...rework },
     timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now },
   };
 }
@@ -697,7 +731,13 @@ export async function rejectStep(
   });
   await writeJson(join(dir, "approval.json"), approval, "approval");
   const rejectedStep = state.currentStepId;
-  const next = rejectState(state, opts.rejectionRouting, now);
+  const rejectedDir = stepDirName(currentIndex(state), rejectedStep);
+  const outputPath = join(rejectedDir, "output.json");
+  const next = rejectState(state, opts.rejectionRouting, now, {
+    comment: opts.comment,
+    // Task-relative so the committed input.json stays portable (TASK-017 RW-2).
+    output: (await Bun.file(join(opts.taskDir, outputPath)).exists()) ? outputPath : undefined,
+  });
   await writeJson(join(opts.taskDir, "state.json"), next, "task-state");
   return { status: next.status, rejectedStep, reopenedStep: next.currentStepId };
 }

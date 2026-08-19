@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeAll } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join, dirname } from "path";
 import {
@@ -22,8 +22,12 @@ import {
   defaultValidateOutput,
   stepIsGated,
   approveStep,
+  rejectStep,
+  ingestValid,
   type TaskState,
 } from "../src/supervisor";
+import { resolveSchema } from "../src/schema-resolver";
+import { createAjv } from "../src/ajv";
 
 const NOW = "2026-07-23T00:00:00.000Z";
 let steps: ArchetypeStep[]; // backend-feature: analyze, design, implement, review, qa
@@ -841,5 +845,149 @@ describe("supervisor — per-step approval gating", () => {
   test("base.json gates exactly design and review", () => {
     const gated = steps.filter(stepIsGated).map((s) => s.id);
     expect(gated).toEqual(["design", "review"]);
+  });
+});
+
+// TASK-031 — nit:reject documents its --comment as "the specialist's rework
+// context", and it never reached the specialist. The comment is written into the
+// *rejected* step's approval.json, while the *reopened* step is the one that
+// needs it, and priorOutputs structurally cannot reach it: a rejection routes
+// backwards, so the cause is always after the current index.
+describe("supervisor — rework context reaches the reopened step", () => {
+  const ROUTING = { review: "implement", implement: "implement", design: "design" };
+
+  function rejectableTask(): string {
+    const dir = tmpTaskDir();
+    writeFileSync(
+      join(dir, "state.json"),
+      JSON.stringify({
+        taskId: "TASK-031",
+        currentStepId: "review",
+        stepOrder: ["analyze", "design", "implement", "review", "qa"],
+        status: "awaiting_approval",
+        reopenCount: 0,
+        timestamps: { createdAt: NOW, updatedAt: NOW },
+      })
+    );
+    mkdirSync(join(dir, "STEP-004-review"), { recursive: true });
+    writeFileSync(
+      join(dir, "STEP-004-review", "output.json"),
+      JSON.stringify({
+        taskId: "TASK-031",
+        stepId: "review",
+        stepType: "review",
+        result: { resultType: "review", verdict: "changes-requested" },
+      })
+    );
+    return dir;
+  }
+
+  // AC-1
+  test("rejecting records the rejecting step and its comment in state", async () => {
+    const dir = rejectableTask();
+    await rejectStep({ taskDir: dir, now: NOW, rejectionRouting: ROUTING, comment: "AC-2 is not satisfied." });
+
+    const state = readJson<TaskState>(join(dir, "state.json"));
+    expect(state.currentStepId).toBe("implement");
+    expect(state.reworkFrom?.stepId).toBe("review");
+    expect(state.reworkFrom?.comment).toBe("AC-2 is not satisfied.");
+  });
+
+  test("the reopened step's input.json carries the rework context", async () => {
+    const dir = rejectableTask();
+    await rejectStep({ taskDir: dir, now: NOW, rejectionRouting: ROUTING, comment: "Fix the default handling." });
+    await prepare({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+
+    const input = readJson<{ context: { reworkFrom?: { stepId: string; comment: string } } }>(
+      join(dir, "STEP-003-implement", "input.json")
+    );
+    expect(input.context.reworkFrom?.stepId).toBe("review");
+    expect(input.context.reworkFrom?.comment).toBe("Fix the default handling.");
+  });
+
+  // AC-2 — the cause is after the current index, so priorOutputs cannot carry it
+  test("the rejecting step's output is reachable, though priorOutputs cannot reach it", async () => {
+    const dir = rejectableTask();
+    await rejectStep({ taskDir: dir, now: NOW, rejectionRouting: ROUTING, comment: "c" });
+    await prepare({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+
+    const input = readJson<{ context: { reworkFrom?: { output?: string }; priorOutputs?: Record<string, string> } }>(
+      join(dir, "STEP-003-implement", "input.json")
+    );
+    const path = input.context.reworkFrom?.output;
+    expect(path).toBe(join("STEP-004-review", "output.json"));
+    expect(existsSync(join(dir, path!))).toBe(true);
+    // the point of the field: review is not, and cannot be, in priorOutputs
+    expect(input.context.priorOutputs?.review).toBeUndefined();
+  });
+
+  test("no output path is recorded when the rejected step wrote none", async () => {
+    const dir = rejectableTask();
+    rmSync(join(dir, "STEP-004-review", "output.json"));
+    await rejectStep({ taskDir: dir, now: NOW, rejectionRouting: ROUTING, comment: "c" });
+    expect(readJson<TaskState>(join(dir, "state.json")).reworkFrom?.output).toBeUndefined();
+  });
+
+  // AC-3 — repair and rework are different causes and must stay distinguishable
+  test("a repair reopen carries repairErrors and no rework context", async () => {
+    const dir = tmpTaskDir();
+    await prepare({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+    writeFileSync(join(dir, "STEP-001-analyze", "output.json"), JSON.stringify(invalidOutput));
+    await ingest({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+
+    const input = readJson<{ context: { repairErrors?: unknown[]; reworkFrom?: unknown } }>(
+      join(dir, "STEP-001-analyze", "input.json")
+    );
+    expect(input.context.repairErrors?.length).toBeGreaterThan(0);
+    expect(input.context.reworkFrom).toBeUndefined();
+  });
+
+  test("a step reworked and then failing validation keeps both causes", async () => {
+    const dir = rejectableTask();
+    await rejectStep({ taskDir: dir, now: NOW, rejectionRouting: ROUTING, comment: "rework me" });
+    await prepare({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(invalidOutput));
+    await ingest({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+
+    const input = readJson<{ context: { repairErrors?: unknown[]; reworkFrom?: { comment: string } } }>(
+      join(dir, "STEP-003-implement", "input.json")
+    );
+    // the rework is still outstanding — the step has not succeeded yet
+    expect(input.context.reworkFrom?.comment).toBe("rework me");
+    expect(input.context.repairErrors?.length).toBeGreaterThan(0);
+  });
+
+  // AC-4 — success discharges the rework; a later reopen must not resurface it
+  test("advancing clears the rework, so a later reopen carries no stale rejection", async () => {
+    const dir = rejectableTask();
+    await rejectStep({ taskDir: dir, now: NOW, rejectionRouting: ROUTING, comment: "stale if it survives" });
+    await prepare({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+    writeFileSync(
+      join(dir, "STEP-003-implement", "output.json"),
+      JSON.stringify({
+        taskId: "TASK-031",
+        stepId: "implement",
+        stepType: "implement",
+        result: { resultType: "implementation", filesChanged: [{ path: "a.ts", action: "modified" }] },
+      })
+    );
+    await ingest({ taskDir: dir, taskId: "TASK-031", steps, now: NOW });
+    expect(readJson<TaskState>(join(dir, "state.json")).reworkFrom).toBeUndefined();
+  });
+
+  test("parking for approval also discharges the rework", () => {
+    const state: TaskState = {
+      ...initialState("TASK-031", steps, NOW),
+      currentStepId: "design",
+      reworkFrom: { stepId: "review", comment: "c" },
+    };
+    expect(ingestValid(state, NOW).state.reworkFrom).toBeUndefined();
+  });
+
+  test("a task-state carrying reworkFrom is schema-valid", () => {
+    const state = { ...initialState("TASK-031", steps, NOW), reworkFrom: { stepId: "review", comment: "c" } };
+    const ajv = createAjv();
+    const compiled = ajv.compile(require(resolveSchema("task-state")!));
+    expect(compiled(state)).toBe(true);
   });
 });

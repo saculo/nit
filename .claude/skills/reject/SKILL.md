@@ -30,5 +30,8 @@ Run `/nit:continue` afterwards to prepare and dispatch the reopened step.
 ## Rules
 
 - The task must be at `awaiting_approval`; otherwise the command aborts with a clear message.
-- Always provide a `--comment` explaining the rejection — it is the specialist's rework context.
+- Always provide a `--comment` explaining the rejection — it is the specialist's rework context, and
+  it reaches them: the comment, the rejected step's id, and a path to its `output.json` are recorded in
+  `state.json.reworkFrom` and threaded into the reopened step's `input.json` as `context.reworkFrom`
+  (TASK-031). A vague comment is a vague rework instruction.
 - Do NOT hand-edit `state.json` or `approval.json` — only the CLI transitions them.

@@ -126,3 +126,31 @@ describe("ADR-0006 — .nit/ holds project state only", () => {
     expect(adrs.some((f) => f.startsWith("0006-"))).toBe(true);
   });
 });
+
+// TASK-031 — a context field nothing reads is the defect pattern this phase kept
+// finding. reworkFrom is only useful if the steps reachable by rejection routing
+// know to read it, so pin that rather than trusting the prose stays in step.
+describe("every step skill reads both reopen causes", () => {
+  const SKILLS = ["analyze", "design", "implement", "review", "qa"];
+
+  test.each(SKILLS)("%s documents context.repairErrors", (skill) => {
+    const text = readFileSync(join(ROOT, ".claude", "skills", skill, "SKILL.md"), "utf8");
+    expect(text).toContain("context.repairErrors");
+  });
+
+  test.each(SKILLS)("%s documents context.reworkFrom", (skill) => {
+    const text = readFileSync(join(ROOT, ".claude", "skills", skill, "SKILL.md"), "utf8");
+    expect(text).toContain("context.reworkFrom");
+  });
+
+  test("nit:continue documents both reopen causes", () => {
+    const text = readFileSync(join(ROOT, ".claude", "skills", "continue", "SKILL.md"), "utf8");
+    expect(text).toContain("repairErrors");
+    expect(text).toContain("reworkFrom");
+  });
+
+  test("nit:reject no longer promises rework context it cannot deliver", () => {
+    const text = readFileSync(join(ROOT, ".claude", "skills", "reject", "SKILL.md"), "utf8");
+    expect(text).toContain("reworkFrom");
+  });
+});
