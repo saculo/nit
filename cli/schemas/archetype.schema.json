@@ -33,14 +33,16 @@
       "additionalProperties": {
         "type": "string"
       },
-      "description": "Map of step id to the step id to route to on rejection."
+      "description": "Map of step id to the step id to reopen when that step is rejected. Both ends must name steps this archetype resolves to, and every step gated for approval must have an entry \u2014 reject is one of the two answers to a gate, so a gated step without a route is a gate that only works one way. An ungated step never parks for approval and needs no entry. Declaring this on a child archetype replaces the parent's map rather than merging into it, so an archetype that removes inherited steps must state where rejections go. Resolution fails if any of this does not hold."
     },
     "overrides": {
       "type": "object",
       "properties": {
         "removeSteps": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Step ids to remove from the parent."
         },
         "addSteps": {
@@ -55,8 +57,12 @@
           "additionalProperties": {
             "type": "object",
             "properties": {
-              "role": { "type": "string" },
-              "approval": { "type": "boolean" }
+              "role": {
+                "type": "string"
+              },
+              "approval": {
+                "type": "boolean"
+              }
             },
             "additionalProperties": false
           },
@@ -67,39 +73,65 @@
       "description": "Step-level overrides for child archetypes."
     }
   },
-  "required": ["id"],
+  "required": [
+    "id"
+  ],
   "additionalProperties": false,
   "if": {
     "not": {
-      "required": ["extends"]
+      "required": [
+        "extends"
+      ]
     }
   },
   "then": {
-    "required": ["id", "steps"]
+    "required": [
+      "id",
+      "steps"
+    ]
   },
   "$defs": {
     "step": {
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "role": { "type": "string" },
-        "approval": { "type": "boolean" }
+        "id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "approval": {
+          "type": "boolean"
+        }
       },
-      "required": ["id", "role"],
+      "required": [
+        "id",
+        "role"
+      ],
       "additionalProperties": false
     },
     "addStep": {
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "role": { "type": "string" },
-        "approval": { "type": "boolean" },
+        "id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "approval": {
+          "type": "boolean"
+        },
         "after": {
           "type": "string",
           "description": "Insert this step after the step with this id."
         }
       },
-      "required": ["id", "role", "after"],
+      "required": [
+        "id",
+        "role",
+        "after"
+      ],
       "additionalProperties": false
     }
   }

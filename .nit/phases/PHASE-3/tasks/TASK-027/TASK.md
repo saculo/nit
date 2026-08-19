@@ -8,7 +8,7 @@
     <title>Rejection Routing Must Target a Step That Exists</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>
