@@ -612,6 +612,15 @@ export function rejectState(
 ): TaskState {
   const target = rejectionRouting[state.currentStepId];
   if (!target) throw new Error(`No rejection routing for step "${state.currentStepId}"`);
+  // Belt and braces against a hand-authored archetype or a hand-edited state:
+  // resolution validates this, but rejectState is reachable with any routing map
+  // and moving currentStepId outside stepOrder breaks the next prepare (TASK-027).
+  if (!state.stepOrder.includes(target)) {
+    throw new Error(
+      `Rejecting "${state.currentStepId}" would reopen "${target}", which is not in this task's ` +
+        `step order (${state.stepOrder.join(", ")}).`
+    );
+  }
   return {
     ...state,
     currentStepId: target,

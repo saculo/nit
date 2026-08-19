@@ -1,6 +1,11 @@
 {
   "id": "architecture-decision",
   "extends": "base",
+  "rejectionRouting": {
+    "analyze": "analyze",
+    "design": "design",
+    "review": "design"
+  },
   "overrides": {
     "removeSteps": ["implement", "qa"],
     "steps": {

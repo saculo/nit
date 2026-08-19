@@ -5,6 +5,7 @@ import {
   replacePlaceholders,
   applyOverrides,
   resolveArchetype,
+  assertRejectionRoutingResolvable,
   type ArchetypeStep,
 } from "../src/archetype-resolver";
 
@@ -221,5 +222,79 @@ describe("resolveArchetype", () => {
     const resolved = await resolveArchetype("bugfix");
     expect(resolved.rejectionRouting).not.toHaveProperty("analyze");
     expect(resolved.rejectionRouting).toHaveProperty("design");
+  });
+});
+
+// TASK-027 — rejection routing may only name steps the archetype actually has.
+// architecture-decision removed `implement` but inherited `review -> implement`,
+// so rejecting its review set currentStepId outside stepOrder, currentIndex
+// returned -1, and the next prepare dereferenced steps[-1].
+describe("rejection routing must resolve", () => {
+  const ALL = [
+    "backend-feature",
+    "frontend-feature",
+    "infra-change",
+    "bugfix",
+    "cross-module-change",
+    "architecture-decision",
+  ];
+
+  // AC-1 — across every shipped archetype, not just the broken one
+  test.each(ALL)("%s routes only to steps it has", async (name) => {
+    const { steps, rejectionRouting } = await resolveArchetype(name);
+    const ids = new Set(steps.map((s) => s.id));
+    for (const [from, to] of Object.entries(rejectionRouting)) {
+      expect(ids.has(from)).toBe(true);
+      expect(ids.has(to)).toBe(true);
+    }
+  });
+
+  // a gated step that cannot be rejected is a half-working gate
+  test.each(ALL)("%s can reject every step it gates", async (name) => {
+    const { steps, rejectionRouting } = await resolveArchetype(name);
+    const unrejectable = steps
+      .filter((s) => s.approval !== false && rejectionRouting[s.id] === undefined)
+      .map((s) => s.id);
+    expect(unrejectable).toEqual([]);
+  });
+
+  test("architecture-decision reopens design, not the removed implement step", async () => {
+    const { rejectionRouting } = await resolveArchetype("architecture-decision");
+    expect(rejectionRouting.review).toBe("design");
+  });
+
+  test("cross-module-change can reject its boundary-check step", async () => {
+    const { rejectionRouting } = await resolveArchetype("cross-module-change");
+    expect(rejectionRouting["boundary-check"]).toBe("implement");
+  });
+
+  // AC-3 — an unresolvable routing fails at resolution, naming the problem
+  test("a target that is not a step is rejected, naming both ends", () => {
+    const steps = [
+      { id: "design", role: "architect", approval: true },
+      { id: "review", role: "reviewer", approval: true },
+    ];
+    expect(() =>
+      assertRejectionRoutingResolvable("made-up", { design: "design", review: "implement" }, steps)
+    ).toThrow(/rejecting "review" would reopen "implement", which is not a step/);
+  });
+
+  test("a route keyed by a step that does not exist is rejected", () => {
+    const steps = [{ id: "design", role: "architect", approval: true }];
+    expect(() =>
+      assertRejectionRoutingResolvable("made-up", { design: "design", qa: "design" }, steps)
+    ).toThrow(/"qa" is not a step, but has a rejection route/);
+  });
+
+  test("a gated step with no route is rejected", () => {
+    const steps = [{ id: "design", role: "architect", approval: true }];
+    expect(() => assertRejectionRoutingResolvable("made-up", {}, steps)).toThrow(
+      /"design" is gated for approval but has no rejection route/
+    );
+  });
+
+  test("an ungated step needs no route", () => {
+    const steps = [{ id: "implement", role: "backend-engineer", approval: false }];
+    expect(() => assertRejectionRoutingResolvable("made-up", {}, steps)).not.toThrow();
   });
 });

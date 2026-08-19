@@ -156,13 +156,6 @@ If the user asks for changes, re-run the step that produced the artifact — for
 `/nit:reject` with their reasoning as the comment, which reopens the archetype's rejection-routing
 target. Never hand-edit the artifact to satisfy the feedback yourself.
 
-## Known limitations
-
-State these when they apply rather than failing opaquely:
-
-- **`architecture-decision` cannot be rejected at review.** Its rejection routing targets the
-  `implement` step, which that archetype removes (TASK-027).
-
 ## Rules
 
 - NEVER dispatch a step specialist — that is the supervisor's job, and duplicating it puts two

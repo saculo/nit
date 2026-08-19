@@ -2,9 +2,22 @@
   "id": "cross-module-change",
   "extends": "base",
   "engineerRole": "$detect",
+  "rejectionRouting": {
+    "analyze": "analyze",
+    "design": "design",
+    "implement": "implement",
+    "boundary-check": "implement",
+    "review": "implement",
+    "qa": "implement"
+  },
   "overrides": {
     "addSteps": [
-      { "id": "boundary-check", "after": "implement", "role": "reviewer", "approval": true }
+      {
+        "id": "boundary-check",
+        "after": "implement",
+        "role": "reviewer",
+        "approval": true
+      }
     ]
   }
 }
