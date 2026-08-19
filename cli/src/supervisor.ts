@@ -142,6 +142,15 @@ export async function resolveStepRole(
   return { ...step, role: engineerRoleForTaskType(task.type, step.id) };
 }
 
+/**
+ * Whether a step stops for a human decision. The archetype declares it per step
+ * (`approval`); an archetype that omits the flag is treated as gated, because
+ * inferring "no human review needed" from silence is not a safe default.
+ */
+export function stepIsGated(step: ArchetypeStep): boolean {
+  return step.approval !== false;
+}
+
 /** Build the step input payload for a specialist. */
 export function buildStepInput(
   taskId: string,
@@ -397,6 +406,7 @@ export async function prepare(
 /** Result of ingesting a step's output.json. */
 export type IngestResult =
   | { valid: true; status: "awaiting_approval"; stepId: string }
+  | { valid: true; status: string; stepId: string; gated: false; advancedTo?: string }
   | {
       valid: boolean;
       blocked: true;
@@ -474,11 +484,36 @@ export async function ingest(
   }
 
   if (errors.length === 0) {
-    const { state: next, approval } = ingestValid(state, now);
-    approval.timestamp = now;
+    // The archetype decides whether this step stops for a human (TASK-029).
+    // An archetype that omits the flag is treated as gated: skipping human
+    // review is not a safe default to infer from silence.
+    if (stepIsGated(step)) {
+      const { state: next, approval } = ingestValid(state, now);
+      approval.timestamp = now;
+      await writeJson(join(dir, "approval.json"), approval, "approval");
+      await writeJson(statePath, next, "task-state");
+      return { valid: true, status: "awaiting_approval", stepId: step.id };
+    }
+
+    // Ungated: advance without a human decision. An auto-approved approval.json
+    // is still written so the step's record looks the same shape as a gated
+    // one — and so `prepare`, which decides by reading that file, cannot see a
+    // half-finished step if it runs before the state write lands.
+    const approval = buildApproval(state.taskId, step.id, "approved", {
+      approvedBy: "supervisor",
+      timestamp: now,
+      comment: `Step "${step.id}" is not gated by the archetype (approval: false).`,
+    });
     await writeJson(join(dir, "approval.json"), approval, "approval");
+    const next = advanceState(state, now);
     await writeJson(statePath, next, "task-state");
-    return { valid: true, status: "awaiting_approval", stepId: step.id };
+    return {
+      valid: true,
+      status: next.status,
+      stepId: step.id,
+      gated: false,
+      advancedTo: next.status === "done" ? undefined : next.currentStepId,
+    };
   }
 
   const maxReopen = opts.maxReopenCount ?? 3;
@@ -577,6 +612,15 @@ export function rejectState(
 ): TaskState {
   const target = rejectionRouting[state.currentStepId];
   if (!target) throw new Error(`No rejection routing for step "${state.currentStepId}"`);
+  // Belt and braces against a hand-authored archetype or a hand-edited state:
+  // resolution validates this, but rejectState is reachable with any routing map
+  // and moving currentStepId outside stepOrder breaks the next prepare (TASK-027).
+  if (!state.stepOrder.includes(target)) {
+    throw new Error(
+      `Rejecting "${state.currentStepId}" would reopen "${target}", which is not in this task's ` +
+        `step order (${state.stepOrder.join(", ")}).`
+    );
+  }
   return {
     ...state,
     currentStepId: target,

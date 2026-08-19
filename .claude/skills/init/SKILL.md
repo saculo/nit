@@ -63,6 +63,7 @@ mkdir -p .nit/config
 mkdir -p .nit/registry
 mkdir -p .nit/boundaries
 mkdir -p .nit/phases
+mkdir -p .nit/adr
 mkdir -p .nit/decisions
 mkdir -p .nit/logs
 mkdir -p .nit/plr
@@ -356,11 +357,17 @@ Write `.nit/registry/artifact-types.json`:
     { "id": "ci-pipeline",    "label": "CI Pipeline",          "description": "CI/CD pipeline definitions",                             "filePattern": ".github/**/*" },
     { "id": "documentation",  "label": "Documentation",        "description": "Markdown or other documentation files",                   "filePattern": "docs/**/*" },
     { "id": "adr",            "label": "ADR",                  "description": "Architecture Decision Records",                          "filePattern": ".nit/adr/**/*" },
-    { "id": "task",           "label": "Task",                 "description": "nit task definition files (TASK.md)",                    "filePattern": ".nit/phases/**/TASK.md" },
-    { "id": "design",         "label": "Design",               "description": "nit task design documents (DESIGN.md)",                  "filePattern": ".nit/phases/**/DESIGN.md" },
-    { "id": "implementation", "label": "Implementation",       "description": "nit implementation summary files (IMPLEMENTATION.md)",   "filePattern": ".nit/phases/**/IMPLEMENTATION.md" },
-    { "id": "review",         "label": "Review",               "description": "nit code review documents (REVIEW.md)",                  "filePattern": ".nit/phases/**/REVIEW.md" },
-    { "id": "step-plan",      "label": "Step Plan",            "description": "nit implementation step tracking files (STEPS.md)",      "filePattern": ".nit/phases/**/STEPS.md" },
+    { "id": "phase",          "label": "Phase",                "description": "nit phase definitions",                                  "filePattern": ".nit/phases/*/phase.json" },
+    { "id": "task",           "label": "Task",                 "description": "nit task definitions",                                   "filePattern": ".nit/phases/*/tasks/*/task.json" },
+    { "id": "task-state",     "label": "Task State",           "description": "nit per-task pipeline state, owned by the supervisor",   "filePattern": ".nit/phases/*/tasks/*/state.json" },
+    { "id": "routing",        "label": "Routing",              "description": "nit resolved skill routing for a task's current step",   "filePattern": ".nit/phases/*/tasks/*/routing.json" },
+    { "id": "step-input",     "label": "Step Input",           "description": "nit input handed to a specialist for one step",          "filePattern": ".nit/phases/*/tasks/*/STEP-*/input.json" },
+    { "id": "step-output",    "label": "Step Output",          "description": "nit result of one step — the sole canonical artifact",   "filePattern": ".nit/phases/*/tasks/*/STEP-*/output.json" },
+    { "id": "approval",       "label": "Approval",             "description": "nit approval record for a gated step",                   "filePattern": ".nit/phases/*/tasks/*/STEP-*/approval.json" },
+    { "id": "validation",     "label": "Validation Result",    "description": "nit validation errors recorded when a step output fails","filePattern": ".nit/phases/*/tasks/*/STEP-*/validation.json" },
+    { "id": "phase-summary",  "label": "Phase Summary",        "description": "nit phase completion analysis",                          "filePattern": ".nit/phases/*/summary.json" },
+    { "id": "prd-summary",    "label": "PRD Summary",          "description": "nit clarified PRD summary and glossary",                 "filePattern": ".nit/prd/*.json" },
+    { "id": "plr",            "label": "Phase Learning Record","description": "nit phase retrospectives, written for people",           "filePattern": ".nit/plr/**/*.md" },
     { "id": "dependency",     "label": "Dependency Manifest",  "description": "Package and dependency manifests",                       "filePattern": "**/package.json" },
     { "id": "environment",    "label": "Environment Config",   "description": "Environment variable configuration files",               "filePattern": "**/.env*" },
     { "id": "script",         "label": "Script",               "description": "Build, utility, or automation scripts",                  "filePattern": "scripts/**/*" },

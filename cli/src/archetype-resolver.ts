@@ -135,6 +135,47 @@ export function engineerRoleForTaskType(taskType: string, stepId?: string): stri
 }
 
 /**
+ * Every rejection-routing entry must name steps that exist in the resolved
+ * sequence — both the step being rejected and the step that reopens.
+ *
+ * Removing a step from an inherited sequence orphans any entry that *targeted*
+ * it, and resolution used to drop only the entries *keyed* by it. The result
+ * resolved cleanly and then broke at reject time: `currentStepId` moved to a
+ * step absent from `stepOrder`, `currentIndex` returned -1, and the next
+ * `prepare` dereferenced `steps[-1]`. Failing here instead forces the author to
+ * say where a rejection should go, which is a decision only they can make
+ * (TASK-027).
+ */
+export function assertRejectionRoutingResolvable(
+  archetypeId: string,
+  rejectionRouting: Record<string, string>,
+  steps: ArchetypeStep[]
+): void {
+  const ids = new Set(steps.map((s) => s.id));
+  const problems: string[] = [];
+  for (const [from, to] of Object.entries(rejectionRouting)) {
+    if (!ids.has(from)) problems.push(`  "${from}" is not a step, but has a rejection route`);
+    if (!ids.has(to)) problems.push(`  rejecting "${from}" would reopen "${to}", which is not a step`);
+  }
+  // A gated step parks for a human decision, and reject is one of the two
+  // answers. Without a route, `rejectState` throws and the gate only works one
+  // way — so gating a step without saying where a rejection goes is incomplete.
+  for (const step of steps) {
+    if (step.approval !== false && rejectionRouting[step.id] === undefined) {
+      problems.push(`  "${step.id}" is gated for approval but has no rejection route`);
+    }
+  }
+  if (problems.length > 0) {
+    throw new Error(
+      `Archetype "${archetypeId}" has unresolvable rejection routing:\n` +
+        problems.join("\n") +
+        `\nResolved steps: ${[...ids].join(", ")}.` +
+        `\nDeclare a rejectionRouting on the archetype naming steps it actually has.`
+    );
+  }
+}
+
+/**
  * Apply overrides to a parent step list.
  * Order: removeSteps first, then step property modifications, then addSteps.
  */
@@ -202,10 +243,12 @@ export async function resolveArchetype(name: string): Promise<ResolvedArchetype>
       archetype.steps ?? [],
       archetype.engineerRole
     );
+    const rejectionRouting = archetype.rejectionRouting ?? {};
+    assertRejectionRoutingResolvable(archetype.id, rejectionRouting, steps);
     return {
       id: archetype.id,
       engineerRole: archetype.engineerRole,
-      rejectionRouting: archetype.rejectionRouting ?? {},
+      rejectionRouting,
       steps,
     };
   }
@@ -228,13 +271,19 @@ export async function resolveArchetype(name: string): Promise<ResolvedArchetype>
   // Replace placeholders
   const resolvedSteps = replacePlaceholders(mergedSteps, archetype.engineerRole);
 
-  // Build rejection routing: start with parent, remove entries for removed steps
-  const rejectionRouting = { ...(parent.rejectionRouting ?? {}) };
-  if (archetype.overrides?.removeSteps) {
+  // Build rejection routing: the child's own declaration wins outright when it
+  // has one; otherwise inherit the parent's, dropping entries keyed by a step
+  // this archetype removed — a step that no longer exists cannot be rejected.
+  const rejectionRouting = archetype.rejectionRouting
+    ? { ...archetype.rejectionRouting }
+    : { ...(parent.rejectionRouting ?? {}) };
+  if (!archetype.rejectionRouting && archetype.overrides?.removeSteps) {
     for (const removedId of archetype.overrides.removeSteps) {
       delete rejectionRouting[removedId];
     }
   }
+
+  assertRejectionRoutingResolvable(archetype.id, rejectionRouting, resolvedSteps);
 
   return {
     id: archetype.id,

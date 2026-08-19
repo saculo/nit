@@ -82,8 +82,8 @@ For each task, in dependency order, repeat until its `state.json.status` is `don
 
    | status | Do |
    |---|---|
-   | `in-progress` | Call `/nit:continue` again. The supervisor is mid-task; nothing needs you. |
-   | `awaiting_approval` | **Gate.** Present the step's `output.json` and ask. Then `/nit:approve` or `/nit:reject <p> <t> --comment "<why>"`, and continue the loop. |
+   | `in-progress` | Call `/nit:continue` again. The supervisor is mid-task; nothing needs you. An ungated step advances into this state on its own, which is why not every step produces a gate. |
+   | `awaiting_approval` | **Gate.** The archetype declares this step gated. Present the step's `output.json` and ask. Then `/nit:approve` or `/nit:reject <p> <t> --comment "<why>"`, and continue the loop. |
    | `blocked` | **Stop this task.** Go to *Blocked tasks* below. |
    | `escalated` | **Stop this task.** The reopen budget is spent; surface the accumulated errors from `validation.json` and hand it to the user. Do not retry — the supervisor already tried `maxReopenCount` times. |
    | `done` | Move to the next task. |
@@ -155,15 +155,6 @@ At every gate, give the user four things and then stop:
 If the user asks for changes, re-run the step that produced the artifact — for a task step that means
 `/nit:reject` with their reasoning as the comment, which reopens the archetype's rejection-routing
 target. Never hand-edit the artifact to satisfy the feedback yourself.
-
-## Known limitations
-
-State these when they apply rather than failing opaquely:
-
-- **Every step gates.** The per-step `approval` flag in the archetype is not read by the supervisor, so
-  a five-step task asks for five approvals rather than the two `base.json` declares (TASK-029).
-- **`architecture-decision` cannot be rejected at review.** Its rejection routing targets the
-  `implement` step, which that archetype removes (TASK-027).
 
 ## Rules
 

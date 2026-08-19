@@ -8,7 +8,7 @@
     <title>Honour the Per-Step Approval Flag</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>

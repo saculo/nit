@@ -86,11 +86,14 @@ describe("nit:orchestrate conformance", () => {
     expect(skill).toContain("milestone.reached");
   });
 
-  // TASK-028 closed the $detect gap, so the skill must no longer claim those
-  // archetypes cannot run. A stale limitation is worse than none: it tells the
-  // user to avoid something that works.
-  test("does not claim $detect archetypes are unrunnable", () => {
+  // TASK-028, TASK-029 and TASK-027 closed every limitation this skill declared.
+  // A stale limitation is worse than none: it tells the user to avoid something
+  // that works.
+  test("declares no limitation that has since been fixed", () => {
     expect(skill).not.toContain("cannot run");
+    expect(skill).not.toContain("Known limitations");
+    expect(skill).not.toContain("asks for five approvals");
+    expect(skill).not.toContain("cannot be rejected at review");
   });
 
   test("$detect is resolved at dispatch, so both archetypes are runnable", async () => {

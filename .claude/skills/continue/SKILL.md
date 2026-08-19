@@ -63,8 +63,13 @@ conforming to `step-output.schema.json`.
 bun run ./cli/src/cli.ts continue --task-dir <dir> --archetype <name> --ingest
 ```
 
-This validates `output.json`. On success it writes a pending `approval.json` and sets the task to
-`awaiting_approval` (prints `{"valid": true, ...}`). On failure it writes `validation.json`,
+This validates `output.json`. On success, what happens next is the archetype's decision: a step
+declared `approval: true` writes a pending `approval.json` and parks the task at `awaiting_approval`
+(prints `{"valid": true, "status": "awaiting_approval"}`); a step declared `approval: false` advances
+straight to the next step, writing an auto-approved `approval.json` for the record and printing
+`{"valid": true, "gated": false, "advancedTo": "<next step>"}`. On the last step it completes the task
+instead. A step whose archetype omits the flag is treated as gated. Under `base.json` that means a
+five-step task stops twice — at `design` and `review` — not five times. On failure it writes `validation.json`,
 increments `reopenCount`, and either reopens the step with the errors embedded in a fresh
 `input.json` (`{"valid": false, "escalated": false}`) or, once `reopenCount` exceeds
 `maxReopenCount`, sets the task to `escalated` and reports the accumulated errors. On a reopen,
@@ -124,4 +129,5 @@ the next step — writing nothing and dispatching no agent.
 - After an escalation, stop and surface the accumulated errors to the user — do not loop further.
 - After a block, stop and surface the reason and explanation — do not re-dispatch the step.
 - Approve/reject is a separate command (`/nit:approve`, `/nit:reject`, TASK-016); this skill parks a
-  valid step at `awaiting_approval` and advances only once the prior step is approved.
+  valid **gated** step at `awaiting_approval` and advances only once it is approved. An ungated step
+  needs neither command — running `/nit:approve` on one fails, because the task is not parked.
