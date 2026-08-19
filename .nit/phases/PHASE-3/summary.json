@@ -8,19 +8,26 @@
         "id": "SC-1",
         "result": "met",
         "evidence": "Verified by execution, not by step output: a scripted backend-feature run drove analyze through qa to status done during TASK-022. All five step skills resolve.",
-        "taskIds": ["TASK-021", "TASK-022"]
+        "taskIds": [
+          "TASK-021",
+          "TASK-022"
+        ]
       },
       {
         "id": "SC-2",
         "result": "met",
         "evidence": "nit:review rewritten as a v2 step skill; review-result shape covered by 10 tests in step-output-shapes.test.ts, and a review-result ingested to awaiting_approval through the CLI.",
-        "taskIds": ["TASK-021"]
+        "taskIds": [
+          "TASK-021"
+        ]
       },
       {
         "id": "SC-3",
         "result": "met",
         "evidence": "nit:qa created; qa-result shape covered by 10 tests, and a qa-result ingested and approved to done through the CLI.",
-        "taskIds": ["TASK-022"]
+        "taskIds": [
+          "TASK-022"
+        ]
       },
       {
         "id": "SC-4",
@@ -44,7 +51,10 @@
         "id": "SC-7",
         "result": "unmet",
         "evidence": "Partially served but unmet as written. adrCandidates exist in step-output.schema.json and the design, implement and phase-summary skills emit them, but there is no trigger automation, so they do not appear 'when triggers match'.",
-        "taskIds": ["TASK-021", "TASK-023"]
+        "taskIds": [
+          "TASK-021",
+          "TASK-023"
+        ]
       },
       {
         "id": "SC-8",
@@ -62,59 +72,139 @@
         "id": "SC-10",
         "result": "met",
         "evidence": "phase-summary.schema.json created and registered; nit validate --schema phase-summary resolves. This summary and PLR 0002 are the skill's first real output.",
-        "taskIds": ["TASK-023"]
+        "taskIds": [
+          "TASK-023"
+        ]
       },
       {
         "id": "SC-11",
         "result": "met",
         "evidence": "blocked-result branch added; ingest parks at blocked without touching reopenCount or writing a repair input, and a missing output.json takes the same path with reason no-output. Verified through the CLI.",
-        "taskIds": ["TASK-018"]
+        "taskIds": [
+          "TASK-018"
+        ]
       },
       {
         "id": "SC-12",
         "result": "met",
         "evidence": "analyze, design, implement, review and qa each document the shared blocked contract with reason-specific detail requirements enforced by schema conditionals.",
-        "taskIds": ["TASK-018", "TASK-021", "TASK-022"]
+        "taskIds": [
+          "TASK-018",
+          "TASK-021",
+          "TASK-022"
+        ]
       },
       {
         "id": "SC-13",
         "result": "met",
         "evidence": "No skill routes on a retired artifact. Remaining mentions are disclaimers or the mixed-workspace detection in nit:phase-summary. Asserted by conformance tests in status-dashboard and orchestration test files.",
-        "taskIds": ["TASK-021", "TASK-023", "TASK-024", "TASK-025", "TASK-026"]
+        "taskIds": [
+          "TASK-021",
+          "TASK-023",
+          "TASK-024",
+          "TASK-025",
+          "TASK-026"
+        ]
       },
       {
         "id": "SC-14",
         "result": "met",
         "evidence": "nit:status rewritten onto state.json, task.json, phase.json and summary.json, leading with awaiting_approval, blocked and escalated. Conformance tests pin the advertised commands and the states routed on, each verified by injection.",
-        "taskIds": ["TASK-024"]
+        "taskIds": [
+          "TASK-024"
+        ]
       },
       {
         "id": "SC-15",
         "result": "met",
         "evidence": "artifact-types template migrated to the eleven artifacts v2 writes; four init templates validated against their schemas by test; every referenced .nit directory is created by init.",
-        "taskIds": ["TASK-026"]
+        "taskIds": [
+          "TASK-026"
+        ]
       },
       {
         "id": "SC-16",
         "result": "met",
         "evidence": "Five orphaned hooks deleted, five remain each wired to a live skill. .nit/skills, .nit/hooks and .nit/agents deleted. Q-4 settled as ADR-0006 with a test enforcing its stated confirmation.",
-        "taskIds": ["TASK-026"]
+        "taskIds": [
+          "TASK-026"
+        ]
       }
     ]
   },
   "tasks": [
-    { "taskId": "TASK-018", "title": "Blocked-Step Escalation Contract for Step Skills", "status": "done", "readable": false },
-    { "taskId": "TASK-021", "title": "Rewrite nit:review for JSON Step Output", "status": "done", "readable": false },
-    { "taskId": "TASK-022", "title": "Dedicated nit:qa Step Skill", "status": "done", "readable": false },
-    { "taskId": "TASK-023", "title": "Rewrite nit:phase-summary for JSON Output and PLR", "status": "done", "readable": false },
-    { "taskId": "TASK-024", "title": "Rewrite nit:status for v2 Artifacts", "status": "done", "readable": false },
-    { "taskId": "TASK-025", "title": "Rewrite nit:orchestrate for the v2 Pipeline", "status": "done", "readable": false },
-    { "taskId": "TASK-026", "title": "Stop Scaffolding v1 Artifacts and Remove Orphaned Machinery", "status": "done", "readable": false },
-    { "taskId": "TASK-027", "title": "Rejection Routing Must Target a Step That Exists", "status": "done", "readable": false },
-    { "taskId": "TASK-028", "title": "Resolve $detect to a Concrete Engineer Role at Dispatch", "status": "done", "readable": false },
-    { "taskId": "TASK-029", "title": "Honour the Per-Step Approval Flag", "status": "done", "readable": false },
-    { "taskId": "TASK-030", "title": "Phase Success Criteria Need a v2 Home", "status": "todo", "readable": false },
-    { "taskId": "TASK-031", "title": "Rework Context Must Reach the Reopened Step", "status": "todo", "readable": false }
+    {
+      "taskId": "TASK-018",
+      "title": "Blocked-Step Escalation Contract for Step Skills",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-021",
+      "title": "Rewrite nit:review for JSON Step Output",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-022",
+      "title": "Dedicated nit:qa Step Skill",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-023",
+      "title": "Rewrite nit:phase-summary for JSON Output and PLR",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-024",
+      "title": "Rewrite nit:status for v2 Artifacts",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-025",
+      "title": "Rewrite nit:orchestrate for the v2 Pipeline",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-026",
+      "title": "Stop Scaffolding v1 Artifacts and Remove Orphaned Machinery",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-027",
+      "title": "Rejection Routing Must Target a Step That Exists",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-028",
+      "title": "Resolve $detect to a Concrete Engineer Role at Dispatch",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-029",
+      "title": "Honour the Per-Step Approval Flag",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-030",
+      "title": "Phase Success Criteria Need a v2 Home",
+      "status": "todo",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-031",
+      "title": "Rework Context Must Reach the Reopened Step",
+      "status": "done",
+      "readable": false
+    }
   ],
   "deviations": [],
   "techDebt": [],
@@ -138,13 +228,7 @@
     },
     {
       "phaseId": "PHASE-3",
-      "scopeItem": "TASK-031 — rework context",
-      "recommendation": "Close TASK-031 before the pipeline is used in earnest.",
-      "reason": "nit:reject documents its comment as the specialist's rework context and it never reaches the specialist. TASK-029 removed the human checkpoint that used to compensate, so a rejected review now sends a blind rework straight back to the same reviewer."
-    },
-    {
-      "phaseId": "PHASE-3",
-      "scopeItem": "TASK-030 — phase success criteria",
+      "scopeItem": "TASK-030 \u2014 phase success criteria",
       "recommendation": "Close TASK-030 before running another phase summary.",
       "reason": "This summary derived its criteria from PHASE.md prose because phase.json has nowhere to store them. Every future phase hits the same wall."
     },
@@ -163,70 +247,105 @@
     {
       "phaseId": "PHASE-4",
       "scopeItem": "Repair/reopen flow refinement",
-      "recommendation": "Treat TASK-031 as a dependency rather than overlapping work.",
-      "reason": "Threading rework context defines the shape of the reopen contract that PHASE-4's refinement would then tune."
+      "recommendation": "Build on the reopen contract TASK-031 established rather than redefining it.",
+      "reason": "TASK-031 closed the rework path: state.reworkFrom carries the rejected step, the comment and a path to its output, and repair and rework are now distinguishable causes. PHASE-4's refinement tunes that contract instead of inventing one."
     }
   ],
   "unreadable": [
     {
       "taskId": "TASK-018",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists, so no structured field could be aggregated.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-021",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-022",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-023",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-024",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-025",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-026",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-027",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-028",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-029",
       "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
-      "found": ["TASK.md", "REVIEW.md"]
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     },
     {
       "taskId": "TASK-030",
       "reason": "Not started, and recorded as v1 prose; no step outputs exist to aggregate.",
-      "found": ["TASK.md"]
+      "found": [
+        "TASK.md"
+      ]
     },
     {
       "taskId": "TASK-031",
-      "reason": "Not started, and recorded as v1 prose; no step outputs exist to aggregate.",
-      "found": ["TASK.md"]
+      "reason": "Recorded as v1 prose; no task.json, state.json, or step output.json exists.",
+      "found": [
+        "TASK.md",
+        "REVIEW.md"
+      ]
     }
   ],
   "plr": ".nit/plr/0002-phase-3-v1-to-v2-migration.md"
