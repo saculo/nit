@@ -27,7 +27,7 @@
     </in-scope>
     <out-of-scope>
     - Migrating this repository's own v1 `.nit/` workspace to `phase.json` / `task.json` — init explicitly does not migrate v1 workspaces (A-2), and doing so here would rewrite the project's own history mid-phase
-    - The global `~/.claude/skills/nit/` namespace separation (PHASE-4)
+    - The global `~/.claude/skills/nit/` namespace separation (PHASE-5, formerly PHASE-4)
     - Changing what any step skill writes; this task only stops nit from *declaring* artifacts nothing produces
     </out-of-scope>
   </scope>

@@ -1,13 +1,13 @@
 {
   "phaseId": "PHASE-3",
-  "title": "Review, QA, and Boundary Enforcement",
+  "title": "The v1 to v2 Skill Migration",
   "milestone": {
-    "reached": false,
+    "reached": true,
     "criteria": [
       {
         "id": "SC-1",
         "result": "met",
-        "evidence": "Verified by execution, not by step output: a scripted backend-feature run drove analyze through qa to status done during TASK-022. All five step skills resolve.",
+        "evidence": "Verified by execution: a scripted backend-feature run drove analyze through qa to status done. All five step skills resolve.",
         "taskIds": [
           "TASK-021",
           "TASK-022"
@@ -16,7 +16,7 @@
       {
         "id": "SC-2",
         "result": "met",
-        "evidence": "nit:review rewritten as a v2 step skill; review-result shape covered by 10 tests in step-output-shapes.test.ts, and a review-result ingested to awaiting_approval through the CLI.",
+        "evidence": "nit:review rewritten as a v2 step skill; review-result shape covered by 10 tests, and a review-result ingested to awaiting_approval through the CLI.",
         "taskIds": [
           "TASK-021"
         ]
@@ -31,53 +31,14 @@
       },
       {
         "id": "SC-4",
-        "result": "unmet",
-        "evidence": "Unstarted. dependency-rules.schema.json exists but no CLI code reads allowedDependencies; no task in the phase attempted boundary enforcement.",
-        "taskIds": []
+        "result": "met",
+        "evidence": "phase-summary.schema.json created and registered; this summary and PLR 0002 are the skill's output.",
+        "taskIds": [
+          "TASK-023"
+        ]
       },
       {
         "id": "SC-5",
-        "result": "unmet",
-        "evidence": "Unstarted, and dependent on SC-4. validation.json carries only schema errors and the no-output block reason.",
-        "taskIds": []
-      },
-      {
-        "id": "SC-6",
-        "result": "unmet",
-        "evidence": "Unstarted. adr-triggers appears only as a registry entry in schema-resolver.ts; no CLI code consumes the trigger conditions.",
-        "taskIds": []
-      },
-      {
-        "id": "SC-7",
-        "result": "unmet",
-        "evidence": "Partially served but unmet as written. adrCandidates exist in step-output.schema.json and the design, implement and phase-summary skills emit them, but there is no trigger automation, so they do not appear 'when triggers match'.",
-        "taskIds": [
-          "TASK-021",
-          "TASK-023"
-        ]
-      },
-      {
-        "id": "SC-8",
-        "result": "unmet",
-        "evidence": "Unstarted. nit explain-routing is not a CLI command; nit --help lists validate, archetype, route, continue, approve, reject.",
-        "taskIds": []
-      },
-      {
-        "id": "SC-9",
-        "result": "unmet",
-        "evidence": "Unstarted. nit skills is not a CLI command.",
-        "taskIds": []
-      },
-      {
-        "id": "SC-10",
-        "result": "met",
-        "evidence": "phase-summary.schema.json created and registered; nit validate --schema phase-summary resolves. This summary and PLR 0002 are the skill's first real output.",
-        "taskIds": [
-          "TASK-023"
-        ]
-      },
-      {
-        "id": "SC-11",
         "result": "met",
         "evidence": "blocked-result branch added; ingest parks at blocked without touching reopenCount or writing a repair input, and a missing output.json takes the same path with reason no-output. Verified through the CLI.",
         "taskIds": [
@@ -85,9 +46,9 @@
         ]
       },
       {
-        "id": "SC-12",
+        "id": "SC-6",
         "result": "met",
-        "evidence": "analyze, design, implement, review and qa each document the shared blocked contract with reason-specific detail requirements enforced by schema conditionals.",
+        "evidence": "analyze, design, implement, review and qa each document the shared blocked contract, with reason-specific detail requirements enforced by schema conditionals.",
         "taskIds": [
           "TASK-018",
           "TASK-021",
@@ -95,9 +56,9 @@
         ]
       },
       {
-        "id": "SC-13",
+        "id": "SC-7",
         "result": "met",
-        "evidence": "No skill routes on a retired artifact. Remaining mentions are disclaimers or the mixed-workspace detection in nit:phase-summary. Asserted by conformance tests in status-dashboard and orchestration test files.",
+        "evidence": "No skill routes on a retired artifact; remaining mentions are disclaimers or the mixed-workspace detection in nit:phase-summary. Asserted by conformance tests.",
         "taskIds": [
           "TASK-021",
           "TASK-023",
@@ -107,7 +68,7 @@
         ]
       },
       {
-        "id": "SC-14",
+        "id": "SC-8",
         "result": "met",
         "evidence": "nit:status rewritten onto state.json, task.json, phase.json and summary.json, leading with awaiting_approval, blocked and escalated. Conformance tests pin the advertised commands and the states routed on, each verified by injection.",
         "taskIds": [
@@ -115,19 +76,38 @@
         ]
       },
       {
-        "id": "SC-15",
+        "id": "SC-9",
         "result": "met",
-        "evidence": "artifact-types template migrated to the eleven artifacts v2 writes; four init templates validated against their schemas by test; every referenced .nit directory is created by init.",
+        "evidence": "artifact-types template migrated to the artifacts v2 writes; four init templates validated against their schemas by test; every referenced .nit directory is created by init.",
         "taskIds": [
           "TASK-026"
         ]
       },
       {
-        "id": "SC-16",
+        "id": "SC-10",
         "result": "met",
         "evidence": "Five orphaned hooks deleted, five remain each wired to a live skill. .nit/skills, .nit/hooks and .nit/agents deleted. Q-4 settled as ADR-0006 with a test enforcing its stated confirmation.",
         "taskIds": [
           "TASK-026"
+        ]
+      },
+      {
+        "id": "SC-11",
+        "result": "met",
+        "evidence": "All four declared-contract defects closed and each pinned by a test verified to fail when its fix is reverted: rejection routing validated at resolution, $detect resolved at dispatch, the approval flag read by ingest, and phase success criteria given a producer. Generalised as ADR-0007. Criterion written during the 2026-08-19 re-scope, after the work.",
+        "taskIds": [
+          "TASK-027",
+          "TASK-028",
+          "TASK-029",
+          "TASK-030"
+        ]
+      },
+      {
+        "id": "SC-12",
+        "result": "met",
+        "evidence": "state.reworkFrom carries the rejected step, the comment and a task-relative path to its output into the reopened step's input.json, cleared once the step succeeds; repair and rework remain distinguishable and can coexist. Verified end-to-end through the CLI. Criterion written during the 2026-08-19 re-scope, after the work.",
+        "taskIds": [
+          "TASK-031"
         ]
       }
     ]
@@ -196,7 +176,7 @@
     {
       "taskId": "TASK-030",
       "title": "Phase Success Criteria Need a v2 Home",
-      "status": "todo",
+      "status": "done",
       "readable": false
     },
     {
@@ -222,34 +202,40 @@
   ],
   "recommendations": [
     {
-      "phaseId": "PHASE-3",
-      "scopeItem": "Boundary enforcement, ADR trigger automation, routing introspection commands",
-      "recommendation": "Decide explicitly whether to finish PHASE-3 or re-scope it to the migration it became and move the remaining six criteria to a new phase.",
-      "reason": "Six of sixteen success criteria are unstarted. The displacement was correct task by task but was never made as a decision, and the milestone is unreached as a direct result."
-    },
-    {
-      "phaseId": "PHASE-3",
-      "scopeItem": "TASK-030 \u2014 phase success criteria",
-      "recommendation": "Close TASK-030 before running another phase summary.",
-      "reason": "This summary derived its criteria from PHASE.md prose because phase.json has nowhere to store them. Every future phase hits the same wall."
+      "phaseId": "PHASE-4",
+      "scopeItem": "Boundary enforcement, ADR trigger automation, routing introspection",
+      "recommendation": "These are PHASE-3's original criteria, moved here unchanged in substance on 2026-08-19.",
+      "reason": "Displaced by the migration, correctly task by task, but never as a decision. Recorded in PHASE-3's <scope-change> so the move is auditable rather than a gap."
     },
     {
       "phaseId": "PHASE-4",
+      "scopeItem": "Every schema or archetype field this phase adds",
+      "recommendation": "Apply ADR-0007 while the fields are written, not after.",
+      "reason": "dependency-rules.json, adr-triggers consumption and the ADR index all declare new fields. Four instances of a declared field with no consumer were found in PHASE-3, each by review rather than by a passing suite."
+    },
+    {
+      "phaseId": "PHASE-5",
       "scopeItem": "Run logging integrated with nit:status",
       "recommendation": "Re-plan the integration point against the rewritten skill.",
-      "reason": "TASK-024 rewrote nit:status onto v2 artifacts; the v1 dashboard PHASE-4 was planned against no longer exists."
+      "reason": "TASK-024 rewrote nit:status onto v2 artifacts; the v1 dashboard it was planned against no longer exists."
     },
     {
-      "phaseId": "PHASE-4",
+      "phaseId": "PHASE-5",
       "scopeItem": "Bun CLI package distribution (bunx @nit/cli install)",
-      "recommendation": "Ship .claude/ definitions from the package; there is no longer a source tree in the repository to copy from.",
-      "reason": "ADR-0006 deleted .nit/skills/ and .nit/agents/, and nit:init no longer populates skills or agents anywhere. This was implied by the distribution plan and is now load-bearing."
+      "recommendation": "Ship .claude/ definitions from the package; there is no source tree in the repository to copy from.",
+      "reason": "ADR-0006 deleted .nit/skills/ and .nit/agents/, and nit:init no longer populates skills or agents anywhere."
     },
     {
-      "phaseId": "PHASE-4",
+      "phaseId": "PHASE-5",
       "scopeItem": "Repair/reopen flow refinement",
       "recommendation": "Build on the reopen contract TASK-031 established rather than redefining it.",
-      "reason": "TASK-031 closed the rework path: state.reworkFrom carries the rejected step, the comment and a path to its output, and repair and rework are now distinguishable causes. PHASE-4's refinement tunes that contract instead of inventing one."
+      "reason": "state.reworkFrom carries the rejection forward and repair and rework are now distinguishable causes; the refinement tunes that contract."
+    },
+    {
+      "phaseId": "PHASE-4",
+      "scopeItem": "Workspace migration to phase.json and task.json",
+      "recommendation": "Migrate this repository's own .nit/ workspace, or accept that nit cannot summarise its own project from step outputs.",
+      "reason": "Every task in this phase is declared unreadable below, because the workspace is v1 prose. The aggregates are empty as a result \u2014 the tool degrades honestly and reports that it cannot see its own project."
     }
   ],
   "unreadable": [

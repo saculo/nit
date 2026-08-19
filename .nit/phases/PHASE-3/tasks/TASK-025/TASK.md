@@ -32,7 +32,7 @@
     <out-of-scope>
     - Reimplementing any state transition — every one belongs to the CLI per ADR-0004; the orchestrator reads state and calls commands
     - Unattended or auto-approving operation; every existing approval gate stays a gate
-    - Multi-project orchestration (PHASE-4)
+    - Multi-project orchestration (PHASE-5, formerly PHASE-4)
     - PR creation policy — decide where it lives, but implementing a PR-opening step is out of scope if it is not already in the pipeline
     </out-of-scope>
   </scope>

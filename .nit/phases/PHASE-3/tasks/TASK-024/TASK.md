@@ -28,7 +28,7 @@
     - Degrade honestly on a v1 or partially migrated workspace: report what it cannot read rather than showing an empty dashboard
     </in-scope>
     <out-of-scope>
-    - Run log history integration — PHASE-4, and it assumes this rewrite has already happened
+    - Run log history integration — PHASE-5 (formerly PHASE-4), and it assumes this rewrite has already happened
     - A machine-readable status output; `nit:status` is a human-facing dashboard and stays prose
     - Modifying any state it reads — status is strictly read-only
     </out-of-scope>
@@ -77,7 +77,7 @@
   </dependencies>
 
   <notes>
-    **This was an unplanned gap.** PHASE-3 did not list a nit:status rewrite, and PHASE-4 assumes a
+    **This was an unplanned gap.** PHASE-3 did not list a nit:status rewrite, and the distribution phase (PHASE-5, formerly PHASE-4) assumes a
     working nit:status when it adds run-log history to it. The skill currently scans for
     `CLARIFICATIONS.md`, `PHASE.md`, `DESIGN.md`, `STEPS.md`, `IMPLEMENTATION.md` and `REVIEW.md` —
     six artifacts, none of which v2 writes — so on a v2 workspace it reports almost nothing while
