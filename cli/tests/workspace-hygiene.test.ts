@@ -62,6 +62,27 @@ describe("nit:init scaffolds only v2 artifacts", () => {
   });
 });
 
+// AC-1/AC-2 — a declared artifact type whose directory init never creates is the
+// same defect as one pointing at a file the pipeline never writes: the scaffold
+// and the registry disagree about the workspace.
+describe("init creates every .nit directory its own templates reference", () => {
+  test("each nit-owned artifact pattern lands in a directory init makes", () => {
+    const text = readFileSync(INIT_SKILL, "utf8");
+    const made = new Set(
+      [...text.matchAll(/mkdir -p \.nit\/([a-z-]+)/g)].map((m) => m[1]!)
+    );
+    const types = templateAfter("### 5d — artifact-types.json") as {
+      types: { id: string; filePattern?: string }[];
+    };
+    const missing = types.types
+      .map((t) => t.filePattern ?? "")
+      .filter((p) => p.startsWith(".nit/"))
+      .map((p) => p.split("/")[1]!)
+      .filter((dir) => !made.has(dir));
+    expect([...new Set(missing)]).toEqual([]);
+  });
+});
+
 // AC-3 — a hook that validates arguments for a supervisor-dispatched skill has
 // nothing to validate. Five of ten were orphaned by the migration.
 describe("every hook is wired to a skill that exists", () => {

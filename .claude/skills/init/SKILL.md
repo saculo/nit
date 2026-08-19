@@ -63,6 +63,7 @@ mkdir -p .nit/config
 mkdir -p .nit/registry
 mkdir -p .nit/boundaries
 mkdir -p .nit/phases
+mkdir -p .nit/adr
 mkdir -p .nit/decisions
 mkdir -p .nit/logs
 mkdir -p .nit/plr
