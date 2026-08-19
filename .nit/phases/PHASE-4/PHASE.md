@@ -1,77 +1,98 @@
-# PHASE-4 — Skill Creation, Distribution, and Polish
+# PHASE-4 — Boundary Enforcement, ADR Automation, and Routing Introspection
 
 <phase>
 
   <meta>
     <id>PHASE-4</id>
-    <title>Skill Creation, Distribution, and Polish</title>
-    <milestone>Users can interactively create custom skills, install nit globally via package manager, and run the complete pipeline with run logging and refined repair flows on a multi-module project</milestone>
-    <status>draft</status>
+    <title>Boundary Enforcement, ADR Automation, and Routing Introspection</title>
+    <milestone>The pipeline enforces module boundaries during validation, records architectural decisions without being asked, and can explain its own skill routing</milestone>
+    <status>planned</status>
   </meta>
 
   <business-value>
-    The system becomes self-extensible and distributable. Users can add framework, tool, and pattern expertise via `nit:add-skill` without manually authoring SKILL.md files. The Bun/Node CLI package lets users install nit globally with a single command and update it independently of project state. Run logging provides an audit trail of every supervisor invocation. Repair flow refinement makes rejection/reopen cycles more predictable. End-to-end testing on a multi-module project validates the entire system works as designed across all archetypes, skill layers, and boundary rules.
+    PHASE-3 made the pipeline complete and correct: every step runs, every declared contract is
+    honoured. This phase makes it *opinionated about the code it produces*. Boundary enforcement turns
+    the module registry from documentation into a constraint, catching architectural drift at the step
+    that causes it rather than at review months later. ADR trigger automation stops significant
+    decisions going unrecorded, which is the failure mode every project has and none notices until it
+    needs the history. Routing introspection lets a user answer "why did this agent load these skills?"
+    without reading four config files — the question that makes a composition system debuggable rather
+    than magical.
   </business-value>
 
   <scope>
     <in-scope>
-    - nit:add-skill interactive skill creation: asks targeted questions, generates SKILL.md in .claude/skills/<name>/, updates registry/skills.json, optionally associates with modules in modules.json
-    - Role refinements: analyst role behavior tuning, infra-engineer role behavior tuning (renamed from devops-engineer)
-    - Bun CLI package (bunx @nit/cli install and update), also supporting npx (per R-5)
-    - Global ~/.claude/skills/nit/ namespace separation: core nit skills installed globally, project custom skills in .claude/skills/
-    - Run logging: .nit/logs/runs/RUN-NNN.json tracking timestamp, task, step, skills loaded, duration, outcome
-    - nit:status integration with run log history
-    - Repair/reopen flow refinement: edge cases in rejection routing, comment-based routing overrides (e.g., "reject review -> reopen review" vs default "reject review -> reopen implement")
-    - nitVersion compatibility checking between global install and project state (per R-3)
-    - End-to-end testing: full pipeline on a sample multi-module project across at least 3 archetype types
-    - Documentation: update any skill instructions that changed during implementation
+    - Boundary enforcement during validation: read modules.json allowedDependencies and boundaries/dependency-rules.json, check implementation output against the rules
+    - Boundary violations produce structured errors in validation.json
+    - dependency-rules.json creation (allowed and forbidden cross-module dependencies)
+    - Cross-module-change archetype boundary-check step enforced rather than merely present
+    - ADR trigger automation: config/adr-triggers.json with structured conditions (multi-module change, new shared component, public API change, new infra capability, boundary change)
+    - Specialists append adrCandidates to step output when triggers fire
+    - ADR index maintained in decisions/adr-index.json, and the adr/ versus decisions/ split settled
+    - nit:explain-routing command: shows the full skill composition chain for any task
+    - nit:resolve-routing command: resolves and persists routing.json for a task
+    - nit:skills command: lists all skills grouped by layer and module
     </in-scope>
     <out-of-scope>
-    - Claude.ai support (deferred per U-9)
-    - Initiative layer (INIT-NNN grouping, deferred per PRD 4.2)
-    - TUI/GUI
-    - MCP server integration
-    - Provider adapters (Codex, Cursor, etc.)
-    - Multi-project orchestration
-    - v1 artifact migration tooling
+    - nit:add-skill interactive creation (PHASE-5)
+    - Bun CLI package distribution (PHASE-5)
+    - Run logging (PHASE-5)
+    - Global ~/.claude/skills/nit/ namespace separation (PHASE-5)
+    - Repair/reopen flow refinement beyond what TASK-031 established (PHASE-5)
+    - Migrating this repository's own v1 .nit/ workspace to phase.json and task.json — still deliberately deferred, and still the reason nit cannot summarise its own project from step outputs
     </out-of-scope>
   </scope>
 
   <dependencies>
-    PHASE-3 (full 5-step pipeline, boundary enforcement, ADR triggers, routing commands)
+    PHASE-3 (the v1 to v2 skill migration, the deterministic pipeline, and the blocked-step contract)
   </dependencies>
 
   <draft-tasks>
-  - Build nit:add-skill interactive skill creation flow
-  - Refine analyst role skill and behavior
-  - Refine infra-engineer role skill and behavior (renamed from devops-engineer)
-  - Build Bun/Node CLI package for global install (bunx @nit/cli install, bunx @nit/cli update)
-  - Implement global namespace separation (~/.claude/skills/nit/ for core, .claude/skills/ for project custom)
-  - Implement nitVersion compatibility check between global core and project state
-  - Add run logging (.nit/logs/runs/RUN-NNN.json) and integrate with nit:status
-  - Refine repair/reopen flow: comment-based routing overrides, edge case handling
-  - End-to-end test: run full pipeline on sample multi-module project with backend-feature, frontend-feature, and cross-module-change archetypes
-  - Final documentation pass on all skills
+  - Create dependency-rules.json format and schema
+  - Implement boundary enforcement in validation: modules.json allowedDependencies plus dependency-rules.json, with violations as structured errors in validation.json
+  - Enforce the cross-module-change boundary-check step against those rules
+  - Create adr-triggers.json trigger conditions and integrate them into the supervisor's post-step flow
+  - Build adrCandidates detection so specialists emit candidates when a trigger fires
+  - Create decisions/adr-index.json management (nit:adr-list-candidates, nit:adr-write, nit:adr-approve), settling the adr/ versus decisions/ directory split
+  - Build nit:explain-routing command
+  - Build nit:resolve-routing command
+  - Build nit:skills listing command
   </draft-tasks>
 
   <success-criteria>
-  - nit:add-skill creates a valid custom skill interactively, registers it in skills.json, and optionally associates it with modules
-  - bunx @nit/cli install (and npx equivalent) installs core nit to ~/.claude/skills/nit/, ~/.claude/agents/nit/, ~/.claude/hooks/nit/
-  - bunx @nit/cli update updates global core without affecting project state
-  - nitVersion mismatch between global core and project state produces a clear warning
-  - Run logs are written after each supervisor invocation with correct metadata
-  - nit:status shows recent run history alongside task/phase status
-  - Rejection routing correctly handles comment-based overrides (e.g., "reject review -> reopen review" when comment indicates review-only issue)
-  - Full pipeline completes end-to-end on a multi-module project: init -> clarify -> phases -> tasks -> (analyze -> design -> implement -> review -> qa) per task -> phase-summary
-  - At least 3 archetype types (backend-feature, frontend-feature, cross-module-change) exercised in the end-to-end test
-  - Skill composition verified with language + custom skills correctly loaded per module
+  - SC-1 Boundary violations are detected when implementation output references a forbidden dependency
+  - SC-2 Boundary violations appear as structured errors in validation.json, distinguishable from schema errors
+  - SC-3 ADR triggers fire for multi-module changes and new shared components
+  - SC-4 adrCandidates appear in step output when a trigger matches, without the specialist being asked
+  - SC-5 nit:explain-routing displays the complete skill composition chain (base, language, custom, step-scoped, global) for a given task
+  - SC-6 nit:skills lists every registered skill organised by layer and module association
+  - SC-7 Every field this phase adds to a schema or archetype has a consumer proven by test (ADR-0007)
   </success-criteria>
 
   <risks>
-  - CLI package distribution adds a build/publish toolchain dependency (Bun/Node packaging, npm registry) that is new to the project
-  - Global namespace separation requires careful file management; conflicts with user's own global skills could occur if namespacing is not strict
-  - End-to-end testing on a multi-module project may reveal integration issues that require backporting fixes to PHASE-2/PHASE-3 work
-  - LLM-generated skill content from nit:add-skill varies in quality; may need templates or guardrails to ensure consistency
+  - Boundary enforcement heuristics may produce false positives on cross-module references that are legitimately allowed; a rule that cries wolf gets disabled
+  - ADR trigger conditions need tuning — too sensitive creates noise, too conservative misses real decisions, and the phase has no way to measure which until it runs on real work
+  - This phase's criteria were carried over from PHASE-3's original plan and were displaced once already. If they are displaced again, the reason should be recorded as a decision rather than discovered at phase summary
   </risks>
+
+  <notes>
+    **Origin.** These are the six success criteria PHASE-3 declared and never started. PHASE-3 was
+    planned as the quality-gates phase; a survey at its start found four skills still reading the prose
+    artifacts ADR-0005 retired, one step skill missing entirely, and nit:init scaffolding v1 artifact
+    types into every new project. The migration displaced the planned scope, correctly task by task —
+    a pipeline that cannot complete a task is more urgent than one that cannot lint module boundaries —
+    but the displacement was never made as a decision.
+
+    PHASE-3 is therefore re-scoped to the migration it delivered, and its milestone is judged against
+    that. This phase carries the original quality-gates work, unchanged in substance and renumbered
+    ahead of distribution: shipping a package before the pipeline enforces its own boundaries would put
+    the wrong thing in users' hands first.
+
+    **SC-7 is new.** ADR-0007 was accepted at the end of PHASE-3 after four defects turned out to share
+    one root cause — a declared contract nothing consumes. This phase adds `dependency-rules.json`,
+    `adr-triggers` consumption, and an ADR index, each of which declares new fields. The criterion
+    exists so the ADR is applied while the fields are being written rather than retrofitted after the
+    next phase summary finds the same pattern a fifth time.
+  </notes>
 
 </phase>

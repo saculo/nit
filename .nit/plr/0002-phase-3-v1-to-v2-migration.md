@@ -20,7 +20,10 @@ every review found something — the phase that fixed five defects nobody had pl
 (TASK-018), and five defect fixes (TASK-027, TASK-028, TASK-029, TASK-031, with TASK-030 filed and
 open).
 **Not delivered**: boundary enforcement, ADR trigger automation, and the three routing introspection
-commands — six of sixteen success criteria, none of them started.
+commands — six of the sixteen criteria originally declared, none of them started. Moved to PHASE-4 on
+2026-08-19 as a recorded decision; the phase was re-scoped to the migration it delivered and closes
+against twelve criteria, two of which were written after the work they describe. See PHASE-3's
+`<scope-change>`.
 
 Eleven tasks done, one open. Eleven reviews, one rework cycle. 263 tests, up from 96.
 
@@ -129,10 +132,12 @@ backlog of defects.
 
 ## Recommendations
 
-**PHASE-3 is not finished; decide explicitly whether to finish it.** Six criteria are unmet and the
-milestone is not reached. The honest options are to continue the phase with the boundary, ADR-trigger,
-and routing work, or to re-scope PHASE-3 to what it actually became — the migration phase — and move
-the remainder to a new phase. Either is defensible; drifting into PHASE-4 without choosing is not.
+**PHASE-3 is not finished; decide explicitly whether to finish it.** *(Settled 2026-08-19: re-scoped
+to the migration phase. The six unmet criteria moved to a new PHASE-4 — boundary enforcement, ADR
+automation, routing introspection — and the former PHASE-4, Skill Creation and Distribution, became
+PHASE-5. Recorded in PHASE-3's `<scope-change>`.)* Six criteria are unmet and the milestone is not
+reached. The honest options are to continue the phase with the boundary, ADR-trigger, and routing
+work, or to re-scope PHASE-3 to what it actually became and move the remainder to a new phase.
 
 **Close TASK-030 before running another phase summary.** This summary had to derive its criteria from
 `PHASE.md` prose because `phase.json` has nowhere to put them. Every future phase hits the same wall.
@@ -141,15 +146,15 @@ the remainder to a new phase. Either is defensible; drifting into PHASE-4 withou
 strongest evidence this phase produced. A test asserting that something reads each archetype and schema
 field would have caught three of them before they shipped.
 
-**PHASE-4's `nit:status` run-log integration must be re-planned.** TASK-024 rewrote that skill onto v2
-artifacts; the v1 dashboard PHASE-4 was planned against no longer exists.
+**The distribution phase's `nit:status` run-log integration must be re-planned.** TASK-024 rewrote that skill onto v2
+artifacts; the v1 dashboard the distribution phase was planned against no longer exists.
 
 **Close the `context` shape before it grows further.** It now carries five fields — `taskId`,
 `stepId`, `priorOutputs`, `repairErrors`, `reworkFrom` — and `step-input.schema.json` declares it as an
 open object, so none of them is schema-enforced. A misspelled field name in a skill produces no
 validation error. Not urgent, but each addition raises the cost of closing it.
 
-**PHASE-4's distribution work now has no source tree to copy.** ADR-0006 deleted `.nit/skills/` and
+**The distribution phase now has no source tree to copy.** ADR-0006 deleted `.nit/skills/` and
 `.nit/agents/`, and `nit:init` no longer populates skills or agents anywhere. `bunx @nit/cli install`
 must ship `.claude/` definitions from the package, which was implied but is now load-bearing.
 
