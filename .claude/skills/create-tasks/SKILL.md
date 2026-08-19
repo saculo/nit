@@ -33,7 +33,11 @@ Each task must deliver something required for the phase milestone. Do not:
 - Add configuration or extensibility points not needed yet
 - Create placeholder modules or skeleton code
 
-Every task must answer: **"Which phase milestone acceptance criterion does this directly contribute to?"**
+Every task must answer: **"Which phase success criterion does this directly contribute to?"** Since
+TASK-030 that question has a source: `phase.json.successCriteria` records what the phase must
+demonstrate, with `SC-N` ids. Name the criterion when you propose the task. A task that serves none of
+them is either out of scope or evidence the criteria are incomplete — say which, rather than creating
+it quietly.
 
 ## Step 0 — Input Validation
 
@@ -55,7 +59,8 @@ If validation passes, proceed.
 
 ## Input
 
-1. `phase.json` (validated above) — the phase's milestone and business value
+1. `phase.json` (validated above) — the phase's milestone, business value, and `successCriteria`, the
+   criteria the phase will be verified against when it closes
 2. `.nit/prd/summary.json` for resolved product context (goal, capabilities, clarifications)
 3. `.nit/boundaries/modules.json` — the set of valid `targetModule` names
 4. `.nit/registry/task-types.json` — task types and their `defaultArchetype`
@@ -64,13 +69,16 @@ If validation passes, proceed.
 
 Work through task creation interactively, one task at a time:
 
-1. Read `phase.json` and `prd/summary.json` and understand the full scope of the milestone
+1. Read `phase.json` and `prd/summary.json` and understand the full scope of the milestone, including
+   the `successCriteria` the phase will be judged on
 2. Propose the first task — present user story, scope, target module, and acceptance criteria
 3. Wait for user approval or adjustment
 4. Propose the archetype (see "Archetype Proposal" below) and write the approved `task.json`
 5. Propose the next task, noting dependencies on previous tasks
 6. Repeat until the phase scope is covered
-7. After the last task, present a summary of all created tasks with dependency graph
+7. After the last task, present a summary of all created tasks with dependency graph, and name any
+   `successCriteria` no task serves — an uncovered criterion means the phase cannot reach its milestone
+   as planned, and it is cheaper to see that now than at phase summary
 
 The phase's milestone is the contract; the specific task breakdown is yours to shape. You may split, merge, reorder, add, or skip candidate work as long as every task serves the milestone.
 
@@ -205,7 +213,7 @@ decision — do not edit its `state.json` or `task.json` to say otherwise.
 
 - One task per PR, one module per task, one type per task — no exceptions
 - Discuss user stories in BDD form (As a / I want / So that) and write acceptance criteria in Given/When/Then form
-- YAGNI — every task directly serves the phase milestone
+- YAGNI — every task directly serves the phase milestone, and names the success criterion it advances
 - The phase milestone is guidance for scope, not a binding task list
 - Write and validate each `task.json` immediately after the user approves — do not batch
 - `targetModule` must exist in `.nit/boundaries/modules.json`; `archetype` must be a concrete archetype from `cli/archetypes/`

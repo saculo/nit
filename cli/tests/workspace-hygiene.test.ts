@@ -179,6 +179,10 @@ describe("phase success criteria have a producer and a consumer", () => {
     expect(phase.successCriteria.length).toBeGreaterThan(0);
   });
 
+  test("nit:tasks reads them, so its criterion question has a source", () => {
+    expect(skill("create-tasks")).toContain("successCriteria");
+  });
+
   test("nit:phase-summary reads them and no longer derives from the milestone", () => {
     const text = skill("phase-summary");
     expect(text).toContain("phase.json.successCriteria");
