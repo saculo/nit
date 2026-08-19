@@ -22,6 +22,12 @@ without guessing. Your output is a machine-readable `design-result` embedded in 
   to the directory convention: `STEP-NNN-<stepId>/output.json` under the task directory.
 - `context.repairErrors`, when present — schema errors from your previous attempt at this step. Fix
   exactly those and re-emit.
+- `context.reworkFrom`, when present — this step was reopened because a **later** step was rejected,
+  not because your output was malformed. It carries `stepId` (the step that was rejected), `comment`
+  (the reviewer's reason — the whole point of the rejection), and `output` (that step's `output.json`,
+  relative to the task directory, since a rejection routes backwards and `priorOutputs` cannot reach
+  it). Read the comment and the rejected step's findings, and fix what they name. Re-doing the step
+  without reading them sends the same work back to the same reviewer.
 - `task.json` for the task under design — user story, acceptance criteria, target module.
 - `.nit/adr/` for prior decisions you must respect, and `.nit/boundaries/modules.json` for module
   boundaries, when present.

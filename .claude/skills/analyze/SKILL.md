@@ -16,6 +16,13 @@ analysis that later steps (design, implementation) build on. Your output is a ma
 ## Inputs
 
 - `input.json` in the step directory — `taskId`, `stepId`, `role`, `skillList`, and `context`.
+- `context.repairErrors`, when present — schema errors from your previous attempt at this step. Fix
+  exactly those and re-emit.
+- `context.reworkFrom`, when present — this step was reopened because a **later** step was rejected,
+  not because your output was malformed. It carries `stepId` (the step that was rejected), `comment`
+  (the reviewer's reason), and `output` (that step's `output.json`, relative to the task directory,
+  since a rejection routes backwards and `priorOutputs` cannot reach it). Read both and address what
+  they name.
 - `task.json` (or TASK.md) for the task under analysis — user story, acceptance criteria, module.
 - `.nit/prd/summary.json` and `.nit/boundaries/modules.json` for product and module context, when present.
 - `.nit/registry/task-types.json` for the default archetype of the task's type (starting point for
