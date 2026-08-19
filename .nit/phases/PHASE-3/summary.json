@@ -216,7 +216,8 @@
       "title": "Every declared schema and archetype field must have a consumer, proven by test",
       "context": "Four defects in this phase share one root cause: a declared contract nothing consumes. rejectionRouting targets were validated only as keys (TASK-027); the $detect placeholder role was never resolved (TASK-028); the per-step approval flag was never read (TASK-029); and phase success criteria have no producer at all (TASK-030, the inverse). Each resolved cleanly, validated successfully, and then failed at runtime or silently did nothing. None was caught by a test, because the tests asserted what the code did rather than that the declarations were honoured.",
       "decision": "Every field a schema or archetype declares is covered by a conformance test asserting something reads it, in the same shape as the skill-prose conformance tests this phase adopted. A field with no consumer is either wired up or removed.",
-      "status": "proposed"
+      "status": "accepted",
+      "promotedTo": ".nit/adr/0007-every-declared-field-must-have-a-proven-consumer.md"
     }
   ],
   "recommendations": [
