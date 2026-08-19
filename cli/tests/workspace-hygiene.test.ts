@@ -143,6 +143,12 @@ describe("every step skill reads both reopen causes", () => {
     expect(text).toContain("context.reworkFrom");
   });
 
+  test("nit:continue documents both reopen causes", () => {
+    const text = readFileSync(join(ROOT, ".claude", "skills", "continue", "SKILL.md"), "utf8");
+    expect(text).toContain("repairErrors");
+    expect(text).toContain("reworkFrom");
+  });
+
   test("nit:reject no longer promises rework context it cannot deliver", () => {
     const text = readFileSync(join(ROOT, ".claude", "skills", "reject", "SKILL.md"), "utf8");
     expect(text).toContain("reworkFrom");

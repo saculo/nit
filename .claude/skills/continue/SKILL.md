@@ -75,6 +75,13 @@ increments `reopenCount`, and either reopens the step with the errors embedded i
 `maxReopenCount`, sets the task to `escalated` and reports the accumulated errors. On a reopen,
 return to step 2 with the updated `input.json`.
 
+A step can be reopened for either of two reasons, and the specialist is told which. **Repair** is the
+path above: the output was malformed, and `context.repairErrors` carries the schema errors to fix.
+**Rework** comes from `/nit:reject`: the output was well-formed but unsatisfactory, so a later step's
+rejection routed work backwards and `context.reworkFrom` carries the rejected step's id, the
+rejection comment, and a path to its `output.json` (TASK-031). A step reopened for repair while a
+rework is still outstanding carries both. Both are cleared once the step succeeds.
+
 Two outcomes park the task at `blocked` instead, both printing `{"blocked": true, "status":
 "blocked", "reason": "..."}`. A schema-valid `blocked` result means the specialist reported it cannot
 proceed (`needs-splitting`, `contradictory-input`, `criterion-unsatisfiable`); a missing `output.json`
