@@ -151,3 +151,79 @@ describe("nit:phase-summary output (phase-summary)", () => {
     expect(validate({ ...minimal, tasks: [{ status: "done" }] }).valid).toBe(false);
   });
 });
+
+// TASK-030 — phase success criteria had no v2 home. nit:phases discussed them
+// and discarded them, so phase-summary had to derive them from PHASE.md prose or
+// from the milestone sentence, and the ids it assigned were not stable between
+// runs. The summary requires milestone.criteria[]; nothing produced the input.
+describe("phase.successCriteria — the summary's input contract", () => {
+  function validatePhase(phase: unknown): { valid: boolean; errors: string } {
+    const ajv = createAjv();
+    const compiled = ajv.compile(require(resolveSchema("phase")!));
+    return { valid: compiled(phase) as boolean, errors: ajv.errorsText(compiled.errors) };
+  }
+
+  const base = { id: "PHASE-3", title: "Review, QA, and Boundary Enforcement", status: "planned" };
+
+  // AC-3 — additive: a phase.json written before the field stays valid
+  test("a phase without successCriteria still validates", () => {
+    expect(validatePhase(base).valid).toBe(true);
+  });
+
+  // AC-1
+  test("a phase carrying criteria with stable ids validates", () => {
+    const { valid, errors } = validatePhase({
+      ...base,
+      successCriteria: [
+        { id: "SC-1", description: "nit:review produces a valid review-result within step-output." },
+        { id: "SC-2a", description: "A sub-criterion keeps a stable id too." },
+      ],
+    });
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+  });
+
+  // the summary matches criteria by id across runs, so the id convention is enforced
+  test.each(["criterion-one", "1", "sc-1", "AC-1", "SC-", ""])("id %p is rejected", (id) => {
+    expect(validatePhase({ ...base, successCriteria: [{ id, description: "x" }] }).valid).toBe(false);
+  });
+
+  test("a criterion needs a non-empty description", () => {
+    expect(validatePhase({ ...base, successCriteria: [{ id: "SC-1", description: "" }] }).valid).toBe(false);
+    expect(validatePhase({ ...base, successCriteria: [{ id: "SC-1" }] }).valid).toBe(false);
+  });
+
+  // AC-2 — the round trip is the point: what nit:phases writes is what
+  // phase-summary reports on, matched by id
+  test("every phase criterion id can be carried into a summary verdict", () => {
+    const phase = {
+      ...base,
+      successCriteria: [
+        { id: "SC-1", description: "The five-step pipeline completes end-to-end." },
+        { id: "SC-2", description: "Boundary violations are detected." },
+      ],
+    };
+    expect(validatePhase(phase).valid).toBe(true);
+
+    const summary = {
+      phaseId: phase.id,
+      title: phase.title,
+      milestone: {
+        reached: false,
+        criteria: phase.successCriteria.map((c, i) => ({
+          id: c.id,
+          result: i === 0 ? "met" : "unmet",
+          evidence: `Checked against ${c.description}`,
+        })),
+      },
+    };
+    const { valid, errors } = validate(summary);
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+
+    // the ids the summary reports are exactly the ids the phase declared
+    expect(summary.milestone.criteria.map((c) => c.id)).toEqual(
+      phase.successCriteria.map((c) => c.id)
+    );
+  });
+});

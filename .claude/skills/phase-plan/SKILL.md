@@ -97,15 +97,23 @@ Phase directories use natural (non-zero-padded) numbering: `PHASE-1`, `PHASE-2`,
   "title": "Short descriptive title",
   "milestone": "What is achieved — one sentence",
   "status": "planned",
-  "businessValue": "What is usable or demonstrable at the end of this phase, and why it matters."
+  "businessValue": "What is usable or demonstrable at the end of this phase, and why it matters.",
+  "successCriteria": [
+    { "id": "SC-1", "description": "What must be demonstrably true for the milestone to be reached." },
+    { "id": "SC-2", "description": "Another, verifiable by inspection or execution." }
+  ]
 }
 ```
 
 - `id` — `PHASE-N`, matching the directory.
 - `status` — a new phase is `planned` (allowed values: `planned`, `in-progress`, `done`).
-- `milestone` and `businessValue` carry the phase intent. Per-phase scope, draft tasks, and
-  success criteria are worked out interactively and then materialised by `nit:tasks`, which reads
-  `phase.json` and the PRD summary — they are not stored in `phase.json`.
+- `milestone` and `businessValue` carry the phase intent.
+- `successCriteria` — **persist the criteria you agree with the user; do not discard them.** They are
+  the contract `nit:phase-summary` verifies the milestone against, criterion by criterion, matching by
+  `id` across runs. Criteria that live only in the planning conversation cannot be verified later, and
+  criteria re-derived at summary time do not keep stable ids (TASK-030).
+- Per-phase scope and draft tasks are still worked out interactively and materialised by `nit:tasks`,
+  which reads `phase.json` and the PRD summary — those are not stored in `phase.json`.
 
 Do NOT also write a prose `PHASE.md`; `phase.json` is the single source of truth, rendered for
 humans on demand by `nit:status`.
@@ -116,12 +124,16 @@ humans on demand by `nit:status`.
 2. Identify the natural delivery milestones — what are the meaningful "checkpoints" where value is delivered?
 3. Order by: risk reduction → value delivery → dependency chain
 4. For each phase, define scope using the YAGNI rule: only what this milestone needs (discuss scope with the user; it is not persisted in phase.json)
-5. Write each `phase.json` and validate it immediately:
+5. Agree the phase's success criteria with the user — what must be demonstrably true for the milestone
+   to be reached — and record them in `successCriteria` with `SC-N` ids. Write criteria someone can
+   check: "nit:review produces a valid review-result within step-output" is verifiable; "review works
+   well" is not
+6. Write each `phase.json` and validate it immediately:
    ```bash
    bun run ./cli/src/cli.ts validate --schema phase .nit/phases/PHASE-N/phase.json
    ```
    A non-zero exit aborts the step — fix the reported field and re-write before continuing.
-6. Report back with a summary of all phases:
+7. Report back with a summary of all phases:
    - Phase title and milestone (one line each)
    - Why this ordering
 
@@ -130,6 +142,8 @@ humans on demand by `nit:status`.
 - Never include work in a phase that isn't directly required for that phase's milestone
 - Never pre-build infrastructure, modules, or abstractions "for later"
 - Each phase must have a clear, demonstrable business value — not just "setup" or "preparation"
+- Every phase carries success criteria in `phase.json`. A phase whose criteria exist only in the
+  conversation cannot have its milestone verified when it closes
 - Detailed task planning happens separately per task via `nit:tasks`
 - If a phase has no clear business value, it should be merged into another phase
 - Brownfield: always consider initial-state.md; greenfield: never reference it

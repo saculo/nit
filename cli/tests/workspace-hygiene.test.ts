@@ -154,3 +154,34 @@ describe("every step skill reads both reopen causes", () => {
     expect(text).toContain("reworkFrom");
   });
 });
+
+// TASK-030 — the field is only useful if the producer writes it and the consumer
+// reads it. Shipping a schema field with neither is the pattern this phase kept
+// finding, so pin both ends.
+describe("phase success criteria have a producer and a consumer", () => {
+  function skill(name: string): string {
+    return readFileSync(join(ROOT, ".claude", "skills", name, "SKILL.md"), "utf8");
+  }
+
+  test("nit:phases persists successCriteria", () => {
+    const text = skill("phase-plan");
+    expect(text).toContain("successCriteria");
+    // and no longer says they are discarded
+    expect(text).not.toContain("success criteria are worked out interactively and then materialised");
+  });
+
+  test("its documented phase.json template carries them", () => {
+    const text = skill("phase-plan");
+    const open = text.indexOf("```json", text.indexOf("### phase.json Format"));
+    const body = text.slice(open + 7, text.indexOf("```", open + 7));
+    const phase = JSON.parse(body);
+    expect(Array.isArray(phase.successCriteria)).toBe(true);
+    expect(phase.successCriteria.length).toBeGreaterThan(0);
+  });
+
+  test("nit:phase-summary reads them and no longer derives from the milestone", () => {
+    const text = skill("phase-summary");
+    expect(text).toContain("phase.json.successCriteria");
+    expect(text).not.toContain("derive one\n   criterion per distinct outcome named in `milestone`");
+  });
+});

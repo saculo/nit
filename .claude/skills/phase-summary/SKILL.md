@@ -23,8 +23,9 @@ You write two artifacts, for two audiences:
 
 ## Inputs
 
-- `.nit/phases/PHASE-N/phase.json` — the milestone and business value you are verifying against. Fall
-  back to `PHASE.md` for a workspace still on v1 (see "Mixed workspaces").
+- `.nit/phases/PHASE-N/phase.json` — the milestone, the business value, and `successCriteria`, the
+  contract you verify against. Fall back to `PHASE.md` for a workspace still on v1 (see "Mixed
+  workspaces").
 - Every task under `.nit/phases/PHASE-N/tasks/`:
   - `task.json` — the acceptance criteria the task was contracted to deliver
   - `state.json` — where the task actually got to; a task not `done` is not evidence of anything
@@ -59,13 +60,19 @@ from", and a summary that cannot answer it will not be trusted twice.
    the evidence, and put the tasks in `taskIds` so the trace is explicit. Guessing is not verifying: a
    criterion you cannot check against a step output is `unmet`.
 
-   **Where the criteria come from.** `phase.json` carries only `milestone` — one sentence — and
-   `businessValue`; it has no `successCriteria` field, and its schema rejects unknown fields, so there
-   is no v2 source for a criteria list yet (TASK-030). Until there is, take them in this order:
-   the phase's `PHASE.md` `<success-criteria>` if the workspace still has one; otherwise derive one
-   criterion per distinct outcome named in `milestone`, and say so in the evidence. Either way the
-   `id` you assign must be stable enough to mean the same thing on a re-run — prefer the `SC-N` ids
-   from `PHASE.md` when they exist.
+   **The criteria come from `phase.json.successCriteria`** (TASK-030). Use its ids verbatim in
+   `milestone.criteria` so a re-run reports on the same criteria, and report on every one — a criterion
+   you omit reads as a criterion that passed.
+
+   A `phase.json` with no `successCriteria` is a phase planned before the field existed, or one
+   `nit:phases` did not complete. Do not invent criteria for it and do not derive them from the
+   `milestone` sentence: say the phase has none recorded, leave `milestone.reached` false, and point at
+   `nit:phases` to add them. Inventing criteria means verifying the phase against a bar you set
+   yourself after the fact, which is not verification.
+
+   A phase recorded as v1 `PHASE.md` prose has its criteria in `<success-criteria>`. Read them, and say
+   in each `evidence` that the criterion came from prose rather than from `phase.json` — see "Mixed
+   workspaces".
 3. **Aggregate**, per the table above, attributing every item.
 4. **Look for the pattern.** Four tasks each deviating in the same direction is a finding about the
    design, not four findings about four tasks. Say so in the PLR, and raise it as an `adrCandidate` if
