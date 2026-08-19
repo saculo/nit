@@ -8,7 +8,7 @@
     <title>Phase Success Criteria Need a v2 Home</title>
     <type>devops</type>
     <module>@nit/cli</module>
-    <status>todo</status>
+    <status>done</status>
   </meta>
 
   <user-story>

@@ -20,14 +20,45 @@
     },
     "status": {
       "type": "string",
-      "enum": ["planned", "in-progress", "done"],
+      "enum": [
+        "planned",
+        "in-progress",
+        "done"
+      ],
       "description": "Current phase status."
     },
     "businessValue": {
       "type": "string",
       "description": "Business value delivered by completing this phase."
+    },
+    "successCriteria": {
+      "type": "array",
+      "description": "What must be true for this phase's milestone to be reached. Worked out with the user at planning and persisted here, because nit:phase-summary verifies the milestone criterion by criterion and matches them by id across runs \u2014 criteria that live only in a conversation cannot be verified against, and criteria re-derived each run do not keep stable ids. Optional in the schema so a phase.json written before this field stays valid, but nit:phases writes it for every new phase.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^SC-\\d+[a-z]?$",
+            "description": "Stable identifier, SC-1, SC-2, \u2026 A criterion's id must mean the same thing on every re-run of the phase summary."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What must be demonstrably true. Verifiable by inspection or execution, not a restatement of the milestone."
+          }
+        },
+        "required": [
+          "id",
+          "description"
+        ]
+      }
     }
   },
-  "required": ["id", "title", "status"],
+  "required": [
+    "id",
+    "title",
+    "status"
+  ],
   "additionalProperties": false
 }
