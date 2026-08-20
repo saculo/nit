@@ -62,6 +62,42 @@ describe("dependency rules — loading", () => {
     );
   });
 
+  // A rule can be well-formed, name real modules, and still never fire. Both
+  // shapes below resolve without complaint, which is the same silent-no-op the
+  // unknown-module check exists to prevent.
+  test("two rules governing the same pair are rejected, naming both", () => {
+    expect(() =>
+      loadDependencyRules(
+        {
+          rules: [
+            { from: "api", to: "core", allowed: true },
+            { from: "api", to: "core", allowed: false },
+          ],
+        },
+        MODULES
+      )
+    ).toThrow(/rules\[1\][\s\S]*already governed by rules\[0\]/);
+  });
+
+  test("a rule governing a module and itself is rejected", () => {
+    expect(() =>
+      loadDependencyRules({ rules: [{ from: "api", to: "api", allowed: false }] }, MODULES)
+    ).toThrow(/to itself/);
+  });
+
+  test("the same pair in opposite directions is fine — they are different rules", () => {
+    const rules = loadDependencyRules(
+      {
+        rules: [
+          { from: "api", to: "core", allowed: true },
+          { from: "core", to: "api", allowed: false },
+        ],
+      },
+      MODULES
+    );
+    expect(rules.rules).toHaveLength(2);
+  });
+
   test("an unknown top-level field is rejected", () => {
     expect(() => loadDependencyRules({ rules: [], mode: "strict" }, MODULES)).toThrow(
       /validation failed/

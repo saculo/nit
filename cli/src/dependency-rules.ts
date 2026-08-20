@@ -62,6 +62,37 @@ export function loadDependencyRules(raw: unknown, modules: ModuleEntry[]): Depen
         `Known modules: ${[...known].join(", ")}.`
     );
   }
+
+  // Two further shapes of rule that can never do what they say. Both are
+  // well-formed and both would resolve without complaint, which is the failure
+  // mode this loader exists to prevent.
+  const incoherent: string[] = [];
+  const seen = new Map<string, number>();
+  for (const [i, rule] of (raw as DependencyRules).rules.entries()) {
+    // A rule governing a module and itself: resolution always allows a module to
+    // depend on itself, so such a rule can never fire whatever it says.
+    if (rule.from === rule.to) {
+      incoherent.push(`  rules[${i}]: "${rule.from}" to itself — a module always may depend on itself`);
+      continue;
+    }
+    // Two rules for one pair: resolution answers with the first match, so the
+    // second silently loses. Which one the author meant is not knowable here.
+    const key = `${rule.from}\u0000${rule.to}`;
+    const first = seen.get(key);
+    if (first !== undefined) {
+      incoherent.push(
+        `  rules[${i}]: "${rule.from}" -> "${rule.to}" is already governed by rules[${first}]`
+      );
+    } else {
+      seen.set(key, i);
+    }
+  }
+  if (incoherent.length > 0) {
+    throw new Error(
+      `dependency-rules contains rules that can never take effect:\n${incoherent.join("\n")}`
+    );
+  }
+
   return raw as DependencyRules;
 }
 
