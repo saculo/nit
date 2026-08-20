@@ -1,0 +1,27 @@
+{
+  "id": "TASK-037",
+  "phase": "PHASE-4",
+  "title": "ADR Trigger Evaluation in the Supervisor",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given config/adr-triggers.json and a step output, When the supervisor evaluates the triggers after ingest, Then a multi-module change and a new shared component each match their declared condition."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a step output matching no trigger, When evaluation runs, Then nothing is reported, so a quiet step stays quiet."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a trigger condition the evaluator does not recognise, When it is evaluated, Then it fails naming the condition rather than silently matching nothing."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the trigger conditions adr-triggers.json declares, When they are inspected, Then every one is read by the evaluator, proven by test (ADR-0007)."
+    }
+  ]
+}

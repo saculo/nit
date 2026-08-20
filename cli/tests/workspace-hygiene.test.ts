@@ -284,8 +284,20 @@ describe("the nit workspace is expressed in v2 artifacts", () => {
   });
 
   // AC-5 — the v1 prose is the historical record and stays
-  test("the prose each task was migrated from is still present", () => {
-    const missing = taskFiles().filter((f) => !existsSync(f.replace("task.json", "TASK.md")));
-    expect(missing).toEqual([]);
+  // The migration's property is completeness, not symmetry: every task recorded
+  // as v1 prose gained a task.json. The inverse would be wrong — nit:tasks
+  // forbids writing a parallel TASK.md, so a task created after the migration
+  // has no prose and should not be required to.
+  test("every task recorded as prose gained a task.json, and its prose was kept", () => {
+    const orphaned: string[] = [];
+    for (const p of readdirSync(join(NIT, "phases")).filter((d) => d.startsWith("PHASE-"))) {
+      const tasks = join(NIT, "phases", p, "tasks");
+      if (!existsSync(tasks)) continue;
+      for (const t of readdirSync(tasks)) {
+        const prose = join(tasks, t, "TASK.md");
+        if (existsSync(prose) && !existsSync(join(tasks, t, "task.json"))) orphaned.push(`${p}/${t}`);
+      }
+    }
+    expect(orphaned).toEqual([]);
   });
 });

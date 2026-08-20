@@ -1,0 +1,23 @@
+{
+  "id": "TASK-042",
+  "phase": "PHASE-4",
+  "title": "task-types.json Is Keyed by Archetype, Not Task Type",
+  "type": "devops",
+  "targetModule": "@nit/workspace",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given nit:tasks' Archetype Proposal step, When it looks up a task's type in registry/task-types.json, Then an entry exists for each of backend, frontend, devops and qa, and each carries a defaultArchetype."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the registry, When its purpose is settled, Then it either describes task types with archetype defaults or is renamed to what it actually holds, and nit:init's template and the skills that read it agree."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a task of each type, When its default archetype is resolved, Then that archetype's implement step reaches the engineer that type implies, asserted by test."
+    }
+  ]
+}

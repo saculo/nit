@@ -50,6 +50,8 @@
   <draft-tasks>
   - Migrate this repository's own .nit/ workspace to v2 artifacts (TASK-032; must land first — nit:tasks cannot plan this phase and boundary enforcement has no module registry to enforce against without it)
   - Give a qa-type task an archetype that dispatches to the qa engineer (TASK-033; nothing in the shipped set does today)
+  - Fix registry/task-types.json, which is keyed by archetype names so every type lookup nit:tasks makes fails (TASK-042)
+  - Give task.json a field for the dependencies nit:tasks is instructed to record and present (TASK-043)
   - Create dependency-rules.json format and schema
   - Implement boundary enforcement in validation: modules.json allowedDependencies plus dependency-rules.json, with violations as structured errors in validation.json
   - Enforce the cross-module-change boundary-check step against those rules

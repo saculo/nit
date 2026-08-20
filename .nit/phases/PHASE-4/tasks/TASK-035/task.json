@@ -1,0 +1,27 @@
+{
+  "id": "TASK-035",
+  "phase": "PHASE-4",
+  "title": "Boundary Enforcement at Ingest",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given an implementation-result whose filesChanged touch a module the task's targetModule may not depend on, When the supervisor ingests it, Then the violation is reported and the step does not pass validation."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a boundary violation, When validation.json is written, Then the entry is distinguishable from a schema error \u2014 by its path, its message, or an explicit field \u2014 so a reader can tell an architectural failure from a malformed output."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given an implementation-result that respects the rules, When it is ingested, Then no boundary error is produced and the step proceeds exactly as before."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a workspace with no dependency-rules.json, When ingest runs, Then boundary checking is skipped without error, so the feature is additive for projects that have not configured it."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "TASK-041",
+  "phase": "PHASE-4",
+  "title": "nit:skills Listing Command",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the skills on disk and registry/skills.json, When nit skills runs, Then it lists every skill grouped by layer \u2014 base step, language, custom, global \u2014 and names the modules each is associated with."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a skill declared in a registry or module but absent from disk, When nit skills runs, Then it is listed as missing rather than omitted, since a silently dropped skill is what routing does at runtime."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given no arguments, When nit skills runs, Then it exits 0 and its output reflects the repository's actual skills rather than a hardcoded list."
+    }
+  ]
+}

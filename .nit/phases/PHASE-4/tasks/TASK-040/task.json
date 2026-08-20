@@ -1,0 +1,23 @@
+{
+  "id": "TASK-040",
+  "phase": "PHASE-4",
+  "title": "Routing Introspection Commands",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task and a step, When nit explain-routing runs, Then it prints the full composition chain \u2014 base, language, custom, step-scoped and global \u2014 showing which layer contributed each skill and which were dropped as absent."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task, When nit resolve-routing runs, Then it writes a schema-valid routing.json for that task's current step and exits 0."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a task whose module is not in the registry, When either command runs, Then it fails naming the module and pointing at modules.json rather than resolving a partial chain."
+    }
+  ]
+}
