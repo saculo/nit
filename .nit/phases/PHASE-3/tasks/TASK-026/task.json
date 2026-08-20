@@ -1,0 +1,26 @@
+{
+  "id": "TASK-026",
+  "phase": "PHASE-3",
+  "title": "Stop Scaffolding v1 Artifacts and Remove Orphaned Machinery",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a fresh nit:init run, When the generated artifact-types.json is inspected, Then every declared artifact type corresponds to something the v2 pipeline actually writes, and none of DESIGN.md, STEPS.md, IMPLEMENTATION.md, or REVIEW.md appears."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the generated workspace, When each config and registry file is validated against its schema, Then all of them pass, as ADR-0003 requires at write time."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the hooks directory, When it is inspected after this task, Then no hook remains that validates slash-command arguments for a skill that is dispatched by the supervisor, and every remaining hook is wired to a skill that still exists."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the duplicated .nit/skills/ and .nit/hooks/ trees, When Q-4 is settled, Then exactly one tree remains, the choice is recorded with its rationale, and the surviving tree is consistent with the principle that .nit/ holds project business state rather than nit infrastructure."
+    }
+  ]
+}

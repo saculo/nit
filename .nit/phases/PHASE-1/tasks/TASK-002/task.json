@@ -1,0 +1,30 @@
+{
+  "id": "TASK-002",
+  "phase": "PHASE-1",
+  "title": "Core Pipeline Skills",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .nit/skills/ directory, When listing skill directories, Then 7 core pipeline skills exist: clarify, phase-plan, create-tasks, design, implement, task-review, phase-summary."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given any core pipeline skill, When reading its SKILL.md frontmatter, Then the name field uses the nit:* namespace and the hooks section references a per-skill validation script."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the nit:clarify skill, When invoked with a PRD path, Then it produces .nit/CLARIFICATIONS.md with clarifications, unknowns, risks, and assumptions sections."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the nit:review skill, When invoked on a task with all artifacts present, Then it produces REVIEW.md with a verdict of approved or rework-requested, and updates TASK.md status accordingly."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given the nit:phase-summary skill, When invoked on a completed phase, Then it produces SUMMARY.md, creates a PLR in .nit/plr/, and updates PHASE.md status."
+    }
+  ]
+}

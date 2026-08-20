@@ -1,0 +1,26 @@
+{
+  "id": "TASK-003",
+  "phase": "PHASE-1",
+  "title": "Orchestration and Utility Skills",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .nit/skills/ directory, When listing skill directories, Then e2e-orchestration, init, and status skill directories exist with SKILL.md files."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the nit:orchestrate skill, When reading its workflow steps, Then all pipeline steps are wired: clarify \u2192 phases \u2192 tasks \u2192 design \u2192 implement \u2192 review \u2192 phase-summary."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the nit:init skill, When invoked in a git repository, Then it creates .nit/ directory structure with config/nit.yaml containing the selected mode."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the nit:status skill, When invoked on an initialized workspace, Then it displays phase/task tree with statuses, suggests the next step, and lists all available /nit:* commands including init, phase-summary, and brownfield-orchestrate."
+    }
+  ]
+}

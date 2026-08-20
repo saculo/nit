@@ -1,0 +1,26 @@
+{
+  "id": "TASK-006",
+  "phase": "PHASE-1",
+  "title": "Init Placement of Agents, Skills, and Hooks",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a user running /nit:init, When prompted for placement location, Then the user can choose between project-local (.claude/) or global (~/.claude/)."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the user selects project-local placement, When init completes, Then all 7 agent files exist in .claude/agents/, all skill directories exist in .claude/skills/ with SKILL.md files, and all hook scripts exist in .claude/hooks/ with executable permissions."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given nit files already exist in the target .claude/ directory, When init runs, Then the user is warned about existing files and asked whether to overwrite or skip each conflict."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given init completes successfully, When the user invokes any /nit:* command, Then the skill is found and its validation hook executes correctly."
+    }
+  ]
+}

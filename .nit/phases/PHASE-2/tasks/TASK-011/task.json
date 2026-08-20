@@ -1,0 +1,30 @@
+{
+  "id": "TASK-011",
+  "phase": "PHASE-2",
+  "title": "Config and Registry Scaffolding (nit:init Rewrite)",
+  "type": "devops",
+  "targetModule": "@nit/workspace",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given an empty project directory, When nit:init is run in greenfield mode, Then .nit/ is created with subdirectories config/, registry/, boundaries/, phases/, decisions/, logs/, plr/, prd/, project/ and all default config and registry JSON files are present and valid against their schemas."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given nit:init has completed in greenfield mode, When workspace.json is inspected, Then it contains nitVersion field, mode set to \"greenfield\", and project metadata fields."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given an existing project with Java and TypeScript source directories, When nit:init is run in brownfield mode, Then boundaries/modules.json is populated with detected modules, each having a languageId field, and .claude/skills/<language>/SKILL.md stubs are auto-generated for each detected language."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given nit:init has completed, When registry/task-types.json is inspected, Then it maps each of the 6 concrete task types (backend-feature, frontend-feature, infra-change, cross-module-change, bugfix, architecture-decision) to their archetype names."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given nit:init has completed, When registry/roles.json is inspected, Then it lists all 7 specialist roles: analyst, architect, backend-engineer, frontend-engineer, infra-engineer, reviewer, qa."
+    }
+  ]
+}

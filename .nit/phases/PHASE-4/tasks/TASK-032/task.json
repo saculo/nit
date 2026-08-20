@@ -1,0 +1,30 @@
+{
+  "id": "TASK-032",
+  "phase": "PHASE-4",
+  "title": "Migrate the nit Workspace to v2 Artifacts",
+  "type": "devops",
+  "targetModule": "@nit/workspace",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the migrated workspace, When `nit:tasks` runs its Step 0 validation for PHASE-4, Then every precondition it checks is satisfied \u2014 `phase.json`, `prd/summary.json`, `boundaries/modules.json`, and `registry/task-types.json` all exist and validate."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given every generated `phase.json` and `task.json`, When each is validated against its schema, Then all pass, and each task's acceptance criteria match the prose it came from in count and in text."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given `boundaries/modules.json`, When `nit route` resolves routing for a task, Then it exits 0 rather than failing with \"Module registry not found\", so the skill composition engine works on this repository."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the migrated task files, When their declared modules and types are inspected, Then every `targetModule` names a module in the registry and every `type` is one of the four the schema allows."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given the v1 prose files, When the migration completes, Then they are still present and unmodified, and nothing claims a task ran through the supervisor when it did not."
+    }
+  ]
+}

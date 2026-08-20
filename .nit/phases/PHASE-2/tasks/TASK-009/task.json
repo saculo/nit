@@ -1,0 +1,30 @@
+{
+  "id": "TASK-009",
+  "phase": "PHASE-2",
+  "title": "CLI Package Foundation and JSON Schemas",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the @nit/cli package is scaffolded, When a developer inspects the package structure, Then package.json exists with a bin entry for \"nit\", src/ directory exists, and schemas/ directory contains all ~13 standalone .schema.json files."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a valid JSON artifact file conforming to workspace.schema.json, When `npx nit validate --schema workspace artifact.json` is executed, Then the command exits with code 0 and outputs no errors."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given an invalid JSON artifact file missing required fields, When `npx nit validate --schema workspace artifact.json` is executed, Then the command exits with a non-zero code and outputs structured error messages identifying the validation failures."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the step-output.schema.json file, When its contents are inspected, Then it contains $defs for embedded types (analysis-result, design-result, implementation-result, review-result, qa-result, adr-candidate) referenced via $ref (per U-8)."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given any of the ~13 schema files, When validated against the JSON Schema meta-schema, Then each schema file is itself valid JSON Schema (draft-07 or later)."
+    }
+  ]
+}

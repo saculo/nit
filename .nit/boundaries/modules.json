@@ -1,0 +1,25 @@
+{
+  "modules": [
+    {
+      "name": "@nit/cli",
+      "path": "cli",
+      "languageId": "typescript",
+      "description": "The deterministic core: supervisor state machine, archetype and routing resolvers, JSON schemas, and the nit CLI. Everything ADR-0004 says must be tested code rather than prose.",
+      "allowedDependencies": []
+    },
+    {
+      "name": "@nit/skills",
+      "path": ".claude",
+      "languageId": "markdown",
+      "description": "The agent-facing definitions: step and command skills, agent personas, and the validation hooks. Skills invoke the CLI; the CLI never reads a skill.",
+      "allowedDependencies": ["@nit/cli"]
+    },
+    {
+      "name": "@nit/workspace",
+      "path": ".nit",
+      "languageId": "markdown",
+      "description": "Project business state — PRD, phases, tasks, decisions, retrospectives. Consumed by the skills and the CLI; depends on neither (ADR-0006).",
+      "allowedDependencies": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "TASK-012",
+  "phase": "PHASE-2",
+  "title": "Agent Definitions for v2 Roles",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "in-progress",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .claude/agents/ directory, When its contents are listed, Then 7 agent .md files exist: analyst.md, architect.md, backend-engineer.md, frontend-engineer.md, infra-engineer.md, reviewer.md, qa.md."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the analyst.md agent definition, When its content is inspected, Then it references the nit:analyze skill and describes the analyst role (analysis, archetype proposal per U-11)."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given each agent definition file, When its allowed-tools section is inspected, Then it lists tools appropriate for that role (e.g., Read/Write/Edit for engineers, Read-only for reviewer)."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given v1 agent files for requirement-gatherer and devops-engineer, When v2 agent definitions are applied, Then requirement-gatherer is replaced by analyst and devops-engineer is replaced by infra-engineer with updated skill references."
+    }
+  ]
+}

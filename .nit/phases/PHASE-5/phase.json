@@ -1,0 +1,49 @@
+{
+  "id": "PHASE-5",
+  "title": "Skill Creation, Distribution, and Polish",
+  "milestone": "Users can interactively create custom skills, install nit globally via package manager, and run the complete pipeline with run logging and refined repair flows on a multi-module project",
+  "status": "planned",
+  "businessValue": "The system becomes self-extensible and distributable. Users can add framework, tool, and pattern expertise via `nit:add-skill` without manually authoring SKILL.md files. The Bun/Node CLI package lets users install nit globally with a single command and update it independently of project state. Run logging provides an audit trail of every supervisor invocation. Repair flow refinement makes rejection/reopen cycles more predictable. End-to-end testing on a multi-module project validates the entire system works as designed across all archetypes, skill layers, and boundary rules.",
+  "successCriteria": [
+    {
+      "id": "SC-1",
+      "description": "nit:add-skill creates a valid custom skill interactively, registers it in skills.json, and optionally associates it with modules"
+    },
+    {
+      "id": "SC-2",
+      "description": "bunx @nit/cli install (and npx equivalent) installs core nit to ~/.claude/skills/nit/, ~/.claude/agents/nit/, ~/.claude/hooks/nit/"
+    },
+    {
+      "id": "SC-3",
+      "description": "bunx @nit/cli update updates global core without affecting project state"
+    },
+    {
+      "id": "SC-4",
+      "description": "nitVersion mismatch between global core and project state produces a clear warning"
+    },
+    {
+      "id": "SC-5",
+      "description": "Run logs are written after each supervisor invocation with correct metadata"
+    },
+    {
+      "id": "SC-6",
+      "description": "nit:status shows recent run history alongside task/phase status"
+    },
+    {
+      "id": "SC-7",
+      "description": "Rejection routing correctly handles comment-based overrides (e.g., \"reject review -> reopen review\" when comment indicates review-only issue)"
+    },
+    {
+      "id": "SC-8",
+      "description": "Full pipeline completes end-to-end on a multi-module project: init -> clarify -> phases -> tasks -> (analyze -> design -> implement -> review -> qa) per task -> phase-summary"
+    },
+    {
+      "id": "SC-9",
+      "description": "At least 3 archetype types (backend-feature, frontend-feature, cross-module-change) exercised in the end-to-end test"
+    },
+    {
+      "id": "SC-10",
+      "description": "Skill composition verified with language + custom skills correctly loaded per module"
+    }
+  ]
+}

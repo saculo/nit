@@ -1,0 +1,7 @@
+{
+  "maxReopenCount": 3,
+  "autoAdvance": {
+    "enabled": false,
+    "requireApproval": true
+  }
+}

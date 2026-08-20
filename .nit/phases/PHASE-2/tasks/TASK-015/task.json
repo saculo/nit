@@ -1,0 +1,30 @@
+{
+  "id": "TASK-015",
+  "phase": "PHASE-2",
+  "title": "Deterministic Supervisor (nit:continue)",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task with no state.json and a backend-feature archetype, When nit:continue is run, Then state.json is created with currentStepId=\"analyze\", stepOrder listing all 5 steps, STEP-001-analyze/input.json is built, the analyst agent is dispatched, and upon successful output validation, approval.json is written with status=pending and state.json is updated to status=\"awaiting_approval\"."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task with state.json showing analyze step approved, When nit:continue is run, Then the supervisor advances to the design step, creates STEP-002-design/input.json, dispatches the architect agent with skills from routing.json, and upon successful output validation, approval.json is written with status=pending and state.json is updated to status=\"awaiting_approval\"."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the agent produces an output.json that fails schema validation, When nit:continue processes the output, Then validation.json is written with errors, state.json is updated with repairRequired=true and reopenCount incremented, and the step is reopened with error context in a new input.json."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a step has been reopened 3 times (reaching maxReopenCount), When validation fails again, Then the supervisor stops, sets status to \"escalated\", and reports accumulated validation errors to the user."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given a task with a backend-feature archetype, When nit:continue --dry-run is run, Then the supervisor prints the resolved archetype (flat step list), skill composition from routing.json, and the step input that would be built, but does not dispatch any agent or write state changes."
+    }
+  ]
+}

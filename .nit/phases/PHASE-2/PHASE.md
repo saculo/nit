@@ -6,7 +6,7 @@
     <id>PHASE-2</id>
     <title>Deterministic Supervisor and Core Pipeline</title>
     <milestone>A task can be created, routed through archetype-driven steps (analyze, design, implement), with JSON state tracking, schema validation, and layered skill composition — all driven by a deterministic supervisor</milestone>
-    <status>draft</status>
+    <status>in-progress</status>
   </meta>
 
   <business-value>

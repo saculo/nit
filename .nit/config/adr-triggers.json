@@ -1,0 +1,28 @@
+{
+  "triggers": [
+    {
+      "id": "new-library",
+      "condition": "A new external library or framework is added to the project",
+      "template": "madr",
+      "enabled": true
+    },
+    {
+      "id": "architecture-change",
+      "condition": "A significant architectural change is proposed that affects multiple modules",
+      "template": "madr",
+      "enabled": true
+    },
+    {
+      "id": "cross-module-boundary",
+      "condition": "A new cross-module dependency is introduced",
+      "template": "madr",
+      "enabled": true
+    },
+    {
+      "id": "data-schema-change",
+      "condition": "A breaking change to a shared data schema is proposed",
+      "template": "madr",
+      "enabled": true
+    }
+  ]
+}

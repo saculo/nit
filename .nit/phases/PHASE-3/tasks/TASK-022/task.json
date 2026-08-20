@@ -1,0 +1,26 @@
+{
+  "id": "TASK-022",
+  "phase": "PHASE-3",
+  "title": "Dedicated nit:qa Step Skill",
+  "type": "qa",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given an implemented and reviewed task, When the qa step runs, Then it produces an output.json carrying a qa-result with testsRun, testsPassed, and testsFailed, and that output validates against step-output.schema.json."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given behaviour that does not satisfy an acceptance criterion, When QA records it, Then the mismatch appears in issues[] naming the criterion, and testsFailed is non-zero rather than the outcome being reported only in prose."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a task whose acceptance criteria cannot be exercised \u2014 no runnable target or no test command, When the qa step runs, Then it emits the TASK-018 blocked contract rather than reporting zero tests as if that were a pass."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the resolved archetype for any concrete archetype that includes the qa step, When the supervisor dispatches it, Then the step role, the agent definition, and the skill name agree, and routing resolves the base skill to a SKILL.md that exists on disk."
+    }
+  ]
+}

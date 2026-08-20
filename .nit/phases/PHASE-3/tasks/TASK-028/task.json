@@ -1,0 +1,22 @@
+{
+  "id": "TASK-028",
+  "phase": "PHASE-3",
+  "title": "Resolve $detect to a Concrete Engineer Role at Dispatch",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a bugfix task whose task.json declares a type, When the supervisor prepares the implement step, Then the dispatch descriptor's role is the concrete engineer role for that type, and no descriptor or input.json carries the literal `$detect`."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given each of the four task types, When $detect is resolved, Then backend maps to backend-engineer, frontend to frontend-engineer, devops to infra-engineer, and qa to qa, and each resolved role has an agent definition on disk."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a task whose type cannot be mapped to an engineer role, When the supervisor prepares a $detect step, Then it fails with a message naming the type and the step, rather than dispatching an unresolvable role."
+    }
+  ]
+}

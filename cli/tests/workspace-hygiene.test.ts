@@ -189,3 +189,103 @@ describe("phase success criteria have a producer and a consumer", () => {
     expect(text).not.toContain("derive one\n   criterion per distinct outcome named in `milestone`");
   });
 });
+
+// TASK-032 — this repository's own .nit/ workspace, migrated to v2 artifacts.
+// Until it was, nit:tasks hard-stopped at Step 0 and nit route exited 1, so nit
+// could neither plan its next phase nor enforce boundaries on itself.
+describe("the nit workspace is expressed in v2 artifacts", () => {
+  const NIT = join(ROOT, ".nit");
+
+  function readJson(p: string): any {
+    return JSON.parse(readFileSync(p, "utf8"));
+  }
+
+  // AC-1 — the preconditions nit:tasks checks before it will plan a phase
+  test.each([
+    ["prd/summary.json", "prd-summary"],
+    ["boundaries/modules.json", "modules"],
+    ["registry/task-types.json", "task-types"],
+    ["config/workspace.json", "workspace"],
+  ])("%s exists and validates against %s", (rel, schema) => {
+    const path = join(NIT, rel);
+    expect(existsSync(path)).toBe(true);
+    const { valid, errors } = validate(schema, readJson(path));
+    expect(errors).toBe("No errors");
+    expect(valid).toBe(true);
+  });
+
+  test("every clarification is answered, as nit:phases requires", () => {
+    const summary = readJson(join(NIT, "prd", "summary.json"));
+    const unanswered = summary.clarifications.filter((c: any) => !c.answer).map((c: any) => c.id);
+    expect(unanswered).toEqual([]);
+  });
+
+  // AC-2 — every phase and task is machine-readable
+  test("every phase has a valid phase.json", () => {
+    const phases = readdirSync(join(NIT, "phases")).filter((d) => d.startsWith("PHASE-"));
+    expect(phases.length).toBeGreaterThan(0);
+    for (const p of phases) {
+      const path = join(NIT, "phases", p, "phase.json");
+      expect(existsSync(path)).toBe(true);
+      expect(validate("phase", readJson(path)).valid).toBe(true);
+    }
+  });
+
+  function taskFiles(): string[] {
+    const out: string[] = [];
+    for (const p of readdirSync(join(NIT, "phases")).filter((d) => d.startsWith("PHASE-"))) {
+      const tasks = join(NIT, "phases", p, "tasks");
+      if (!existsSync(tasks)) continue;
+      for (const t of readdirSync(tasks)) {
+        const f = join(tasks, t, "task.json");
+        if (existsSync(f)) out.push(f);
+      }
+    }
+    return out;
+  }
+
+  test("every task has a valid task.json", () => {
+    const files = taskFiles();
+    expect(files.length).toBeGreaterThan(0);
+    const invalid = files.filter((f) => !validate("task", readJson(f)).valid);
+    expect(invalid).toEqual([]);
+  });
+
+  // AC-4 — the registry is the authority for module names and the schema for types
+  test("every task targets a module the registry declares", () => {
+    const known = new Set(
+      readJson(join(NIT, "boundaries", "modules.json")).modules.map((m: any) => m.name)
+    );
+    const unknown = taskFiles()
+      .map((f) => readJson(f))
+      .filter((t) => !known.has(t.targetModule))
+      .map((t) => `${t.id} -> ${t.targetModule}`);
+    expect(unknown).toEqual([]);
+  });
+
+  test("every task declares a type the schema allows", () => {
+    const allowed: string[] = require(resolveSchema("task")!).properties.type.enum;
+    const bad = taskFiles()
+      .map((f) => readJson(f))
+      .filter((t) => !allowed.includes(t.type))
+      .map((t) => `${t.id} -> ${t.type}`);
+    expect(bad).toEqual([]);
+  });
+
+  // A completed task never ran through the supervisor, so claiming an archetype
+  // for it asserts a dispatch that did not happen — the same fabrication this
+  // migration refused for state.json and step directories.
+  test("no completed task claims an archetype it never ran", () => {
+    const claimed = taskFiles()
+      .map((f) => readJson(f))
+      .filter((t) => t.status === "done" && t.archetype !== undefined)
+      .map((t) => `${t.id} -> ${t.archetype}`);
+    expect(claimed).toEqual([]);
+  });
+
+  // AC-5 — the v1 prose is the historical record and stays
+  test("the prose each task was migrated from is still present", () => {
+    const missing = taskFiles().filter((f) => !existsSync(f.replace("task.json", "TASK.md")));
+    expect(missing).toEqual([]);
+  });
+});

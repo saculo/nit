@@ -22,6 +22,7 @@
 
   <scope>
     <in-scope>
+    - Migrating this repository's own .nit/ workspace to v2 artifacts, which SC-1 and SC-2 depend on (TASK-032; deferred in TASK-026 on the assumption it was cosmetic, and it is not)
     - Boundary enforcement during validation: read modules.json allowedDependencies and boundaries/dependency-rules.json, check implementation output against the rules
     - Boundary violations produce structured errors in validation.json
     - dependency-rules.json creation (allowed and forbidden cross-module dependencies)
@@ -39,7 +40,6 @@
     - Run logging (PHASE-5)
     - Global ~/.claude/skills/nit/ namespace separation (PHASE-5)
     - Repair/reopen flow refinement beyond what TASK-031 established (PHASE-5)
-    - Migrating this repository's own v1 .nit/ workspace to phase.json and task.json — still deliberately deferred, and still the reason nit cannot summarise its own project from step outputs
     </out-of-scope>
   </scope>
 
@@ -48,6 +48,8 @@
   </dependencies>
 
   <draft-tasks>
+  - Migrate this repository's own .nit/ workspace to v2 artifacts (TASK-032; must land first — nit:tasks cannot plan this phase and boundary enforcement has no module registry to enforce against without it)
+  - Give a qa-type task an archetype that dispatches to the qa engineer (TASK-033; nothing in the shipped set does today)
   - Create dependency-rules.json format and schema
   - Implement boundary enforcement in validation: modules.json allowedDependencies plus dependency-rules.json, with violations as structured errors in validation.json
   - Enforce the cross-module-change boundary-check step against those rules

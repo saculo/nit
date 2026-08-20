@@ -1,0 +1,26 @@
+{
+  "id": "TASK-016",
+  "phase": "PHASE-2",
+  "title": "nit:approve, nit:reject, and nit:analyze",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task at the design step with status awaiting_approval, When nit:approve is run with a comment, Then approval.json is written with status=approved and timestamp, and state.json advances currentStepId to the next step in the archetype."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task at the review step with status awaiting_approval, When nit:reject is run with a comment, Then approval.json is written with status=rejected, and state.json reopens the implement step (per default rejection routing: reject review -> reopen implement)."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a task at the last step of its archetype with status awaiting_approval, When nit:approve is run, Then state.json is updated with status=\"completed\" and a completedAt timestamp."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a task at the analyze step dispatched to the analyst agent, When the analyst completes nit:analyze, Then STEP-NNN-analyze/output.json contains an analysis-result with requirements analysis, identified risks, and a proposed archetype, validating against step-output.schema.json."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "TASK-014",
+  "phase": "PHASE-2",
+  "title": "Skill Composition Engine",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task targeting a Java module with customSkills [\"spring-boot\", \"ddd\"] at the implement step, When skill composition is resolved, Then routing.json contains skill list: nit:implement, java, spring-boot, ddd (in layer order)."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task targeting a Java module with stepOverrides review.addSkills [\"security-checklist\"] at the review step, When skill composition is resolved, Then routing.json includes security-checklist in addition to the base, language, and custom skills."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a cross-module-change task targeting module A (Java, spring-boot) and module B (TypeScript, nestjs), When skill composition is resolved, Then routing.json contains the union: base step skill + java + typescript + spring-boot + nestjs."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a module with languageId \"go\" but no .claude/skills/go/SKILL.md file exists, When skill composition is resolved, Then the missing go language skill is skipped without error and routing.json contains only the available skills."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given global custom skills [\"code-conventions\"] in registry/skills.json, When skill composition is resolved for any task, Then routing.json includes code-conventions in the skill list."
+    }
+  ]
+}

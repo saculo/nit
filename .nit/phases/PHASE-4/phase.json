@@ -1,0 +1,37 @@
+{
+  "id": "PHASE-4",
+  "title": "Boundary Enforcement, ADR Automation, and Routing Introspection",
+  "milestone": "The pipeline enforces module boundaries during validation, records architectural decisions without being asked, and can explain its own skill routing",
+  "status": "planned",
+  "businessValue": "PHASE-3 made the pipeline complete and correct: every step runs, every declared contract is honoured. This phase makes it *opinionated about the code it produces*. Boundary enforcement turns the module registry from documentation into a constraint, catching architectural drift at the step that causes it rather than at review months later. ADR trigger automation stops significant decisions going unrecorded, which is the failure mode every project has and none notices until it needs the history. Routing introspection lets a user answer \"why did this agent load these skills?\" without reading four config files \u2014 the question that makes a composition system debuggable rather than magical.",
+  "successCriteria": [
+    {
+      "id": "SC-1",
+      "description": "Boundary violations are detected when implementation output references a forbidden dependency"
+    },
+    {
+      "id": "SC-2",
+      "description": "Boundary violations appear as structured errors in validation.json, distinguishable from schema errors"
+    },
+    {
+      "id": "SC-3",
+      "description": "ADR triggers fire for multi-module changes and new shared components"
+    },
+    {
+      "id": "SC-4",
+      "description": "adrCandidates appear in step output when a trigger matches, without the specialist being asked"
+    },
+    {
+      "id": "SC-5",
+      "description": "nit:explain-routing displays the complete skill composition chain (base, language, custom, step-scoped, global) for a given task"
+    },
+    {
+      "id": "SC-6",
+      "description": "nit:skills lists every registered skill organised by layer and module association"
+    },
+    {
+      "id": "SC-7",
+      "description": "Every field this phase adds to a schema or archetype has a consumer proven by test (ADR-0007)"
+    }
+  ]
+}

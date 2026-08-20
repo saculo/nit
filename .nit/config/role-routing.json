@@ -1,0 +1,50 @@
+{
+  "rules": [
+    {
+      "role": "analyst",
+      "skills": [
+        "clarify",
+        "create-tasks",
+        "phase-plan"
+      ]
+    },
+    {
+      "role": "architect",
+      "skills": [
+        "design",
+        "phase-plan"
+      ]
+    },
+    {
+      "role": "backend-engineer",
+      "skills": [
+        "implement"
+      ]
+    },
+    {
+      "role": "frontend-engineer",
+      "skills": [
+        "implement"
+      ]
+    },
+    {
+      "role": "infra-engineer",
+      "skills": [
+        "implement"
+      ]
+    },
+    {
+      "role": "reviewer",
+      "skills": [
+        "review"
+      ]
+    },
+    {
+      "role": "qa",
+      "skills": [
+        "qa",
+        "implement"
+      ]
+    }
+  ]
+}

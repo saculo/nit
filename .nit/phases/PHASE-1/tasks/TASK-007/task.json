@@ -1,0 +1,30 @@
+{
+  "id": "TASK-007",
+  "phase": "PHASE-1",
+  "title": "Frontend Expertise Skill and Agent Configuration",
+  "type": "frontend",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the frontend skill exists at .claude/skills/frontend/SKILL.md, When a frontend task is implemented, Then the frontend engineer agent loads the skill and follows its conventions."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the skill defines the technology stack, When referenced during implementation, Then it covers TypeScript, Next.js, Vite, Radix UI, shadcn/ui, Tailwind CSS, Framer Motion, Zustand, TanStack Query, React Hook Form, Zod, Vitest, and Playwright."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the skill includes Figma MCP integration, When a frontend task requires design specs, Then the agent can use figma-developer-mcp tools to extract tokens, specs, and assets."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the skill includes Playwright MCP integration, When a frontend task requires testing or visual verification, Then the agent can use @playwright/mcp tools for browser interaction, screenshots, and E2E."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given the frontend engineer agent definition, When it starts any task, Then it explicitly loads the frontend skill before beginning work."
+    }
+  ]
+}
