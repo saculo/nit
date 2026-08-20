@@ -4,7 +4,7 @@
   "title": "Boundary Enforcement at Ingest",
   "type": "devops",
   "targetModule": "@nit/cli",
-  "status": "draft",
+  "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [
     {

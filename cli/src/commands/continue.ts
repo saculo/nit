@@ -7,9 +7,12 @@ import {
   type ModuleEntry,
 } from "../routing-resolver";
 import { prepare, ingest, dryRun, loadMaxReopenCount } from "../supervisor";
+import { loadDependencyRules, type DependencyRules } from "../dependency-rules";
 
 const DEFAULT_CONFIG = ".nit/config/supervisor.json";
 const DEFAULT_SKILLS_DIR = ".claude/skills";
+const DEFAULT_RULES = ".nit/boundaries/dependency-rules.json";
+const DEFAULT_MODULES = ".nit/boundaries/modules.json";
 
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(name);
@@ -23,7 +26,7 @@ const has = (args: string[], name: string): boolean => args.includes(name);
  *
  * Usage: nit continue --task-dir <dir> --archetype <name>
  *          [--ingest] [--dry-run] [--target <module> --modules <file> [--registry <file>]]
- *          [--config <supervisor.json>] [--skills-dir <dir>] [--max-reopen <n>]
+ *          [--config <supervisor.json>] [--skills-dir <dir>] [--max-reopen <n>] [--rules <file>]
  *
  * Exit codes: 0 success, 1 error, 2 usage error.
  */
@@ -84,7 +87,22 @@ export async function runContinue(args: string[]): Promise<number> {
       const maxReopenCount = maxReopenFlag !== undefined
         ? Number(maxReopenFlag)
         : await loadMaxReopenCount(configPath);
-      const result = await ingest({ ...opts, maxReopenCount });
+
+      // Boundary checking is opt-in: it runs only when the project has both a
+      // module registry and a rule set. A project that configured neither is
+      // unaffected, which is what makes the feature additive (TASK-035 AC-4).
+      let modules: ModuleEntry[] | undefined;
+      let dependencyRules: DependencyRules | undefined;
+      const rulesPath = flag(args, "--rules") ?? DEFAULT_RULES;
+      const modulesForRules = modulesPath ?? DEFAULT_MODULES;
+      const rulesFile = Bun.file(rulesPath);
+      const modulesFile = Bun.file(modulesForRules);
+      if ((await rulesFile.exists()) && (await modulesFile.exists())) {
+        modules = (await modulesFile.json()).modules ?? [];
+        dependencyRules = loadDependencyRules(await rulesFile.json(), modules!);
+      }
+
+      const result = await ingest({ ...opts, maxReopenCount, modules, dependencyRules });
       console.log(JSON.stringify(result, null, 2));
       return 0;
     }
