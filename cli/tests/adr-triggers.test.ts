@@ -201,3 +201,80 @@ describe("adrTriggers are documented where they are consumed", () => {
     expect(skill).toContain("adr-triggers --task-dir");
   });
 });
+
+// TASK-038 — a trigger nobody is told about fires into the void. SC-4 wants
+// candidates to appear without the specialist being prompted, which only works
+// if the skills know to ask and what to do with the answer.
+describe("specialists are told to emit candidates when a trigger fires", () => {
+  const skillDir = join(import.meta.dir, "..", "..", ".claude", "skills");
+  const read = (name: string) => readFileSync(join(skillDir, name, "SKILL.md"), "utf8");
+  const EMITTERS = ["design", "implement", "boundary-check"];
+
+  // AC-2
+  test.each(EMITTERS)("%s documents how to query the triggers", (name) => {
+    expect(read(name)).toContain("adr-triggers --task-dir");
+  });
+
+  test.each(EMITTERS)("%s names which triggers are likely to fire at its step", (name) => {
+    const text = read(name);
+    const named = TRIGGER_KINDS.filter((k) => text.includes(k));
+    expect(named.length).toBeGreaterThan(0);
+  });
+
+  // AC-1 — a candidate carries reasoning, not a restatement of the change
+  test.each(EMITTERS)("%s says what belongs in a candidate", (name) => {
+    const text = read(name);
+    for (const field of ["title", "context", "decision"]) expect(text).toContain(field);
+  });
+
+  // AC-3 — promotion stays human
+  test.each(EMITTERS)("%s forbids writing into .nit/adr/ itself", (name) => {
+    expect(read(name)).toContain(".nit/adr/");
+  });
+
+  // The query reads the step's own output, so a specialist that runs it before
+  // writing gets exit 2. Guidance that cannot be followed in the order given is
+  // guidance that will be abandoned the first time it fails.
+  test.each(EMITTERS)("%s says to write the result before querying", (name) => {
+    expect(read(name)).toContain("Order matters");
+  });
+
+  // AC-1 — the field must be named where the specialist writes its output
+  test.each(EMITTERS)("%s names adrCandidates in its output shape", (name) => {
+    expect(read(name)).toContain("adrCandidates");
+  });
+
+  // the honest second answer: a trigger's shape can match with no decision behind it
+  test.each(EMITTERS)("%s permits emitting nothing when no decision was made", (name) => {
+    expect(read(name)).toContain("No decision was made");
+  });
+});
+
+// A design step declares what it will touch; an implement step reports what it
+// did. Triggers should see both, but boundary enforcement must not consume a
+// plan — a design would then be blocked for a crossing that may never happen.
+describe("planned paths feed triggers but not enforcement", () => {
+  const design = {
+    result: {
+      resultType: "design", summary: "s", decisions: [],
+      filePlan: [{ path: "src/api/a.ts", action: "created" }, { path: "src/core/b.ts", action: "modified" }],
+    },
+  };
+
+  test("a design's filePlan fires triggers", () => {
+    const m = evaluateTriggers(design, [trigger("multi-module-change")], CTX);
+    expect(m).toHaveLength(1);
+    expect(m[0]!.evidence.sort()).toEqual(["api", "core"]);
+  });
+
+  test("a design's filePlan is invisible to boundary enforcement", async () => {
+    const { changedPaths, plannedPaths } = await import("../src/boundary-check");
+    expect(changedPaths(design)).toEqual([]);
+    expect(plannedPaths(design).map((f) => f.path)).toEqual(["src/api/a.ts", "src/core/b.ts"]);
+  });
+
+  test("an implement result still reports what changed, not a plan", async () => {
+    const { plannedPaths } = await import("../src/boundary-check");
+    expect(plannedPaths(impl([["src/api/a.ts", "modified"]]))).toEqual([]);
+  });
+});

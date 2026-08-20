@@ -97,11 +97,56 @@ rejecting this step reopens `implement`.
       { "severity": "warning", "path": "web/page.tsx", "message": "boundary: api -> web was not in the design's filePlan, but AC-2 needs the field rendered. Bending the rule knowingly." },
       { "severity": "error", "path": "web/theme.css", "message": "boundary: api -> web for a styling tweak unrelated to any acceptance criterion. This belongs in a web task." }
     ]
-  }
+  },
+  "adrCandidates": [
+    {
+      "title": "The api may render web-owned fields directly",
+      "context": "AC-2 needs a field the web module owns, and the rules forbid api -> web. Routing it through core was rejected as indirection for one field.",
+      "decision": "Permit api -> web for rendering only, and change the rule rather than approving this crossing again per task.",
+      "status": "proposed"
+    }
+  ]
 }
 ```
 
 Copy `taskId` and `stepId` verbatim from your `input.json`; set `stepType` to `boundary-check`.
+
+## ADR triggers
+
+You are already judging crossings, and `cross-module-dependency` fires on the same facts. When you
+approve a crossing, the question the trigger asks is whether that approval was a decision worth
+recording — a crossing you would approve again for every similar task is a rule that should change,
+and that is an ADR rather than a repeated judgement call.
+
+Most likely to fire here: `cross-module-dependency` and `multi-module-change`.
+
+Run it and read what fired:
+
+```bash
+bun run ./cli/src/cli.ts adr-triggers --task-dir .nit/phases/PHASE-N/tasks/TASK-NNN --step implement
+```
+
+**Order matters.** The query reads your step's `output.json`, so write your result first, run the
+query, then add any candidates and re-write. Running it before you have written anything fails with
+`No output.json for step` — that is the command telling you it has nothing to evaluate yet, not that
+triggers are unconfigured.
+
+Each match names the `condition` that fired and the `evidence` that satisfied it. Exit 1 means
+something fired; exit 0 means nothing did, and nothing is what you should then emit.
+
+**A trigger firing is not an instruction to write an ADR.** It is the project noticing that this change
+has the shape of a decision, and asking you whether one was made. Two answers are legitimate:
+
+- **A decision was made** — emit an `adrCandidate` with `title`, `context` and `decision`. Write the
+  `context` as the problem that forced the choice, not as a description of the change, and the
+  `decision` as what was chosen *and what was rejected*. A candidate that only says what happened is a
+  changelog entry; the point of a record is the reasoning that would otherwise be lost.
+- **No decision was made** — the trigger's shape matched but nothing was actually decided. Say so in
+  your `notes` and emit no candidate. Emitting an empty candidate to satisfy a trigger is worse than
+  emitting none: it fills the index with records nobody needs and trains the next reader to skim them.
+
+You do **not** write into `.nit/adr/`. Promotion of a candidate to a numbered ADR is a human decision
+behind the approval gate — you propose, a person records.
 
 ## When you cannot proceed
 
