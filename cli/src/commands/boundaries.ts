@@ -15,6 +15,13 @@ function flag(args: string[], name: string): string | undefined {
  * logic in tested code rather than in prose a reviewer interprets — so the skill
  * runs this and reports what it says.
  *
+ * This is a query, not the gate. `ingest` enforces only when a project supplies
+ * both a module registry and a rule set, so a project that has not opted in is
+ * never blocked (TASK-035 AC-4). This command answers what the rules *would*
+ * say either way, including from `modules.json.allowedDependencies` alone — so
+ * a project can see what enforcement would cost before turning it on. When no
+ * rule set exists, the report says so rather than implying the gate is live.
+ *
  * Usage: nit boundaries --task-dir <dir> [--step <stepId>] [--modules <file>] [--rules <file>]
  * Exit codes: 0 no violations, 1 violations found, 2 usage or input error.
  */
@@ -40,9 +47,8 @@ export async function runBoundaries(args: string[]): Promise<number> {
       return 2;
     }
     const modules: ModuleEntry[] = (await modulesFile.json()).modules ?? [];
-    const rules = (await rulesFile.exists())
-      ? loadDependencyRules(await rulesFile.json(), modules)
-      : { rules: [] };
+    const hasRules = await rulesFile.exists();
+    const rules = hasRules ? loadDependencyRules(await rulesFile.json(), modules) : { rules: [] };
 
     // The implement step's output is what reports changed files.
     const stepId = flag(args, "--step") ?? "implement";
@@ -63,6 +69,10 @@ export async function runBoundaries(args: string[]): Promise<number> {
         {
           taskId: task.id,
           targetModule: task.targetModule,
+          // Enforcement at ingest requires both files. Saying so here stops a
+          // report being read as "the gate is live" when it is not.
+          enforced: hasRules,
+          rulesPath: hasRules ? rulesPath : null,
           violations: violations.map((v) => ({ ...v, message: violationMessage(v) })),
         },
         null,

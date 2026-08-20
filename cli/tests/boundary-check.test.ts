@@ -188,6 +188,55 @@ describe("nit:boundary-check skill contract", () => {
   });
 });
 
+// The query and the gate must not disagree about what "configured" means.
+// ingest enforces only with both files; the command reports either way and says
+// which, so a report is never mistaken for a live gate.
+describe("nit boundaries reports whether enforcement is live", () => {
+  const run = (args: string[]) =>
+    Bun.spawnSync(["bun", "run", join(import.meta.dir, "..", "src", "cli.ts"), "boundaries", ...args], {
+      cwd: join(import.meta.dir, "..", ".."),
+    });
+
+  const taskDir = () => {
+    const dir = mkdtempSync(join(tmpdir(), "nit-bq-"));
+    writeFileSync(join(dir, "task.json"), JSON.stringify({
+      id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
+      targetModule: "@nit/cli", status: "draft" }));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
+      implOutput(["cli/src/x.ts", ".claude/skills/design/SKILL.md"])));
+    return dir;
+  };
+
+  test("with a rule set, the report says enforcement is live", () => {
+    const r = run(["--task-dir", taskDir()]);
+    const out = JSON.parse(r.stdout.toString());
+    expect(out.enforced).toBe(true);
+    expect(out.rulesPath).toContain("dependency-rules.json");
+    expect(r.exitCode).toBe(1);
+  });
+
+  test("without one, it still reports but says enforcement is not live", () => {
+    const r = run(["--task-dir", taskDir(), "--rules", "/nonexistent/rules.json"]);
+    const out = JSON.parse(r.stdout.toString());
+    expect(out.enforced).toBe(false);
+    expect(out.rulesPath).toBeNull();
+    // the crossing is still visible, so a project can see what it would cost
+    expect(out.violations.length).toBeGreaterThan(0);
+  });
+
+  test("a clean task exits 0", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nit-bq-"));
+    writeFileSync(join(dir, "task.json"), JSON.stringify({
+      id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
+      targetModule: "@nit/cli", status: "draft" }));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
+      implOutput(["cli/src/x.ts"])));
+    expect(run(["--task-dir", dir]).exitCode).toBe(0);
+  });
+});
+
 describe("boundary enforcement through ingest", () => {
   let steps: ArchetypeStep[];
   const setup = async (paths: string[]) => {
