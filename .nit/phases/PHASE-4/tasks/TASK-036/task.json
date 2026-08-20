@@ -4,7 +4,7 @@
   "title": "nit:boundary-check Step Skill",
   "type": "devops",
   "targetModule": "@nit/skills",
-  "status": "draft",
+  "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [
     {
