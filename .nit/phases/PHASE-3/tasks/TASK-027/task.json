@@ -1,0 +1,23 @@
+{
+  "id": "TASK-027",
+  "phase": "PHASE-3",
+  "title": "Rejection Routing Must Target a Step That Exists",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given any archetype whose overrides remove a step, When it is resolved, Then no rejectionRouting entry names a removed step as its target, and every remaining target is a member of the resolved step list."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given an architecture-decision task parked at awaiting_approval on the review step, When the reviewer's work is rejected, Then the task reopens a step that exists in its stepOrder, and the following prepare produces a dispatch descriptor rather than throwing."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given an archetype authored with a rejectionRouting target that is not one of its steps, When it is resolved, Then resolution fails with a message naming the offending step and target, rather than returning an archetype that breaks at reject time."
+    }
+  ]
+}

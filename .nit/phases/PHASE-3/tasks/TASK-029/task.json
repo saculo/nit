@@ -1,0 +1,27 @@
+{
+  "id": "TASK-029",
+  "phase": "PHASE-3",
+  "title": "Honour the Per-Step Approval Flag",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a step whose archetype declares approval: true, When its valid output is ingested, Then the task parks at awaiting_approval and a pending approval.json is written, exactly as today."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a step whose archetype declares approval: false, When its valid output is ingested, Then the task advances to the next step without requiring a human decision, and a subsequent prepare dispatches that next step."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a bugfix task, whose archetype ungates the design step, When the design step's output is ingested, Then the task advances without a gate, so the archetype's only override has an observable effect."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the final step of an archetype, When it completes under either gating mode, Then the task reaches status done with a completedAt timestamp."
+    }
+  ]
+}

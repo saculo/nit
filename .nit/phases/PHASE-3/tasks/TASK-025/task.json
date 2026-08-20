@@ -1,0 +1,31 @@
+{
+  "id": "TASK-025",
+  "phase": "PHASE-3",
+  "title": "Rewrite nit:orchestrate for the v2 Pipeline",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task with a task.json and an archetype, When the orchestrator runs that task, Then it advances the task by calling the supervisor and the approval commands only, and performs no step dispatch or state transition of its own."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task that reaches blocked or escalated, When the orchestrator observes that state, Then it stops the task loop, surfaces the reason and explanation to the user, and does not advance to the next task without a decision."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a task blocked with reason needs-splitting, When the orchestrator handles it, Then it routes to nit:tasks in splitting mode with the reported task types, and continues with the resulting subtasks after user approval."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a phase whose tasks are all done, When the orchestrator closes the phase, Then it dispatches nit:phase-summary, gates on the user, and proceeds to the next phase only after approval."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given the rewritten skill, When it is inspected for v1 assumptions, Then it references no DESIGN.md-based type routing, no STEPS.md or IMPLEMENTATION.md, and no agent name that has no definition on disk."
+    }
+  ]
+}

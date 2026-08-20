@@ -1,0 +1,35 @@
+{
+  "id": "TASK-018",
+  "phase": "PHASE-3",
+  "title": "Blocked-Step Escalation Contract for Step Skills",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the step output schema, When a specialist emits an output reporting that it is blocked with a reason code and explanation, Then the output validates against step-output.schema.json, and an output carrying a reason code without an explanation is rejected."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a step whose output.json reports blocked, When the supervisor ingests it, Then the task state becomes `blocked`, reopenCount is unchanged, and no repair input.json is written for the step."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a step directory with no output.json, When the supervisor ingests it, Then the task state becomes `blocked` with reason code `no-output` rather than throwing an unhandled error, reopenCount is unchanged, no repair input.json is written, and validation.json is written recording the missing output as the failure."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a design step for a task that spans two task types, When nit:design applies its split-task rule, Then it writes and validates an output.json reporting `needs-splitting` with the task types involved, before stopping."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given an implement step where the design contradicts the acceptance criteria, or an acceptance criterion cannot be satisfied, When nit:implement stops, Then it writes and validates an output.json reporting the corresponding reason code, before stopping."
+    },
+    {
+      "id": "AC-6",
+      "description": "Given the analyze, design, and implement step skills, When any of them cannot complete its step, Then each uses the same blocked contract rather than a skill-specific convention."
+    }
+  ]
+}

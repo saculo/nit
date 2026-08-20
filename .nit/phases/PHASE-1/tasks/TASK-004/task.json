@@ -1,0 +1,27 @@
+{
+  "id": "TASK-004",
+  "phase": "PHASE-1",
+  "title": "Brownfield Analysis Skills",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .nit/skills/ directory, When listing brownfield skill directories, Then brownfield-initial-orchestration, architect-initial-analysis, and engineer-initial-analysis exist with SKILL.md files."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the nit:brownfield-orchestrate skill, When reading its flow, Then it follows a 6-step process: dispatch architect \u2192 present to human \u2192 human review \u2192 dispatch engineer \u2192 present to human \u2192 human review."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the nit:brownfield-analyze skill, When invoked on a repository with code, Then it produces .nit/project/initial-state.md with module-index, per-module architecture analysis, and system-level analysis sections."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the nit:brownfield-snapshot skill, When invoked after the architect has written initial-state.md, Then it adds code-conventions, hot-spots, tech-debt, and toolchain sections per module plus a system-wide tech-debt-summary."
+    }
+  ]
+}

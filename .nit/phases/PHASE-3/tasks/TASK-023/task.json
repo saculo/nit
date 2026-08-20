@@ -1,0 +1,27 @@
+{
+  "id": "TASK-023",
+  "phase": "PHASE-3",
+  "title": "Rewrite nit:phase-summary for JSON Output and PLR",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a phase whose tasks all completed through the supervisor, When nit:phase-summary runs, Then it emits a machine-readable summary validating against phase-summary.schema.json, aggregating deviations, tech debt, and adrCandidates read from the tasks' step outputs."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a phase where the milestone was not reached, When nit:phase-summary runs, Then it reports the milestone as not met with the specific criteria outstanding, and does not set the phase status to done."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the aggregated deviations and tech debt, When the summary is written, Then each item is traceable to the task that reported it, and items with impact on a later phase are named as recommendations for that phase."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a phase containing tasks recorded as v1 prose artifacts, When nit:phase-summary runs, Then it summarises what it can and reports the unreadable tasks explicitly, rather than throwing or silently omitting them."
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "PHASE-3",
+  "title": "The v1 to v2 Skill Migration",
+  "milestone": "Every skill runs on the v2 JSON contract, the full 5-step pipeline completes end-to-end, and no declared field in the supervisor's contracts goes unread",
+  "status": "done",
+  "businessValue": "The pipeline becomes usable. Before this phase four skills still read the prose artifacts ADR-0005 retired, one step skill did not exist, and nit:init scaffolded v1 artifact types into every new project \u2014 so a task could not complete its own archetype and every new adopter inherited the old contract. After it, every skill speaks JSON, all five step skills resolve and dispatch, a specialist that cannot proceed can say so, and the supervisor honours the contracts its schemas declare rather than silently ignoring three of them. The quality gates this phase originally planned are real work that still matters; they are PHASE-4, because a pipeline that cannot finish a task cannot usefully enforce anything about one.",
+  "successCriteria": [
+    {
+      "id": "SC-1",
+      "description": "Full 5-step pipeline (analyze -> design -> implement -> review -> qa) completes end-to-end for a task"
+    },
+    {
+      "id": "SC-2",
+      "description": "nit:review produces a valid JSON review-result within step-output"
+    },
+    {
+      "id": "SC-3",
+      "description": "nit:qa produces a valid JSON qa-result within step-output"
+    },
+    {
+      "id": "SC-4",
+      "description": "nit:phase-summary produces structured JSON output and a Phase Learning Record"
+    },
+    {
+      "id": "SC-5",
+      "description": "A blocked step output validates against step-output.schema.json, transitions the task to `blocked` on ingest, leaves reopenCount unchanged, and writes no repair input.json; a step directory with no output.json takes the same path instead of throwing"
+    },
+    {
+      "id": "SC-6",
+      "description": "Every step skill \u2014 analyze, design, implement, review, qa \u2014 reports an unworkable step through the blocked contract rather than a skill-specific convention"
+    },
+    {
+      "id": "SC-7",
+      "description": "No skill reads or writes DESIGN.md, STEPS.md, IMPLEMENTATION.md, REVIEW.md, or CLARIFICATIONS.md except to state that v2 does not produce them"
+    },
+    {
+      "id": "SC-8",
+      "description": "nit:status reports a v2 workspace accurately, distinguishing awaiting_approval, blocked, and escalated, and suggests only v2 commands"
+    },
+    {
+      "id": "SC-9",
+      "description": "A freshly initialised workspace declares only artifact types the v2 pipeline writes, and every generated file validates against its schema"
+    },
+    {
+      "id": "SC-10",
+      "description": "No orphaned hook or duplicated skill tree remains; design Q-4 is settled and recorded"
+    },
+    {
+      "id": "SC-11",
+      "description": "Every field the supervisor's contracts declare is honoured: rejection routing targets a step that exists, $detect resolves to a real agent, the per-step approval flag is read, and phase success criteria have a producer"
+    },
+    {
+      "id": "SC-12",
+      "description": "A rejection's comment reaches the specialist reopened to act on it, and repair and rework remain distinguishable causes"
+    }
+  ]
+}

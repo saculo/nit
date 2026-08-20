@@ -1,0 +1,40 @@
+{
+  "types": [
+    {
+      "id": "backend-feature",
+      "label": "Backend Feature",
+      "description": "Server-side logic, APIs, services, and data processing",
+      "defaultArchetype": "backend-feature"
+    },
+    {
+      "id": "frontend-feature",
+      "label": "Frontend Feature",
+      "description": "UI components, client-side logic, and styling",
+      "defaultArchetype": "frontend-feature"
+    },
+    {
+      "id": "infra-change",
+      "label": "Infrastructure Change",
+      "description": "CI/CD, deployment, containerization, and environment setup",
+      "defaultArchetype": "infra-change"
+    },
+    {
+      "id": "cross-module-change",
+      "label": "Cross-Module Change",
+      "description": "Changes that span multiple modules or module boundaries",
+      "defaultArchetype": "cross-module-change"
+    },
+    {
+      "id": "bugfix",
+      "label": "Bug Fix",
+      "description": "Defect correction in existing functionality",
+      "defaultArchetype": "bugfix"
+    },
+    {
+      "id": "architecture-decision",
+      "label": "Architecture Decision",
+      "description": "Significant design decision requiring an Architecture Decision Record",
+      "defaultArchetype": "architecture-decision"
+    }
+  ]
+}

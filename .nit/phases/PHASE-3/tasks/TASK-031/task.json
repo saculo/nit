@@ -1,0 +1,27 @@
+{
+  "id": "TASK-031",
+  "phase": "PHASE-3",
+  "title": "Rework Context Must Reach the Reopened Step",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a gated step rejected with a comment, When the supervisor reopens the archetype's rejection-routing target, Then that step's input.json carries the rejecting step's id and the rejection comment."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a step reopened by a rejection from a later step, When the specialist reads its input, Then the rejecting step's output.json is reachable by a path in the context, even though it is not a prior step by index."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a step reopened for repair rather than rework, When the specialist reads its input, Then it receives repairErrors and no rework context, so the two causes remain distinguishable."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a step that was reworked and then produced a valid output, When it is next reopened for an unrelated reason, Then the stale rework context is absent."
+    }
+  ]
+}

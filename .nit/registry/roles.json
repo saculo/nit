@@ -1,0 +1,69 @@
+{
+  "roles": [
+    {
+      "id": "analyst",
+      "label": "Analyst",
+      "description": "Clarifies requirements, creates tasks, and manages the backlog",
+      "capabilities": [
+        "clarify",
+        "create-tasks",
+        "phase-plan"
+      ]
+    },
+    {
+      "id": "architect",
+      "label": "Architect",
+      "description": "Designs systems, makes architecture decisions, and writes ADRs",
+      "capabilities": [
+        "design",
+        "adr",
+        "phase-plan"
+      ]
+    },
+    {
+      "id": "backend-engineer",
+      "label": "Backend Engineer",
+      "description": "Implements server-side features, APIs, and services",
+      "capabilities": [
+        "implement",
+        "test"
+      ]
+    },
+    {
+      "id": "frontend-engineer",
+      "label": "Frontend Engineer",
+      "description": "Implements UI components and client-side logic",
+      "capabilities": [
+        "implement",
+        "test"
+      ]
+    },
+    {
+      "id": "infra-engineer",
+      "label": "Infrastructure Engineer",
+      "description": "Manages CI/CD pipelines, deployment, and environment configuration",
+      "capabilities": [
+        "implement",
+        "deploy"
+      ]
+    },
+    {
+      "id": "reviewer",
+      "label": "Reviewer",
+      "description": "Validates implementation against acceptance criteria and project standards",
+      "capabilities": [
+        "review",
+        "approve"
+      ]
+    },
+    {
+      "id": "qa",
+      "label": "QA Engineer",
+      "description": "Implements test suites and validates quality and coverage",
+      "capabilities": [
+        "test",
+        "validate"
+      ]
+    }
+  ]
+}

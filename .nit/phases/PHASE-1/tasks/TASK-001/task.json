@@ -1,0 +1,27 @@
+{
+  "id": "TASK-001",
+  "phase": "PHASE-1",
+  "title": "Agent Persona Definitions",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .nit/agents/ directory, When listing agent files, Then 7 agent definitions exist: architect.md, requirement-gatherer.md, reviewer.md, backend-engineer.md, frontend-engineer.md, devops-engineer.md, qa-engineer.md."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given any agent file, When reading its frontmatter, Then it contains name, description, allowed-tools, and skills-used fields referencing the correct nit:* skill names."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the architect agent, When checking its capabilities section, Then it lists phase planning (nit:phases), task design (nit:design), and phase summary (nit:phase-summary) modes."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given any engineer agent, When checking its skills reference, Then it references nit:implement as its primary skill."
+    }
+  ]
+}

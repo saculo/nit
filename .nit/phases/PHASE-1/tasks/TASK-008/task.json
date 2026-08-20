@@ -1,0 +1,27 @@
+{
+  "id": "TASK-008",
+  "phase": "PHASE-1",
+  "title": "Replace Claude Code Review with CodeRabbit",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .github/workflows/ directory, When listing workflow files, Then claude-code-review.yml does not exist."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the repository root, When checking for CodeRabbit configuration, Then .coderabbit.yaml exists with auto_review enabled and drafts disabled."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the .coderabbit.yaml configuration, When reading path_instructions, Then instructions exist for .claude/skills, .claude/agents, .claude/hooks, .nit/skills, .nit/agents, .nit/hooks, .nit/phases, and .github/workflows."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the .coderabbit.yaml configuration, When reading review settings, Then request_changes_workflow is true, high_level_summary is true, and base_branches includes main."
+    }
+  ]
+}

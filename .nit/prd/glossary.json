@@ -1,0 +1,52 @@
+{
+  "terms": [
+    {
+      "term": "archetype",
+      "definition": "A named step sequence a task runs through, resolved from a base archetype plus overrides. Declares each step's role and whether it gates for approval."
+    },
+    {
+      "term": "step",
+      "definition": "One unit of the pipeline \u2014 analyze, design, implement, review, qa \u2014 dispatched to a single specialist and producing exactly one output.json."
+    },
+    {
+      "term": "supervisor",
+      "definition": "The deterministic driver in cli/src/supervisor.ts. Decides which step runs next, validates its output, and transitions task state. Never an LLM decision (ADR-0004)."
+    },
+    {
+      "term": "specialist",
+      "definition": "The agent dispatched for one step, identified by the step's role and given a composed skill list."
+    },
+    {
+      "term": "step output",
+      "definition": "output.json, the sole canonical artifact a step persists (ADR-0005). Schema-validated at write time."
+    },
+    {
+      "term": "blocked",
+      "definition": "A specialist's report that it cannot proceed \u2014 needs-splitting, contradictory-input, criterion-unsatisfiable. Parks the task without consuming the reopen budget."
+    },
+    {
+      "term": "repair",
+      "definition": "Reopening a step because its output was malformed. Carries repairErrors and is budgeted by maxReopenCount."
+    },
+    {
+      "term": "rework",
+      "definition": "Reopening a step because a later step was rejected. Carries reworkFrom \u2014 the rejected step, the comment, and its output \u2014 and is not a validation failure."
+    },
+    {
+      "term": "escalated",
+      "definition": "The reopen budget is spent. Terminal without human intervention."
+    },
+    {
+      "term": "routing",
+      "definition": "The ordered skill list an agent loads: base step skill, then language, custom, and global layers."
+    },
+    {
+      "term": "phase",
+      "definition": "A delivery milestone with success criteria, grouping tasks. Verified criterion by criterion when it closes."
+    },
+    {
+      "term": "PLR",
+      "definition": "Phase Learning Record \u2014 the prose retrospective written for people, deliberately not JSON."
+    }
+  ]
+}

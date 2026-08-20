@@ -1,0 +1,27 @@
+{
+  "id": "TASK-010",
+  "phase": "PHASE-2",
+  "title": "Validation Hooks, nit:status, and Integration Testing",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a validation hook script for step output, When an agent produces output.json after a step, Then the hook automatically runs `npx nit validate --schema step-output output.json` and blocks the step if validation fails."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task with state.json showing step progress through analyze and design, When nit:status is run, Then it displays the current step, overall status, step-by-step progress with timestamps, and any validation errors or approval decisions."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a freshly created task with backend-feature archetype, When the full flow is executed: nit:continue (analyze) -> nit:approve -> nit:continue (design) -> nit:approve -> nit:continue (implement), Then each step produces valid output.json, state.json correctly tracks progression, and all step directories contain input.json, output.json, validation.json, and approval.json."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a hook script, When inspected for CLI invocation, Then it uses npx (with bunx fallback or vice versa) to invoke the nit validate command, not direct schema validation tools."
+    }
+  ]
+}

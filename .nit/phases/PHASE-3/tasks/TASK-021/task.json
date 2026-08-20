@@ -1,0 +1,27 @@
+{
+  "id": "TASK-021",
+  "phase": "PHASE-3",
+  "title": "Rewrite nit:review for JSON Step Output",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a completed implement step whose output.json is in context.priorOutputs, When the reviewer runs the review step, Then it produces an output.json carrying a review-result with a verdict and comments, and that output validates against step-output.schema.json."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a review that finds defects, When the reviewer records them, Then each appears as a comments[] entry with a message and a severity of info, warning, or error, and a verdict of changes-requested or rejected rather than approved."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a review step for a task whose implement step produced no output, When the reviewer cannot perform the review, Then it emits the TASK-018 blocked contract with a reason code and explanation rather than stopping with prose."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the rewritten skill, When it is inspected for v1 artifacts, Then it references neither STEPS.md nor IMPLEMENTATION.md nor writing REVIEW.md, and its documented worked example validates against the schema."
+    }
+  ]
+}

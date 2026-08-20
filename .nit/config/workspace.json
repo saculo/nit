@@ -1,0 +1,6 @@
+{
+  "name": "nit",
+  "mode": "greenfield",
+  "nitVersion": "2.0",
+  "description": "An agent-driven delivery pipeline: a deterministic supervisor advances a task through an archetype's steps, dispatching one specialist per step and validating every artifact against a JSON schema."
+}

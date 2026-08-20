@@ -1,0 +1,31 @@
+{
+  "id": "TASK-019",
+  "phase": "PHASE-2",
+  "title": "Archetype Definitions with Inheritance",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the CLI package archetypes/ directory, When inspected, Then it contains base.json (abstract) and 6 concrete archetype JSON files all valid against archetype.schema.json."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a concrete archetype name, When `npx nit archetype <name>` is executed, Then the command outputs a flat JSON object containing the resolved steps array, engineerRole, and rejectionRouting, with `$engineer` replaced by engineerRole and `$detect` preserved."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the abstract base archetype, When `npx nit archetype base` is executed, Then the command exits with a non-zero code and rejects use of the abstract archetype."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given an archetype whose parent itself extends another archetype, When the resolver runs, Then it rejects multi-level inheritance with a clear error."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given a child archetype with overrides, When resolved, Then removeSteps is applied first, then step property modifications, then addSteps, producing a deterministic merged step list."
+    }
+  ]
+}

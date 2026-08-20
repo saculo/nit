@@ -6,7 +6,7 @@
     <id>PHASE-5</id>
     <title>Skill Creation, Distribution, and Polish</title>
     <milestone>Users can interactively create custom skills, install nit globally via package manager, and run the complete pipeline with run logging and refined repair flows on a multi-module project</milestone>
-    <status>draft</status>
+    <status>planned</status>
   </meta>
 
   <business-value>

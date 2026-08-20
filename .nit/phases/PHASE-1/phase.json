@@ -1,0 +1,33 @@
+{
+  "id": "PHASE-1",
+  "title": "Workflow Layer Foundation",
+  "milestone": "Complete set of Claude Code skills, agents, and hooks enabling the full nit workflow pipeline (init \u2192 clarify \u2192 phases \u2192 tasks \u2192 design \u2192 implement \u2192 review \u2192 phase-summary) to be invoked manually or via orchestration",
+  "status": "done",
+  "businessValue": "The nit workflow system is usable end-to-end inside Claude Code. A user can run `/nit:init` to set up a workspace, feed a PRD through the pipeline, and get structured delivery with human-in-the-loop approvals at every stage. Brownfield projects can generate an initial-state analysis before planning.",
+  "successCriteria": [
+    {
+      "id": "SC-1",
+      "description": "All 7 agent definitions exist in .claude/agents/"
+    },
+    {
+      "id": "SC-2",
+      "description": "All skills exist in .claude/skills/ with correct nit:* namespace frontmatter"
+    },
+    {
+      "id": "SC-3",
+      "description": "All validation hooks exist in .claude/hooks/ and are executable"
+    },
+    {
+      "id": "SC-4",
+      "description": "/nit:orchestrate can invoke the full pipeline end-to-end"
+    },
+    {
+      "id": "SC-5",
+      "description": "/nit:init can initialize a workspace for greenfield or brownfield and place nit files into .claude/"
+    },
+    {
+      "id": "SC-6",
+      "description": "Each skill can be invoked standalone via /nit:* commands"
+    }
+  ]
+}

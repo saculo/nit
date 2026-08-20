@@ -1,0 +1,27 @@
+{
+  "id": "TASK-017",
+  "phase": "PHASE-2",
+  "title": "Rewrite nit:design and nit:implement for JSON Output",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task at the design step with input.json containing task requirements and analysis context, When nit:design completes, Then STEP-NNN-design/output.json exists, contains a design-result with architecture decisions and component design, and validates against step-output.schema.json."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task at the implement step with input.json containing design output and task requirements, When nit:implement completes, Then STEP-NNN-implement/output.json exists, contains an implementation-result with files changed and implementation notes, and validates against step-output.schema.json."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the nit:implement skill executing, When it reads context from previous steps, Then it loads design output from STEP-NNN-design/output.json and uses it to inform implementation decisions."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given either nit:design or nit:implement producing output, When the output contains adrCandidates (architectural decisions worth recording), Then the adrCandidates array is included in the step-output.json per the adr-candidate $def in the schema."
+    }
+  ]
+}

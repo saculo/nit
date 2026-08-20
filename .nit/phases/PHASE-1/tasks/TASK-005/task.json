@@ -1,0 +1,27 @@
+{
+  "id": "TASK-005",
+  "phase": "PHASE-1",
+  "title": "Per-Skill Validation Hooks",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the .nit/hooks/ directory, When listing hook scripts, Then 10 validate-*.sh scripts exist, one per skill that requires validation."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given any validation hook script, When checking its permissions, Then it is executable (chmod +x)."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a hook script invoked with missing required files, When the script runs, Then it exits with code 2 and prints a clear error message to stderr."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given each skill's SKILL.md frontmatter, When reading the hooks section, Then it references the corresponding validate-*.sh script with a PreToolUse Skill matcher."
+    }
+  ]
+}

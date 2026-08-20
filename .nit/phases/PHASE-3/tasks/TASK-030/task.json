@@ -1,0 +1,23 @@
+{
+  "id": "TASK-030",
+  "phase": "PHASE-3",
+  "title": "Phase Success Criteria Need a v2 Home",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a phase planned with nit:phases, When the phase.json is written, Then it carries the agreed success criteria with stable ids, and validates against phase.schema.json."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a phase.json carrying success criteria, When nit:phase-summary verifies the milestone, Then each criterion in the summary's milestone.criteria corresponds to one in phase.json by id, with no fallback to PHASE.md or to deriving criteria from the milestone sentence."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the phase.json files that already exist without the new field, When they are validated, Then they still pass, so the change is additive."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "TASK-020",
+  "phase": "PHASE-5",
+  "title": "Plugin Packaging and Global Namespace Separation",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given the repository, When inspected, Then it contains a valid `.claude-plugin/plugin.json` declaring plugin name `nit`, and plugin `skills/`, `agents/`, and `hooks/` payloads covering all current nit skills, all 7 role agents, and all 10 validation hooks."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the nit plugin installed from this repository, When a Claude Code session starts in an unrelated project directory, Then the nit skills are listed under the `nit:` namespace (e.g. `nit:clarify`, `nit:design`, `nit:implement`) and are invocable."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the nit plugin is installed, When a nit skill or hook invokes the CLI, Then it calls a resolved `nit` command rather than `bun run ./cli/src/cli.ts`, and the invocation succeeds with the working directory set to a project outside this repository."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the CLI is invoked from outside this repository, When a command that reads schemas or archetypes runs (`nit validate`, `nit archetype`), Then it resolves its own package-internal `schemas/` and `archetypes/` directories and succeeds."
+    },
+    {
+      "id": "AC-5",
+      "description": "Given a user with a pre-existing global `~/.claude/agents/architect.md`, When the nit plugin is installed, Then the user's existing agent file is neither overwritten nor shadowed, and the nit architect agent remains reachable."
+    },
+    {
+      "id": "AC-6",
+      "description": "Given a step output that violates its schema, When the corresponding validation hook fires from the installed plugin, Then the hook executes and reports the validation failure, confirming hooks are wired into the plugin rather than inert."
+    }
+  ]
+}

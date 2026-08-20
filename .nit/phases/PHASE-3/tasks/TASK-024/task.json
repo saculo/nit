@@ -1,0 +1,27 @@
+{
+  "id": "TASK-024",
+  "phase": "PHASE-3",
+  "title": "Rewrite nit:status for v2 Artifacts",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a workspace with v2 phases and tasks, When nit:status runs, Then every phase and task appears with its real status read from phase.json, task.json, and state.json, and no task is omitted because a v1 artifact is missing."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a task parked at awaiting_approval, blocked, or escalated, When nit:status runs, Then that task is visibly distinguished from tasks in progress, and a blocked task shows the reason from its step output."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given any workspace state, When nit:status suggests the next step, Then it names exactly one action drawn from the v2 command set, and that command is valid for the state it was derived from."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a workspace holding v1 prose artifacts, or no .nit/ directory at all, When nit:status runs, Then it says specifically what it found and what it could not read, rather than rendering an empty or misleading dashboard."
+    }
+  ]
+}

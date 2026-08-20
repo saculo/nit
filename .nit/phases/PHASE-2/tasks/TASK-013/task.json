@@ -1,0 +1,27 @@
+{
+  "id": "TASK-013",
+  "phase": "PHASE-2",
+  "title": "Rewrite nit:clarify, nit:phases, nit:tasks for JSON Output",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "done",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a user running nit:clarify with a PRD document, When the interactive clarification completes, Then prd/summary.json, prd/glossary.json, and prd/source.md exist under .nit/ and the JSON files validate against their schemas."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a user running nit:phases after clarification, When the interactive phase proposal is approved, Then .nit/phases/PHASE-NNN/phase.json is created (not PHASE.md) and validates against phase.schema.json."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a user running nit:tasks for a phase, When a task is approved, Then .nit/phases/PHASE-NNN/tasks/TASK-NNN/task.json is created with a targetModule field referencing a module from modules.json."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given a task being created via nit:tasks, When the task targets a module with a known type, Then the task.json includes an archetype field proposed by the analyst based on the task description and target module type."
+    }
+  ]
+}

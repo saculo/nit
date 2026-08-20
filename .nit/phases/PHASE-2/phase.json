@@ -1,0 +1,53 @@
+{
+  "id": "PHASE-2",
+  "title": "Deterministic Supervisor and Core Pipeline",
+  "milestone": "A task can be created, routed through archetype-driven steps (analyze, design, implement), with JSON state tracking, schema validation, and layered skill composition \u2014 all driven by a deterministic supervisor",
+  "status": "in-progress",
+  "businessValue": "The nit workflow transitions from prose-driven orchestration to data-driven orchestration. A user can run `nit:init` to scaffold the new v2 directory structure, define modules, and then use `nit:continue` to advance tasks through archetype-defined steps. Each step produces validated JSON artifacts, state is explicitly tracked, and skill composition is resolved from module configuration. `nit:continue --dry-run` lets users inspect what would happen before dispatching. This phase delivers the foundational loop: create task, run supervisor, specialist executes step, validate output, approve/reject, advance.",
+  "successCriteria": [
+    {
+      "id": "SC-1",
+      "description": "nit:init creates the complete v2 .nit/ directory structure with config and registry (schemas and archetypes live inside the CLI package, not in .nit/)"
+    },
+    {
+      "id": "SC-2",
+      "description": "Brownfield nit:init auto-detects module languages and populates modules.json"
+    },
+    {
+      "id": "SC-3",
+      "description": "All archetype definitions load correctly, including inheritance resolution from base"
+    },
+    {
+      "id": "SC-4",
+      "description": "nit:continue advances a task through analyze -> design -> implement steps using archetype-driven sequencing"
+    },
+    {
+      "id": "SC-5",
+      "description": "nit:continue --dry-run displays resolved archetype, skill composition, and step input without dispatching"
+    },
+    {
+      "id": "SC-6",
+      "description": "Skill composition correctly layers base + language + custom skills, including step overrides"
+    },
+    {
+      "id": "SC-7",
+      "description": "All JSON artifacts pass schema validation via hook-invoked validator"
+    },
+    {
+      "id": "SC-8",
+      "description": "Invalid step output triggers repair flow (repairRequired=true, step reopened with error context)"
+    },
+    {
+      "id": "SC-9",
+      "description": "maxReopenCount=3 enforced; exceeded count escalates to user"
+    },
+    {
+      "id": "SC-10",
+      "description": "nit:approve and nit:reject correctly update approval.json and advance/reopen state"
+    },
+    {
+      "id": "SC-11",
+      "description": "state.json accurately tracks currentStepId, stepOrder, status, reopenCount, timestamps"
+    }
+  ]
+}
