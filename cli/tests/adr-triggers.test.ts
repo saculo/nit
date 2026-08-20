@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { tmpdir } from "os";
 import { join, dirname } from "path";
 import { loadTriggers, evaluateTriggers, TRIGGER_KINDS, type AdrTrigger } from "../src/adr-triggers";
 import { loadDependencyRules } from "../src/dependency-rules";
@@ -145,5 +146,58 @@ describe("this repository's triggers", () => {
   test("every trigger keeps its English condition for whoever reads the candidate", () => {
     const mute = cfg.triggers.filter((t) => !t.condition || t.condition.length < 10).map((t) => t.id);
     expect(mute).toEqual([]);
+  });
+});
+
+// TASK-037 review — SC-4 needs a specialist to know a trigger fired, but ingest
+// evaluates after the output is written. Without a query the specialist can run
+// first, TASK-038 has nothing to act on.
+describe("nit adr-triggers, the specialist's query", () => {
+  const run = (args: string[]) =>
+    Bun.spawnSync(["bun", "run", join(import.meta.dir, "..", "src", "cli.ts"), "adr-triggers", ...args], {
+      cwd: join(import.meta.dir, "..", ".."),
+    });
+
+  const taskDir = (files: [string, string][]) => {
+    const dir = mkdtempSync(join(tmpdir(), "nit-adrq-"));
+    writeFileSync(join(dir, "task.json"), JSON.stringify({
+      id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
+      targetModule: "@nit/skills", status: "draft" }));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
+      impl(files)));
+    return dir;
+  };
+
+  test("it reports what fired, with exit 1", () => {
+    const r = run(["--task-dir", taskDir([[".claude/skills/x/SKILL.md", "modified"], ["cli/src/y.ts", "modified"]])]);
+    const out = JSON.parse(r.stdout.toString());
+    expect(out.configured).toBe(true);
+    expect(out.fired.map((f: any) => f.kind)).toContain("multi-module-change");
+    expect(r.exitCode).toBe(1);
+  });
+
+  test("a quiet change exits 0 with nothing fired", () => {
+    const r = run(["--task-dir", taskDir([[".claude/skills/x/SKILL.md", "modified"]])]);
+    expect(JSON.parse(r.stdout.toString()).fired).toEqual([]);
+    expect(r.exitCode).toBe(0);
+  });
+
+  test("an unconfigured project says so rather than failing", () => {
+    const r = run(["--task-dir", taskDir([["cli/src/y.ts", "modified"]]), "--triggers", "/nonexistent.json"]);
+    const out = JSON.parse(r.stdout.toString());
+    expect(out.configured).toBe(false);
+    expect(r.exitCode).toBe(0);
+  });
+});
+
+// The evaluator's output must reach whoever acts on it.
+describe("adrTriggers are documented where they are consumed", () => {
+  const skill = readFileSync(
+    join(import.meta.dir, "..", "..", ".claude", "skills", "continue", "SKILL.md"), "utf8");
+
+  test("nit:continue explains the adrTriggers it now reports", () => {
+    expect(skill).toContain("adrTriggers");
+    expect(skill).toContain("adr-triggers --task-dir");
   });
 });

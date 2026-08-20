@@ -75,6 +75,16 @@ increments `reopenCount`, and either reopens the step with the errors embedded i
 `maxReopenCount`, sets the task to `escalated` and reports the accumulated errors. On a reopen,
 return to step 2 with the updated `input.json`.
 
+When a project configures ADR triggers, a successful ingest may also report
+`"adrTriggers"` — the conditions this step's changes matched, each with the evidence that matched it.
+These are advisory: they notice a decision worth recording and never change whether the step passed.
+Surface them to the user alongside the outcome. A specialist that wants to know *before* it finishes
+can ask directly:
+
+```bash
+bun run ./cli/src/cli.ts adr-triggers --task-dir <dir>
+```
+
 A step can be reopened for either of two reasons, and the specialist is told which. **Repair** is the
 path above: the output was malformed, and `context.repairErrors` carries the schema errors to fix.
 **Rework** comes from `/nit:reject`: the output was well-formed but unsatisfactory, so a later step's
