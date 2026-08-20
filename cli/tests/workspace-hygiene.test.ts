@@ -272,15 +272,23 @@ describe("the nit workspace is expressed in v2 artifacts", () => {
     expect(bad).toEqual([]);
   });
 
-  // A completed task never ran through the supervisor, so claiming an archetype
-  // for it asserts a dispatch that did not happen — the same fabrication this
-  // migration refused for state.json and step directories.
-  test("no completed task claims an archetype it never ran", () => {
-    const claimed = taskFiles()
+  // The migration retroactively invented an archetype for 29 tasks that were
+  // planned before the field existed. That is fabrication. An archetype chosen
+  // by nit:tasks *before* the work is a planning decision and stays valid
+  // whether or not the task later ran — so the guard is about provenance, not
+  // status, and provenance is approximated by phase: PHASE-1 to PHASE-3 predate
+  // task.json entirely.
+  test("no pre-v2 task carries an archetype the migration invented", () => {
+    // A fixed historical set, not a growing rule: these are the tasks that
+    // existed as prose before task.json did, so nobody chose their archetype.
+    // Everything planned since is chosen at planning time and may carry one.
+    const preV2 = (t: any) =>
+      ["PHASE-1", "PHASE-2", "PHASE-3"].includes(t.phase) || t.id === "TASK-020";
+    const invented = taskFiles()
       .map((f) => readJson(f))
-      .filter((t) => t.status === "done" && t.archetype !== undefined)
+      .filter((t) => preV2(t) && t.archetype !== undefined)
       .map((t) => `${t.id} -> ${t.archetype}`);
-    expect(claimed).toEqual([]);
+    expect(invented).toEqual([]);
   });
 
   // AC-5 — the v1 prose is the historical record and stays

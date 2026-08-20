@@ -5,7 +5,6 @@
   "type": "devops",
   "targetModule": "@nit/skills",
   "status": "in-progress",
-  "archetype": "infra-change",
   "acceptanceCriteria": [
     {
       "id": "AC-1",
