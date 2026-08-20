@@ -96,6 +96,25 @@ describe("checking boundaries", () => {
   });
 });
 
+// ADR-0007 in its documentation form: enforcement the specialist is never told
+// about is a rule that can only be obeyed by accident.
+describe("the engineer is told what a boundary error means", () => {
+  const skill = readFileSync(
+    join(import.meta.dir, "..", "..", ".claude", "skills", "implement", "SKILL.md"),
+    "utf8"
+  );
+
+  test("nit:implement explains the boundary: prefix and the policyValid distinction", () => {
+    expect(skill).toContain("boundary:");
+    expect(skill).toContain("policyValid");
+  });
+
+  test("it routes a genuinely cross-module task to needs-splitting, not another attempt", () => {
+    expect(skill).toContain("needs-splitting");
+    expect(skill).toContain("reopen budget");
+  });
+});
+
 describe("boundary enforcement through ingest", () => {
   let steps: ArchetypeStep[];
   const setup = async (paths: string[]) => {
