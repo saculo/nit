@@ -139,6 +139,39 @@ There are two honest responses, and only one of them is a re-attempt:
 Do not work around the rule by leaving the cross-module change out and reporting success. A step that
 passes by omitting required work is worse than one that blocks.
 
+## ADR triggers
+
+Triggers evaluate what you actually changed, which may differ from what the design planned. A trigger
+that fires here and did not fire at design is worth attention: it usually means the implementation
+made a decision the design did not anticipate — which is exactly the kind that goes unrecorded.
+
+Most likely to fire here: `new-infra-capability` when you add a dependency, `cross-module-dependency`
+when the change reaches another module, and `boundary-change` when it edits the module registry or the
+rules themselves.
+
+Run it and read what fired:
+
+```bash
+bun run ./cli/src/cli.ts adr-triggers --task-dir .nit/phases/PHASE-N/tasks/TASK-NNN --step implement
+```
+
+Each match names the `condition` that fired and the `evidence` that satisfied it. Exit 1 means
+something fired; exit 0 means nothing did, and nothing is what you should then emit.
+
+**A trigger firing is not an instruction to write an ADR.** It is the project noticing that this change
+has the shape of a decision, and asking you whether one was made. Two answers are legitimate:
+
+- **A decision was made** — emit an `adrCandidate` with `title`, `context` and `decision`. Write the
+  `context` as the problem that forced the choice, not as a description of the change, and the
+  `decision` as what was chosen *and what was rejected*. A candidate that only says what happened is a
+  changelog entry; the point of a record is the reasoning that would otherwise be lost.
+- **No decision was made** — the trigger's shape matched but nothing was actually decided. Say so in
+  your `notes` and emit no candidate. Emitting an empty candidate to satisfy a trigger is worse than
+  emitting none: it fills the index with records nobody needs and trains the next reader to skim them.
+
+You do **not** write into `.nit/adr/`. Promotion of a candidate to a numbered ADR is a human decision
+behind the approval gate — you propose, a person records.
+
 ## When you cannot proceed
 
 A major deviation, a design that contradicts the acceptance criteria, or a criterion you cannot

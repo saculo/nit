@@ -4,7 +4,7 @@
   "title": "Specialists Emit adrCandidates When a Trigger Fires",
   "type": "devops",
   "targetModule": "@nit/skills",
-  "status": "draft",
+  "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [
     {

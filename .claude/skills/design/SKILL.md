@@ -101,6 +101,39 @@ learns what to build, so omit them only when the task genuinely has none. `inter
 `modified`, `deleted`. A non-zero exit from the validator means the output is malformed — fix and
 re-write before finishing.
 
+## ADR triggers
+
+Design is where decisions are made, so it is the step most likely to owe a record. The triggers
+evaluate your `filePlan` — what you say the change will touch — so you can answer before any code
+exists, which is when the reasoning is freshest.
+
+Most likely to fire here: `multi-module-change` when your plan spans modules,
+`new-shared-component` when it creates surface other modules may depend on, and `public-api-change`
+when it alters a schema.
+
+Run it and read what fired:
+
+```bash
+bun run ./cli/src/cli.ts adr-triggers --task-dir .nit/phases/PHASE-N/tasks/TASK-NNN --step design
+```
+
+Each match names the `condition` that fired and the `evidence` that satisfied it. Exit 1 means
+something fired; exit 0 means nothing did, and nothing is what you should then emit.
+
+**A trigger firing is not an instruction to write an ADR.** It is the project noticing that this change
+has the shape of a decision, and asking you whether one was made. Two answers are legitimate:
+
+- **A decision was made** — emit an `adrCandidate` with `title`, `context` and `decision`. Write the
+  `context` as the problem that forced the choice, not as a description of the change, and the
+  `decision` as what was chosen *and what was rejected*. A candidate that only says what happened is a
+  changelog entry; the point of a record is the reasoning that would otherwise be lost.
+- **No decision was made** — the trigger's shape matched but nothing was actually decided. Say so in
+  your `notes` and emit no candidate. Emitting an empty candidate to satisfy a trigger is worse than
+  emitting none: it fills the index with records nobody needs and trains the next reader to skim them.
+
+You do **not** write into `.nit/adr/`. Promotion of a candidate to a numbered ADR is a human decision
+behind the approval gate — you propose, a person records.
+
 ## When you cannot proceed
 
 If the task cannot be designed as it stands, do NOT stop with prose and do NOT design around the

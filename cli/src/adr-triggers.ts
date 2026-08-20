@@ -1,6 +1,6 @@
 import { createAjv } from "./ajv";
 import { resolveSchema } from "./schema-resolver";
-import { changedPaths, moduleForPath } from "./boundary-check";
+import { changedPaths, plannedPaths, moduleForPath } from "./boundary-check";
 import { resolveDependency, type DependencyRules } from "./dependency-rules";
 import type { ModuleEntry } from "./routing-resolver";
 
@@ -129,13 +129,22 @@ export function evaluateTriggers(
   triggers: AdrTrigger[],
   ctx: TriggerContext
 ): TriggerMatch[] {
-  const paths = changedPaths(output);
+  // An implement step reports what it changed; a design step declares what it
+  // plans to change. Both are worth evaluating — a decision noticed at design is
+  // cheaper to record than one noticed after the code exists.
+  const planned = plannedPaths(output);
+  const changed = changedPaths(output);
+  const paths = changed.length > 0 ? changed : planned.map((f) => f.path);
   if (paths.length === 0) return [];
+
   const result = (output as { result?: { filesChanged?: { path?: string; action?: string }[] } }).result;
-  const created = (result?.filesChanged ?? [])
-    .filter((f) => f.action === "created")
-    .map((f) => f.path)
-    .filter((p): p is string => Boolean(p));
+  const created =
+    changed.length > 0
+      ? (result?.filesChanged ?? [])
+          .filter((f) => f.action === "created")
+          .map((f) => f.path)
+          .filter((p): p is string => Boolean(p))
+      : planned.filter((f) => f.action === "created").map((f) => f.path);
 
   const matches: TriggerMatch[] = [];
   for (const trigger of triggers) {
