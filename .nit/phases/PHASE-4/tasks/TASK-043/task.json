@@ -1,0 +1,27 @@
+{
+  "id": "TASK-043",
+  "phase": "PHASE-4",
+  "title": "task.json Cannot Record Task Dependencies",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task that cannot start until another completes, When it is written, Then task.json records that dependency in a field the schema defines."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given a phase's tasks, When nit:tasks presents its summary, Then the dependency graph it is instructed to show is derived from recorded data rather than from prose or memory."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a recorded dependency naming a task that does not exist, When the task is validated, Then it fails rather than accepting an unresolvable reference."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the new field, When it is added, Then something reads it, proven by test (ADR-0007)."
+    }
+  ]
+}
