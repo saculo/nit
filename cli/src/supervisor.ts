@@ -4,6 +4,9 @@ import { createAjv } from "./ajv";
 import { resolveSchema } from "./schema-resolver";
 import { baseSkillForStep } from "./routing-resolver";
 import { engineerRoleForTaskType, type ArchetypeStep } from "./archetype-resolver";
+import { checkBoundaries, violationMessage } from "./boundary-check";
+import { loadDependencyRules, type DependencyRules } from "./dependency-rules";
+import type { ModuleEntry } from "./routing-resolver";
 
 /** Runtime state for a task's step progression (task-state.schema.json). */
 export interface TaskState {
@@ -231,7 +234,14 @@ export function ingestInvalid(
   state: TaskState,
   errors: ValidationError[],
   maxReopenCount: number,
-  now: string
+  now: string,
+  /**
+   * Which kind of validation failed. A malformed output is a schema failure; a
+   * change that crosses a module boundary is well-formed and breaks a policy.
+   * validation-result has carried both flags since PHASE-2 with nothing ever
+   * setting policyValid false (TASK-035).
+   */
+  validity: { schemaValid?: boolean; policyValid?: boolean } = {}
 ): { state: TaskState; validation: ValidationResult; escalated: boolean } {
   const newCount = state.reopenCount + 1;
   const escalated = newCount > maxReopenCount;
@@ -243,8 +253,8 @@ export function ingestInvalid(
     timestamps: { ...(state.timestamps ?? { createdAt: now, updatedAt: now }), updatedAt: now },
   };
   const validation: ValidationResult = {
-    schemaValid: false,
-    policyValid: true,
+    schemaValid: validity.schemaValid ?? false,
+    policyValid: validity.policyValid ?? true,
     errors,
     action: "repair",
   };
@@ -452,7 +462,13 @@ export type IngestResult =
  * reopen/escalate (invalid).
  */
 export async function ingest(
-  opts: SupervisorOptions & { maxReopenCount?: number; validateOutput?: (output: unknown) => ValidationError[] }
+  opts: SupervisorOptions & {
+    maxReopenCount?: number;
+    validateOutput?: (output: unknown) => ValidationError[];
+    /** Module registry and rules. Boundary checking is skipped when absent. */
+    modules?: ModuleEntry[];
+    dependencyRules?: DependencyRules;
+  }
 ): Promise<IngestResult> {
   const now = opts.now ?? new Date().toISOString();
   const resolveSkillList = opts.resolveSkillList ?? defaultSkillList;
@@ -510,6 +526,39 @@ export async function ingest(
       reason: blocked.reason,
       explanation: blocked.explanation,
     };
+  }
+
+  // A schema-valid output can still break a module boundary. That is a policy
+  // failure, not a malformed artifact, so it is reported through policyValid
+  // and only when the project has opted in by configuring rules (TASK-035).
+  if (errors.length === 0 && opts.modules && opts.dependencyRules) {
+    const task = await readJson<{ targetModule?: string }>(join(opts.taskDir, "task.json"));
+    if (task?.targetModule) {
+      const violations = checkBoundaries(output, task.targetModule, opts.modules, opts.dependencyRules, state.taskId);
+      if (violations.length > 0) {
+        const boundaryErrors: ValidationError[] = violations.map((v) => ({
+          path: v.path,
+          message: violationMessage(v),
+          severity: "error" as const,
+        }));
+        const maxReopen = opts.maxReopenCount ?? 3;
+        const { state: next, validation, escalated } = ingestInvalid(
+          state,
+          boundaryErrors,
+          maxReopen,
+          now,
+          { schemaValid: true, policyValid: false }
+        );
+        await writeJson(join(dir, "validation.json"), validation, "validation-result");
+        await writeJson(statePath, next, "task-state");
+        if (!escalated) {
+          const context = await assembleContext(opts, next, step, idx, boundaryErrors);
+          const input = buildStepInput(next.taskId, step, resolveSkillList(step), context);
+          await writeJson(join(dir, "input.json"), input, "step-input");
+        }
+        return { valid: false, escalated, status: next.status, stepId: step.id, errors: boundaryErrors };
+      }
+    }
   }
 
   if (errors.length === 0) {

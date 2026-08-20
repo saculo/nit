@@ -119,6 +119,26 @@ result the reviewer needs, not something to hide. `deviations` and `techDebt` ma
 should be present so their emptiness is a deliberate claim. A non-zero exit from the validator means
 the output is malformed — fix and re-write before finishing.
 
+## Boundary errors
+
+A `repairError` whose message begins `boundary:` is not a malformed output — your result was
+schema-valid. It says the files you changed reach a module your task's `targetModule` is not allowed
+to depend on, and it quotes the rule that forbids it. `validation.json` records this as
+`policyValid: false` with `schemaValid: true`, which is how a reader tells the two apart.
+
+There are two honest responses, and only one of them is a re-attempt:
+
+- **The change was avoidable.** You reached into another module when the work belongs in your own —
+  put it back, and re-emit. This is the repair case.
+- **The task genuinely spans two modules.** Then no number of attempts will satisfy the rule, and
+  retrying burns the reopen budget until the task escalates. Emit a `needs-splitting` blocked result
+  instead, with `detail.taskTypes` naming what the split should produce and the boundary error quoted
+  in your `explanation`. One task, one module is the rule the boundary check enforces; a task that
+  cannot obey it needs re-planning, not another attempt.
+
+Do not work around the rule by leaving the cross-module change out and reporting success. A step that
+passes by omitting required work is worse than one that blocks.
+
 ## When you cannot proceed
 
 A major deviation, a design that contradicts the acceptance criteria, or a criterion you cannot
