@@ -6,7 +6,6 @@
       "when": {
         "kind": "new-infra-capability"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -15,7 +14,6 @@
       "when": {
         "kind": "multi-module-change"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -24,7 +22,6 @@
       "when": {
         "kind": "cross-module-dependency"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -33,7 +30,6 @@
       "when": {
         "kind": "boundary-change"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -42,7 +38,6 @@
       "when": {
         "kind": "public-api-change"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -51,7 +46,6 @@
       "when": {
         "kind": "new-shared-component"
       },
-      "template": "madr",
       "enabled": true
     }
   ]

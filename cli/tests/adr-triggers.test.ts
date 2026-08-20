@@ -16,7 +16,7 @@ const RULES = loadDependencyRules({ rules: [] }, MODULES);
 const CTX = { targetModule: "api", modules: MODULES, rules: RULES };
 
 const trigger = (kind: string, id = kind): AdrTrigger => ({
-  id, condition: `prose for ${kind}`, when: { kind }, template: "madr", enabled: true,
+  id, condition: `prose for ${kind}`, when: { kind }, enabled: true,
 });
 
 function impl(files: [string, string][]): unknown {
@@ -107,13 +107,16 @@ describe("evaluating triggers", () => {
     expect(evaluateTriggers(impl([["src/api/a.ts", "modified"], ["src/core/b.ts", "modified"]]), [off], CTX)).toEqual([]);
   });
 
-  test("a match carries the configured condition and template forward", () => {
+  // TASK-039 removed `template`: it was declared, carried, and read by nothing.
+  // ADR-0007 gives a declared field one job — have a consumer — and this one
+  // never found it, so it went rather than staying as decoration.
+  test("a match carries the configured condition forward, and no template", () => {
     const m = evaluateTriggers(
       impl([["src/api/a.ts", "modified"], ["src/core/b.ts", "modified"]]),
       [trigger("multi-module-change")], CTX
     );
     expect(m[0]!.condition).toBe("prose for multi-module-change");
-    expect(m[0]!.template).toBe("madr");
+    expect(m[0]).not.toHaveProperty("template");
     expect(m[0]!.id).toBe("multi-module-change");
   });
 

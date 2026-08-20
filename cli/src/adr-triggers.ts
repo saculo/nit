@@ -22,7 +22,6 @@ export interface AdrTrigger {
   condition: string;
   /** The condition in a form the evaluator can decide. */
   when: { kind: string };
-  template?: string;
   enabled?: boolean;
 }
 
@@ -32,8 +31,6 @@ export interface TriggerMatch {
   kind: TriggerKind;
   /** The configured English condition, carried so a candidate can quote it. */
   condition: string;
-  /** The ADR template the trigger asks for, for whoever writes the record. */
-  template?: string;
   /** The concrete paths or modules that satisfied the condition. */
   evidence: string[];
 }
@@ -155,7 +152,6 @@ export function evaluateTriggers(
       id: trigger.id,
       kind: trigger.when.kind as TriggerKind,
       condition: trigger.condition,
-      template: trigger.template,
       evidence,
     });
   }
