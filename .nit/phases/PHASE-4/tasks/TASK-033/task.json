@@ -1,0 +1,23 @@
+{
+  "id": "TASK-033",
+  "phase": "PHASE-4",
+  "title": "No Archetype Serves a qa-Type Task",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a task whose type is qa, When an archetype is proposed for it by nit:tasks or nit:analyze, Then the proposed archetype's implement step dispatches to the qa engineer."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given every task type the schema allows, When each is checked against the shipped archetypes, Then at least one archetype's implement step reaches that type's engineer, asserted by test."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given registry/task-types.json, When a qa task looks up its defaultArchetype, Then that archetype exists and satisfies AC-1."
+    }
+  ]
+}

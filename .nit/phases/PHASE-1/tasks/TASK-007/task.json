@@ -5,7 +5,6 @@
   "type": "frontend",
   "targetModule": "@nit/skills",
   "status": "done",
-  "archetype": "frontend-feature",
   "acceptanceCriteria": [
     {
       "id": "AC-1",

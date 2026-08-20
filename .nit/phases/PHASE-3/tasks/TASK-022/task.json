@@ -5,7 +5,6 @@
   "type": "qa",
   "targetModule": "@nit/skills",
   "status": "done",
-  "archetype": "backend-feature",
   "acceptanceCriteria": [
     {
       "id": "AC-1",

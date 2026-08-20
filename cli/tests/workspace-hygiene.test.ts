@@ -272,6 +272,17 @@ describe("the nit workspace is expressed in v2 artifacts", () => {
     expect(bad).toEqual([]);
   });
 
+  // A completed task never ran through the supervisor, so claiming an archetype
+  // for it asserts a dispatch that did not happen — the same fabrication this
+  // migration refused for state.json and step directories.
+  test("no completed task claims an archetype it never ran", () => {
+    const claimed = taskFiles()
+      .map((f) => readJson(f))
+      .filter((t) => t.status === "done" && t.archetype !== undefined)
+      .map((t) => `${t.id} -> ${t.archetype}`);
+    expect(claimed).toEqual([]);
+  });
+
   // AC-5 — the v1 prose is the historical record and stays
   test("the prose each task was migrated from is still present", () => {
     const missing = taskFiles().filter((f) => !existsSync(f.replace("task.json", "TASK.md")));
