@@ -117,6 +117,11 @@ Run it and read what fired:
 bun run ./cli/src/cli.ts adr-triggers --task-dir .nit/phases/PHASE-N/tasks/TASK-NNN --step design
 ```
 
+**Order matters.** The query reads your step's `output.json`, so write your result first, run the
+query, then add any candidates and re-write. Running it before you have written anything fails with
+`No output.json for step` — that is the command telling you it has nothing to evaluate yet, not that
+triggers are unconfigured.
+
 Each match names the `condition` that fired and the `evidence` that satisfied it. Exit 1 means
 something fired; exit 0 means nothing did, and nothing is what you should then emit.
 

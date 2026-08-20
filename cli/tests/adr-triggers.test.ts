@@ -232,6 +232,18 @@ describe("specialists are told to emit candidates when a trigger fires", () => {
     expect(read(name)).toContain(".nit/adr/");
   });
 
+  // The query reads the step's own output, so a specialist that runs it before
+  // writing gets exit 2. Guidance that cannot be followed in the order given is
+  // guidance that will be abandoned the first time it fails.
+  test.each(EMITTERS)("%s says to write the result before querying", (name) => {
+    expect(read(name)).toContain("Order matters");
+  });
+
+  // AC-1 — the field must be named where the specialist writes its output
+  test.each(EMITTERS)("%s names adrCandidates in its output shape", (name) => {
+    expect(read(name)).toContain("adrCandidates");
+  });
+
   // the honest second answer: a trigger's shape can match with no decision behind it
   test.each(EMITTERS)("%s permits emitting nothing when no decision was made", (name) => {
     expect(read(name)).toContain("No decision was made");
