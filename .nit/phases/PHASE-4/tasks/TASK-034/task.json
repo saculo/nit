@@ -1,0 +1,27 @@
+{
+  "id": "TASK-034",
+  "phase": "PHASE-4",
+  "title": "Dependency Rules Format and Schema",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given boundaries/dependency-rules.json, When it is validated against dependency-rules.schema.json, Then a rule set declaring allowed and forbidden cross-module dependencies passes, and one naming a module absent from modules.json is rejected."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the schema, When a rule omits which modules it governs or what it permits, Then validation fails naming the missing field rather than accepting an unenforceable rule."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given this repository's three modules, When a starter dependency-rules.json is written, Then it encodes the direction ADR-0006 states \u2014 @nit/skills may depend on @nit/cli, and neither may depend on @nit/workspace \u2014 and validates."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the new schema, When it is added, Then something reads every field it declares, proven by test (ADR-0007)."
+    }
+  ]
+}

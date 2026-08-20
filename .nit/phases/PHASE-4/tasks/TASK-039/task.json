@@ -1,0 +1,27 @@
+{
+  "id": "TASK-039",
+  "phase": "PHASE-4",
+  "title": "ADR Index and Its Management Commands",
+  "type": "devops",
+  "targetModule": "@nit/cli",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given adrCandidates across a phase's step outputs, When the index is built, Then decisions/adr-index.json lists each candidate with the task that raised it and whether it was promoted."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the index, When a candidate is promoted to a numbered ADR, Then the index records the ADR path and the candidate is no longer listed as outstanding."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the adr/ and decisions/ directories, When this task completes, Then the split between them is settled and recorded, and nit:init creates only what it uses."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the index schema, When it is added, Then something reads every field it declares, proven by test (ADR-0007)."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "TASK-036",
+  "phase": "PHASE-4",
+  "title": "nit:boundary-check Step Skill",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a cross-module-change task at the boundary-check step, When the supervisor prepares it, Then baseSkillForStep resolves nit:boundary-check to a SKILL.md that exists on disk."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the boundary-check step, When the reviewer runs it, Then it emits a schema-valid step output reporting whether the change respects the module boundaries, using an existing result type rather than a new one."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a boundary-check that cannot be performed, When the reviewer stops, Then it emits the TASK-018 blocked contract rather than a skill-specific convention."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given the routing conformance test, When it runs, Then the not-yet-implemented allowlist is empty."
+    }
+  ]
+}

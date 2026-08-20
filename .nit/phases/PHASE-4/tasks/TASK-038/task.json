@@ -1,0 +1,23 @@
+{
+  "id": "TASK-038",
+  "phase": "PHASE-4",
+  "title": "Specialists Emit adrCandidates When a Trigger Fires",
+  "type": "devops",
+  "targetModule": "@nit/skills",
+  "status": "draft",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a step whose work matches an ADR trigger, When the specialist writes its output, Then it includes an adrCandidate with title, context and decision, without being asked in the prompt."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given the design, implement and boundary-check skills, When each is inspected, Then each documents which triggers apply to it and what to put in a candidate."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given a specialist that emits a candidate, When it does so, Then it still does not write into .nit/adr/ \u2014 promotion stays a human decision behind the approval gate."
+    }
+  ]
+}
