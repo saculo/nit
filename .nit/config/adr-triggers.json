@@ -1,26 +1,56 @@
 {
   "triggers": [
     {
-      "id": "new-library",
-      "condition": "A new external library or framework is added to the project",
+      "id": "new-infra-capability",
+      "condition": "A new external library, framework or build capability is added to the project",
+      "when": {
+        "kind": "new-infra-capability"
+      },
       "template": "madr",
       "enabled": true
     },
     {
       "id": "architecture-change",
-      "condition": "A significant architectural change is proposed that affects multiple modules",
+      "condition": "A change spans more than one module, so the decision affects how they fit together",
+      "when": {
+        "kind": "multi-module-change"
+      },
       "template": "madr",
       "enabled": true
     },
     {
       "id": "cross-module-boundary",
-      "condition": "A new cross-module dependency is introduced",
+      "condition": "A change introduces a dependency across a module boundary",
+      "when": {
+        "kind": "cross-module-dependency"
+      },
       "template": "madr",
       "enabled": true
     },
     {
-      "id": "data-schema-change",
-      "condition": "A breaking change to a shared data schema is proposed",
+      "id": "boundary-change",
+      "condition": "The module registry or the dependency rules themselves change",
+      "when": {
+        "kind": "boundary-change"
+      },
+      "template": "madr",
+      "enabled": true
+    },
+    {
+      "id": "public-api-change",
+      "condition": "A schema changes, which is how this project's public contracts are expressed",
+      "when": {
+        "kind": "public-api-change"
+      },
+      "template": "madr",
+      "enabled": true
+    },
+    {
+      "id": "new-shared-component",
+      "condition": "A new file is added to a module other modules are allowed to depend on",
+      "when": {
+        "kind": "new-shared-component"
+      },
       "template": "madr",
       "enabled": true
     }

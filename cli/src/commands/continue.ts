@@ -8,11 +8,13 @@ import {
 } from "../routing-resolver";
 import { prepare, ingest, dryRun, loadMaxReopenCount } from "../supervisor";
 import { loadDependencyRules, type DependencyRules } from "../dependency-rules";
+import { loadTriggers } from "../adr-triggers";
 
 const DEFAULT_CONFIG = ".nit/config/supervisor.json";
 const DEFAULT_SKILLS_DIR = ".claude/skills";
 const DEFAULT_RULES = ".nit/boundaries/dependency-rules.json";
 const DEFAULT_MODULES = ".nit/boundaries/modules.json";
+const DEFAULT_TRIGGERS = ".nit/config/adr-triggers.json";
 
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(name);
@@ -102,7 +104,13 @@ export async function runContinue(args: string[]): Promise<number> {
         dependencyRules = loadDependencyRules(await rulesFile.json(), modules!);
       }
 
-      const result = await ingest({ ...opts, maxReopenCount, modules, dependencyRules });
+      let adrTriggers;
+      const triggersFile = Bun.file(flag(args, "--adr-triggers") ?? DEFAULT_TRIGGERS);
+      if (modules && (await triggersFile.exists())) {
+        adrTriggers = loadTriggers(await triggersFile.json()).triggers;
+      }
+
+      const result = await ingest({ ...opts, maxReopenCount, modules, dependencyRules, adrTriggers });
       console.log(JSON.stringify(result, null, 2));
       return 0;
     }

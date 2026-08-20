@@ -6,6 +6,7 @@ import { baseSkillForStep } from "./routing-resolver";
 import { engineerRoleForTaskType, type ArchetypeStep } from "./archetype-resolver";
 import { checkBoundaries, violationMessage } from "./boundary-check";
 import { loadDependencyRules, type DependencyRules } from "./dependency-rules";
+import { evaluateTriggers, type AdrTrigger, type TriggerMatch } from "./adr-triggers";
 import type { ModuleEntry } from "./routing-resolver";
 
 /** Runtime state for a task's step progression (task-state.schema.json). */
@@ -444,8 +445,8 @@ export async function prepare(
 
 /** Result of ingesting a step's output.json. */
 export type IngestResult =
-  | { valid: true; status: "awaiting_approval"; stepId: string }
-  | { valid: true; status: string; stepId: string; gated: false; advancedTo?: string }
+  | { valid: true; status: "awaiting_approval"; stepId: string; adrTriggers?: TriggerMatch[] }
+  | { valid: true; status: string; stepId: string; gated: false; advancedTo?: string; adrTriggers?: TriggerMatch[] }
   | {
       valid: boolean;
       blocked: true;
@@ -468,6 +469,8 @@ export async function ingest(
     /** Module registry and rules. Boundary checking is skipped when absent. */
     modules?: ModuleEntry[];
     dependencyRules?: DependencyRules;
+    /** ADR triggers. Evaluation is skipped when absent. */
+    adrTriggers?: AdrTrigger[];
   }
 ): Promise<IngestResult> {
   const now = opts.now ?? new Date().toISOString();
@@ -571,12 +574,17 @@ export async function ingest(
     // The archetype decides whether this step stops for a human (TASK-029).
     // An archetype that omits the flag is treated as gated: skipping human
     // review is not a safe default to infer from silence.
+    // Triggers are advisory: they notice a decision worth recording, they do not
+    // decide whether the step passed. Evaluating after validation and reporting
+    // alongside the outcome keeps it that way (TASK-037).
+    const adrTriggers = await evaluateAdrTriggers(opts, output);
+
     if (stepIsGated(step)) {
       const { state: next, approval } = ingestValid(state, now);
       approval.timestamp = now;
       await writeJson(join(dir, "approval.json"), approval, "approval");
       await writeJson(statePath, next, "task-state");
-      return { valid: true, status: "awaiting_approval", stepId: step.id };
+      return { valid: true, status: "awaiting_approval", stepId: step.id, ...(adrTriggers.length > 0 && { adrTriggers }) };
     }
 
     // Ungated: advance without a human decision. An auto-approved approval.json
@@ -597,6 +605,7 @@ export async function ingest(
       stepId: step.id,
       gated: false,
       advancedTo: next.status === "done" ? undefined : next.currentStepId,
+      ...(adrTriggers.length > 0 && { adrTriggers }),
     };
   }
 
@@ -624,6 +633,26 @@ export async function ingest(
 }
 
 /** Validate a step output against step-output.schema.json. */
+/**
+ * Evaluate the configured ADR triggers against a step output, when a project
+ * has configured any. Failure to evaluate is never allowed to fail the step: a
+ * trigger set is advice about what to record, and advice that blocks work would
+ * be worse than no advice.
+ */
+async function evaluateAdrTriggers(
+  opts: { taskDir: string; modules?: ModuleEntry[]; dependencyRules?: DependencyRules; adrTriggers?: AdrTrigger[] },
+  output: unknown
+): Promise<TriggerMatch[]> {
+  if (!opts.adrTriggers || opts.adrTriggers.length === 0 || !opts.modules) return [];
+  const task = await readJson<{ targetModule?: string }>(join(opts.taskDir, "task.json"));
+  if (!task?.targetModule) return [];
+  return evaluateTriggers(output, opts.adrTriggers, {
+    targetModule: task.targetModule,
+    modules: opts.modules,
+    rules: opts.dependencyRules,
+  });
+}
+
 export function defaultValidateOutput(output: unknown): ValidationError[] {
   const schemaPath = resolveSchema("step-output");
   const ajv = createAjv();
