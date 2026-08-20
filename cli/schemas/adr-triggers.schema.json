@@ -25,12 +25,39 @@
           "enabled": {
             "type": "boolean",
             "description": "Whether this trigger is active."
+          },
+          "when": {
+            "type": "object",
+            "description": "The machine-evaluable form of the condition. `condition` says it in English for the reader; this says it in a form the evaluator can decide. A trigger without it can never fire.",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "multi-module-change",
+                  "new-shared-component",
+                  "cross-module-dependency",
+                  "boundary-change",
+                  "public-api-change",
+                  "new-infra-capability"
+                ],
+                "description": "Which computable condition this trigger tests. A kind the evaluator does not recognise fails loudly rather than silently matching nothing."
+              }
+            },
+            "required": [
+              "kind"
+            ]
           }
         },
-        "required": ["id", "condition"]
+        "required": [
+          "id",
+          "condition",
+          "when"
+        ]
       }
     }
   },
-  "required": ["triggers"],
+  "required": [
+    "triggers"
+  ],
   "additionalProperties": false
 }
