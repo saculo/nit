@@ -96,6 +96,57 @@ describe("checking boundaries", () => {
   });
 });
 
+// TASK-036 — an archetype carrying a boundary-check step declares that this task
+// crosses modules deliberately. Blocking it automatically at implement would
+// make that step unreachable and cross-module-change unusable.
+describe("archetypes that review boundaries are not blocked automatically", () => {
+  const setupCross = async (paths: string[]) => {
+    const dir = mkdtempSync(join(tmpdir(), "nit-cmc-"));
+    writeFileSync(join(dir, "task.json"), JSON.stringify({
+      id: "T", phase: "PHASE-4", title: "t", type: "backend", targetModule: "api", status: "draft" }));
+    writeFileSync(join(dir, "state.json"), JSON.stringify({
+      taskId: "T", currentStepId: "implement",
+      stepOrder: ["analyze", "design", "implement", "boundary-check", "review", "qa"],
+      status: "in-progress", reopenCount: 0,
+      timestamps: { createdAt: NOW, updatedAt: NOW } }));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(implOutput(paths)));
+    return dir;
+  };
+
+  test("a crossing passes implement when the archetype has a boundary-check step", async () => {
+    const steps = (await resolveArchetype("cross-module-change")).steps as ArchetypeStep[];
+    const dir = await setupCross(["web/page.tsx"]);
+    const r = (await ingest({
+      taskDir: dir, taskId: "T", steps, now: NOW, modules: MODULES, dependencyRules: RULES,
+    })) as any;
+    expect(r.valid).toBe(true);
+    expect(existsSync(join(dir, "STEP-003-implement", "validation.json"))).toBe(false);
+  });
+
+  test("the same crossing is blocked under an archetype without that step", async () => {
+    const steps = (await resolveArchetype("backend-feature")).steps as ArchetypeStep[];
+    const dir = await setupCross(["web/page.tsx"]);
+    // same output, ordinary archetype
+    writeFileSync(join(dir, "state.json"), JSON.stringify({
+      taskId: "T", currentStepId: "implement",
+      stepOrder: ["analyze", "design", "implement", "review", "qa"],
+      status: "in-progress", reopenCount: 0,
+      timestamps: { createdAt: NOW, updatedAt: NOW } }));
+    const r = (await ingest({
+      taskDir: dir, taskId: "T", steps, now: NOW, modules: MODULES, dependencyRules: RULES,
+    })) as any;
+    expect(r.valid).toBe(false);
+  });
+
+  test("every shipped archetype's boundary-check step resolves to a skill", async () => {
+    const { steps } = await resolveArchetype("cross-module-change");
+    const bc = steps.find((s) => s.id === "boundary-check");
+    expect(bc).toBeDefined();
+    expect(bc!.role).toBe("reviewer");
+  });
+});
+
 // ADR-0007 in its documentation form: enforcement the specialist is never told
 // about is a rule that can only be obeyed by accident.
 describe("the engineer is told what a boundary error means", () => {
@@ -112,6 +163,77 @@ describe("the engineer is told what a boundary error means", () => {
   test("it routes a genuinely cross-module task to needs-splitting, not another attempt", () => {
     expect(skill).toContain("needs-splitting");
     expect(skill).toContain("reopen budget");
+  });
+});
+
+// AC-2 / AC-3 — the skill reuses existing contracts rather than inventing one
+describe("nit:boundary-check skill contract", () => {
+  const skill = readFileSync(
+    join(import.meta.dir, "..", "..", ".claude", "skills", "boundary-check", "SKILL.md"),
+    "utf8"
+  );
+
+  test("it produces a review-result rather than a new result type", () => {
+    expect(skill).toContain('"resultType": "review"');
+    expect(skill).not.toContain("boundary-result");
+  });
+
+  test("it uses the shared blocked contract", () => {
+    expect(skill).toContain('"resultType": "blocked"');
+    expect(skill).toContain("needs-splitting");
+  });
+
+  test("it runs the check rather than re-deriving it", () => {
+    expect(skill).toContain("cli.ts boundaries");
+  });
+});
+
+// The query and the gate must not disagree about what "configured" means.
+// ingest enforces only with both files; the command reports either way and says
+// which, so a report is never mistaken for a live gate.
+describe("nit boundaries reports whether enforcement is live", () => {
+  const run = (args: string[]) =>
+    Bun.spawnSync(["bun", "run", join(import.meta.dir, "..", "src", "cli.ts"), "boundaries", ...args], {
+      cwd: join(import.meta.dir, "..", ".."),
+    });
+
+  const taskDir = () => {
+    const dir = mkdtempSync(join(tmpdir(), "nit-bq-"));
+    writeFileSync(join(dir, "task.json"), JSON.stringify({
+      id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
+      targetModule: "@nit/cli", status: "draft" }));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
+      implOutput(["cli/src/x.ts", ".claude/skills/design/SKILL.md"])));
+    return dir;
+  };
+
+  test("with a rule set, the report says enforcement is live", () => {
+    const r = run(["--task-dir", taskDir()]);
+    const out = JSON.parse(r.stdout.toString());
+    expect(out.enforced).toBe(true);
+    expect(out.rulesPath).toContain("dependency-rules.json");
+    expect(r.exitCode).toBe(1);
+  });
+
+  test("without one, it still reports but says enforcement is not live", () => {
+    const r = run(["--task-dir", taskDir(), "--rules", "/nonexistent/rules.json"]);
+    const out = JSON.parse(r.stdout.toString());
+    expect(out.enforced).toBe(false);
+    expect(out.rulesPath).toBeNull();
+    // the crossing is still visible, so a project can see what it would cost
+    expect(out.violations.length).toBeGreaterThan(0);
+  });
+
+  test("a clean task exits 0", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nit-bq-"));
+    writeFileSync(join(dir, "task.json"), JSON.stringify({
+      id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
+      targetModule: "@nit/cli", status: "draft" }));
+    mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
+      implOutput(["cli/src/x.ts"])));
+    expect(run(["--task-dir", dir]).exitCode).toBe(0);
   });
 });
 

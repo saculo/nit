@@ -198,9 +198,9 @@ describe("every shipped step id resolves to a skill on disk", () => {
 
   // Steps with no SKILL.md yet, each owned by a named task. Shrinks to empty as
   // the migration lands; the second assertion below stops it going stale.
-  const NOT_YET_IMPLEMENTED: Record<string, string> = {
-    "boundary-check": "PHASE-3 boundary enforcement",
-  };
+  // Empty since TASK-036. Every step id in every shipped archetype resolves to a
+  // SKILL.md on disk; the second test below stops this list creeping back.
+  const NOT_YET_IMPLEMENTED: Record<string, string> = {};
 
   const ARCHETYPES = [
     "backend-feature",

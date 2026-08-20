@@ -531,7 +531,13 @@ export async function ingest(
   // A schema-valid output can still break a module boundary. That is a policy
   // failure, not a malformed artifact, so it is reported through policyValid
   // and only when the project has opted in by configuring rules (TASK-035).
-  if (errors.length === 0 && opts.modules && opts.dependencyRules) {
+  // An archetype carrying a boundary-check step is declaring that this task
+  // crosses modules deliberately and that a reviewer will judge whether the
+  // crossing is sound. Blocking it automatically at implement would make that
+  // step unreachable and the cross-module-change archetype unusable, so the
+  // decision is deferred to the step built for it (TASK-036).
+  const reviewsBoundaries = opts.steps.some((s) => s.id === "boundary-check");
+  if (errors.length === 0 && !reviewsBoundaries && opts.modules && opts.dependencyRules) {
     const task = await readJson<{ targetModule?: string }>(join(opts.taskDir, "task.json"));
     if (task?.targetModule) {
       const violations = checkBoundaries(output, task.targetModule, opts.modules, opts.dependencyRules, state.taskId);

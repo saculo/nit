@@ -6,6 +6,7 @@ import { runRoute } from "./commands/route";
 import { runContinue } from "./commands/continue";
 import { runApprove } from "./commands/approve";
 import { runReject } from "./commands/reject";
+import { runBoundaries } from "./commands/boundaries";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -20,6 +21,7 @@ async function main(): Promise<number> {
     console.log("  continue --task-dir <dir>         Advance a task through its archetype steps");
     console.log("  approve --task-dir <dir>          Approve the current step and advance");
     console.log("  reject --task-dir <dir>           Reject the current step and reopen per routing");
+    console.log("  boundaries --task-dir <dir>       Report boundaries a task's implementation crossed");
     return 0;
   }
 
@@ -36,6 +38,8 @@ async function main(): Promise<number> {
       return runApprove(args.slice(1));
     case "reject":
       return runReject(args.slice(1));
+    case "boundaries":
+      return runBoundaries(args.slice(1));
     default:
       console.error(`Unknown command: "${command}"`);
       console.error("Run 'nit --help' for available commands.");
