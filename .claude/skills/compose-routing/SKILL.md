@@ -4,7 +4,7 @@ description: "Skill composition engine for the nit workflow. Resolves the layere
 allowed-tools: Read, Bash
 ---
 
-> **Invocation**: internal — called by the supervisor (`nit:continue`) before dispatch, not a user slash command. The user-facing `nit:resolve-routing` / `nit:explain-routing` commands are PHASE-3.
+> **Invocation**: internal — called by the supervisor (`nit:continue`) before dispatch, not a user slash command. `nit resolve-routing` and `nit explain-routing` are the user-facing equivalents (TASK-040).
 
 # nit Skill Composition Engine
 
@@ -37,24 +37,31 @@ without error, so the agent still receives every available layer.
 
 ## Procedure
 
-1. Determine the current step id from the task's resolved archetype and the target module name(s)
-   from the task's `targetModule`.
-2. Resolve and write `routing.json`:
+1. Resolve and write `routing.json`:
 
    ```bash
-   bun run ./cli/src/cli.ts route \
-     --task TASK-NNN \
-     --step <stepId> \
-     --targets <moduleName>[,<moduleName2>...] \
-     --out .nit/phases/PHASE-N/tasks/TASK-NNN/routing.json
+   bun run ./cli/src/cli.ts resolve-routing \
+     --task-dir .nit/phases/PHASE-N/tasks/TASK-NNN
    ```
 
-   The command reads `modules.json` and `skills.json` from their default locations
-   (`--modules` / `--registry` / `--skills-dir` override them), resolves the layered list, and
-   writes `routing.json`. A missing module registry or unknown target module exits non-zero with a
-   clear message.
+   The task id, the current step and the target module all come from the task directory —
+   `task.json` for the module and archetype, `state.json` for the step the task is actually on. Do
+   NOT determine them yourself and pass them back in: a routing resolved for the wrong step is not
+   detectably wrong, and every value restated is a chance for one of them to be wrong (TASK-040).
 
-3. Confirm the written file is schema-valid (the route command validates in-process; this is the
+   It reads `modules.json` and `skills.json` from their default locations (`--modules` /
+   `--registry` / `--skills-dir` override them) and writes `routing.json` beside the task. A missing
+   module registry or a target module absent from it exits 2 naming what is missing — it never
+   resolves a partial chain, because a short skill list reads as the configuration's fault rather
+   than the registry's.
+
+   A cross-module task names its secondary modules with `--targets <primary>,<secondary>`; the
+   primary must come first.
+
+   `nit route --task <id> --step <step> --targets <m1,m2>` is still there for a resolution that has
+   no task directory to read from.
+
+2. Confirm the written file is schema-valid (the route command validates in-process; this is the
    belt-and-braces guardrail per ADR-0003):
 
    ```bash
@@ -81,6 +88,24 @@ without error, so the agent still receives every available layer.
 ```
 
 `routing.json` reflects the task's **current** step and is regenerated when the step advances.
+
+## When a skill is not in the list
+
+A language, custom or global skill whose `SKILL.md` is absent is dropped without error, so a skill
+someone configured can be missing from the routing with nothing said about it. Do not diff the
+config against the output by hand — ask:
+
+```bash
+bun run ./cli/src/cli.ts explain-routing --task-dir .nit/phases/PHASE-N/tasks/TASK-NNN
+```
+
+It prints every candidate the composition considered, the layer and the module or registry that
+offered it, and why it was dropped — `absent` (no `SKILL.md` under the skills directory) or
+`duplicate` (an earlier layer already contributed it). `--json` gives the same trace as data, and
+`--step <id>` asks about a step the task is not on yet.
+
+The explanation and the routing come from one pass over the same inputs, so what it describes is
+what the supervisor would dispatch.
 
 ## Rules
 

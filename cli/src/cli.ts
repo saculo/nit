@@ -9,6 +9,7 @@ import { runReject } from "./commands/reject";
 import { runBoundaries } from "./commands/boundaries";
 import { runAdrTriggers } from "./commands/adr-triggers";
 import { runAdrIndex } from "./commands/adr-index";
+import { runExplainRouting, runResolveRouting } from "./commands/routing";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -26,6 +27,8 @@ async function main(): Promise<number> {
     console.log("  boundaries --task-dir <dir>       Report boundaries a task's implementation crossed");
     console.log("  adr-triggers --task-dir <dir>     Report which ADR triggers a step's changes fire");
     console.log("  adr-index [--outstanding]         Build the ADR candidate index, list it, or record a promotion");
+    console.log("  explain-routing --task-dir <dir>  Show the full skill composition chain, including what was dropped");
+    console.log("  resolve-routing --task-dir <dir>  Resolve and write routing.json for a task's current step");
     return 0;
   }
 
@@ -48,6 +51,10 @@ async function main(): Promise<number> {
       return runAdrTriggers(args.slice(1));
     case "adr-index":
       return runAdrIndex(args.slice(1));
+    case "explain-routing":
+      return runExplainRouting(args.slice(1));
+    case "resolve-routing":
+      return runResolveRouting(args.slice(1));
     default:
       console.error(`Unknown command: "${command}"`);
       console.error("Run 'nit --help' for available commands.");
