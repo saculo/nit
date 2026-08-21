@@ -24,6 +24,7 @@ const SCHEMA_MAP: Record<string, string> = {
   archetype: "archetype.schema.json",
   "role-routing": "role-routing.schema.json",
   "adr-triggers": "adr-triggers.schema.json",
+  "adr-index": "adr-index.schema.json",
   "validation-config": "validation-config.schema.json",
   "task-types": "task-types.schema.json",
   roles: "roles.schema.json",

@@ -8,6 +8,7 @@ import { runApprove } from "./commands/approve";
 import { runReject } from "./commands/reject";
 import { runBoundaries } from "./commands/boundaries";
 import { runAdrTriggers } from "./commands/adr-triggers";
+import { runAdrIndex } from "./commands/adr-index";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -24,6 +25,7 @@ async function main(): Promise<number> {
     console.log("  reject --task-dir <dir>           Reject the current step and reopen per routing");
     console.log("  boundaries --task-dir <dir>       Report boundaries a task's implementation crossed");
     console.log("  adr-triggers --task-dir <dir>     Report which ADR triggers a step's changes fire");
+    console.log("  adr-index [--outstanding]         Build the ADR candidate index, list it, or record a promotion");
     return 0;
   }
 
@@ -44,6 +46,8 @@ async function main(): Promise<number> {
       return runBoundaries(args.slice(1));
     case "adr-triggers":
       return runAdrTriggers(args.slice(1));
+    case "adr-index":
+      return runAdrIndex(args.slice(1));
     default:
       console.error(`Unknown command: "${command}"`);
       console.error("Run 'nit --help' for available commands.");

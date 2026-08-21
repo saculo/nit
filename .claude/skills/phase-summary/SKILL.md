@@ -85,6 +85,18 @@ from", and a summary that cannot answer it will not be trusted twice.
    emitted, plus any emergent decision the pattern analysis revealed. Writing a numbered file into
    `.nit/adr/` is a human decision behind the approval gate — set `promotedTo` only for candidates
    already promoted.
+
+   Do not scan the step outputs by hand for this. `nit adr-index` already does it, across every phase,
+   and keeps the promotions that were recorded earlier:
+
+   ```bash
+   bun run ./cli/src/cli.ts adr-index --phase PHASE-N   # rebuild .nit/adr/index.json
+   bun run ./cli/src/cli.ts adr-index --outstanding     # what still needs a decision
+   ```
+
+   The index is the answer to "what is still open"; your job is the emergent candidates it cannot
+   know about, because no single step raised them. When the user promotes one, record it with
+   `nit adr-index --promote <id> --to <path>` rather than editing the index by hand.
 7. **Write the PLR** (format below), then `summary.json`, then validate it:
 
    ```bash

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nit.dev/schemas/adr-index.schema.json",
+  "title": "ADR Index",
+  "description": "Every architecture decision candidate the pipeline's steps raised, with the task that raised it and whether it became a numbered record. Lives beside the records it indexes, in .nit/adr/.",
+  "type": "object",
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^TASK-\\d+[a-z]?/[a-z0-9-]+$",
+            "description": "Derived from the task that raised it and a slug of its title, so rebuilding the index keeps the same id for the same candidate."
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "context": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The problem that forced the decision, carried verbatim from the candidate."
+          },
+          "decision": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["proposed", "accepted", "rejected", "superseded"],
+            "description": "The candidate's own status as the step reported it."
+          },
+          "raisedBy": {
+            "type": "object",
+            "description": "Where the candidate came from, so a reader can go back to the work that prompted it.",
+            "properties": {
+              "taskId": { "type": "string" },
+              "stepId": { "type": "string" },
+              "phaseId": { "type": "string" }
+            },
+            "required": ["taskId", "stepId"],
+            "additionalProperties": false
+          },
+          "promotedTo": {
+            "type": "string",
+            "description": "Path of the numbered ADR this became. Absent while the candidate is still outstanding — which is what makes 'outstanding' a computable question rather than a judgement."
+          }
+        },
+        "required": ["id", "title", "context", "decision", "raisedBy"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["candidates"],
+  "additionalProperties": false
+}

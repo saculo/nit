@@ -64,7 +64,6 @@ mkdir -p .nit/registry
 mkdir -p .nit/boundaries
 mkdir -p .nit/phases
 mkdir -p .nit/adr
-mkdir -p .nit/decisions
 mkdir -p .nit/logs
 mkdir -p .nit/plr
 mkdir -p .nit/prd
@@ -180,7 +179,6 @@ Write `.nit/config/adr-triggers.json`:
       "when": {
         "kind": "new-infra-capability"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -189,7 +187,6 @@ Write `.nit/config/adr-triggers.json`:
       "when": {
         "kind": "multi-module-change"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -198,7 +195,6 @@ Write `.nit/config/adr-triggers.json`:
       "when": {
         "kind": "cross-module-dependency"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -207,7 +203,6 @@ Write `.nit/config/adr-triggers.json`:
       "when": {
         "kind": "boundary-change"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -216,7 +211,6 @@ Write `.nit/config/adr-triggers.json`:
       "when": {
         "kind": "public-api-change"
       },
-      "template": "madr",
       "enabled": true
     },
     {
@@ -225,7 +219,6 @@ Write `.nit/config/adr-triggers.json`:
       "when": {
         "kind": "new-shared-component"
       },
-      "template": "madr",
       "enabled": true
     }
   ]
