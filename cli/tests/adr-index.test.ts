@@ -273,9 +273,12 @@ describe("the schema rejects what it should", () => {
 
 // The command, exercised as a caller would.
 describe("nit adr-index", () => {
-  function workspace(): { dir: string; phases: string; index: string } {
+  function workspace(): { dir: string; phases: string; index: string; adr: string } {
     const dir = mkdtempSync(join(tmpdir(), "adr-index-"));
     const phases = join(dir, "phases");
+    // A promotion names a record that exists; the fixture writes one.
+    const adr = join(dir, "0008-shared-cache.md");
+    writeFileSync(adr, "# 0008 — Shared cache\n");
     for (const [phase, task, step, titles] of [
       ["PHASE-4", "TASK-039", "STEP-002-design", ["Shared cache"]],
       ["PHASE-4", "TASK-040", "STEP-003-implement", ["Retry policy"]],
@@ -285,7 +288,7 @@ describe("nit adr-index", () => {
       mkdirSync(stepDir, { recursive: true });
       writeFileSync(join(stepDir, "output.json"), JSON.stringify(output(...titles)));
     }
-    return { dir, phases, index: join(dir, "index.json") };
+    return { dir, phases, index: join(dir, "index.json"), adr };
   }
 
   const read = (p: string): AdrIndex => JSON.parse(readFileSync(p, "utf8"));
@@ -320,11 +323,24 @@ describe("nit adr-index", () => {
     const w = workspace();
     await runAdrIndex(["--phases-dir", w.phases, "--index", w.index]);
     expect(
-      await runAdrIndex(["--index", w.index, "--promote", "TASK-039/shared-cache", "--to", ".nit/adr/0008.md"])
+      await runAdrIndex(["--index", w.index, "--promote", "TASK-039/shared-cache", "--to", w.adr])
     ).toBe(0);
     await runAdrIndex(["--phases-dir", w.phases, "--index", w.index]);
     const promoted = read(w.index).candidates.find((c) => c.id === "TASK-039/shared-cache")!;
-    expect(promoted.promotedTo).toBe(".nit/adr/0008.md");
+    expect(promoted.promotedTo).toBe(w.adr);
+  });
+
+  // RV-2 — the index's claim is that a record was written. A path to a file
+  // nobody wrote makes it assert something false, and the reader who trusts it
+  // stops looking for a decision that was never recorded.
+  test("--promote to a record that does not exist fails, and changes nothing", async () => {
+    const w = workspace();
+    await runAdrIndex(["--phases-dir", w.phases, "--index", w.index]);
+    const before = readFileSync(w.index, "utf8");
+    expect(
+      await runAdrIndex(["--index", w.index, "--promote", "TASK-039/shared-cache", "--to", join(w.dir, "nope.md")])
+    ).toBe(2);
+    expect(readFileSync(w.index, "utf8")).toBe(before);
   });
 
   test("--promote without --to fails rather than guessing", async () => {
@@ -337,7 +353,7 @@ describe("nit adr-index", () => {
     const w = workspace();
     await runAdrIndex(["--phases-dir", w.phases, "--index", w.index]);
     const before = readFileSync(w.index, "utf8");
-    expect(await runAdrIndex(["--index", w.index, "--promote", "TASK-039/nope", "--to", "x.md"])).toBe(2);
+    expect(await runAdrIndex(["--index", w.index, "--promote", "TASK-039/nope", "--to", w.adr])).toBe(2);
     expect(readFileSync(w.index, "utf8")).toBe(before);
   });
 
@@ -348,6 +364,50 @@ describe("nit adr-index", () => {
     const index = join(dir, "index.json");
     expect(await runAdrIndex(["--phases-dir", phases, "--index", index])).toBe(0);
     expect(read(index).candidates).toEqual([]);
+  });
+
+  // RV-1 — "nothing outstanding" and "never built" are different answers, and
+  // only one of them means a reader can stop looking.
+  test("--outstanding against an index that was never built says so", async () => {
+    const w = workspace();
+    expect(await runAdrIndex(["--index", w.index, "--outstanding"])).toBe(2);
+    expect(existsSync(w.index)).toBe(false);
+  });
+
+  // RV-3 — the index is committed. Scan order must not decide its line order,
+  // or a rebuild produces a diff that says nothing changed.
+  test("the index is ordered by phase, task and step, not by scan order", async () => {
+    const w = workspace();
+    await runAdrIndex(["--phases-dir", w.phases, "--index", w.index]);
+    const first = readFileSync(w.index, "utf8");
+    expect(read(w.index).candidates.map((c) => c.raisedBy.taskId)).toEqual([
+      "TASK-039",
+      "TASK-040",
+      "TASK-041",
+    ]);
+    await runAdrIndex(["--phases-dir", w.phases, "--index", w.index]);
+    expect(readFileSync(w.index, "utf8")).toBe(first);
+  });
+
+  // RV-4 — one malformed step output costs its own candidates, not the report
+  // on every other task's. Declared, per the same rule nit:phase-summary follows.
+  test("an unparseable step output is declared, and the rest still index", async () => {
+    const w = workspace();
+    const broken = join(w.phases, "PHASE-4", "tasks", "TASK-042", "STEP-002-design");
+    mkdirSync(broken, { recursive: true });
+    writeFileSync(join(broken, "output.json"), "{ not json");
+    const said: string[] = [];
+    const log = console.log;
+    console.log = (...a: unknown[]) => void said.push(a.join(" "));
+    try {
+      expect(await runAdrIndex(["--phases-dir", w.phases, "--index", w.index])).toBe(0);
+    } finally {
+      console.log = log;
+    }
+    expect(read(w.index).candidates).toHaveLength(3);
+    // Declared, not silently dropped: a report that hides what it could not read
+    // is worse than one that admits a gap.
+    expect(said.join("\n")).toContain("TASK-042/STEP-002-design/output.json");
   });
 
   test("--outstanding reports without rebuilding", async () => {

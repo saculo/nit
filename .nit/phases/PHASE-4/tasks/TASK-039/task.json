@@ -4,7 +4,7 @@
   "title": "ADR Index and Its Management Commands",
   "type": "devops",
   "targetModule": "@nit/cli",
-  "status": "draft",
+  "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [
     {
