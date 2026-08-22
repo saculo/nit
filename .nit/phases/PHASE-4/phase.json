@@ -2,7 +2,7 @@
   "id": "PHASE-4",
   "title": "Boundary Enforcement, ADR Automation, and Routing Introspection",
   "milestone": "The pipeline enforces module boundaries during validation, records architectural decisions without being asked, and can explain its own skill routing",
-  "status": "planned",
+  "status": "in-progress",
   "businessValue": "PHASE-3 made the pipeline complete and correct: every step runs, every declared contract is honoured. This phase makes it *opinionated about the code it produces*. Boundary enforcement turns the module registry from documentation into a constraint, catching architectural drift at the step that causes it rather than at review months later. ADR trigger automation stops significant decisions going unrecorded, which is the failure mode every project has and none notices until it needs the history. Routing introspection lets a user answer \"why did this agent load these skills?\" without reading four config files \u2014 the question that makes a composition system debuggable rather than magical.",
   "successCriteria": [
     {
