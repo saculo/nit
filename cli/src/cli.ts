@@ -11,6 +11,7 @@ import { runAdrTriggers } from "./commands/adr-triggers";
 import { runAdrIndex } from "./commands/adr-index";
 import { runExplainRouting, runResolveRouting } from "./commands/routing";
 import { runSkills } from "./commands/skills";
+import { runDeps } from "./commands/deps";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -31,6 +32,7 @@ async function main(): Promise<number> {
     console.log("  explain-routing --task-dir <dir>  Show the full skill composition chain, including what was dropped");
     console.log("  resolve-routing --task-dir <dir>  Resolve and write routing.json for a task's current step");
     console.log("  skills [--missing]                List every skill by layer, including declared-but-absent ones");
+    console.log("  deps [--phase PHASE-N]            Build the task dependency graph from each task's dependsOn");
     return 0;
   }
 
@@ -59,6 +61,8 @@ async function main(): Promise<number> {
       return runResolveRouting(args.slice(1));
     case "skills":
       return runSkills(args.slice(1));
+    case "deps":
+      return runDeps(args.slice(1));
     default:
       console.error(`Unknown command: "${command}"`);
       console.error("Run 'nit --help' for available commands.");

@@ -76,7 +76,15 @@ Work through task creation interactively, one task at a time:
 4. Propose the archetype (see "Archetype Proposal" below) and write the approved `task.json`
 5. Propose the next task, noting dependencies on previous tasks
 6. Repeat until the phase scope is covered
-7. After the last task, present a summary of all created tasks with dependency graph, and name any
+7. After the last task, present the dependency graph — **derived, not remembered**:
+
+   ```bash
+   bun run ./cli/src/cli.ts deps --phase PHASE-N
+   ```
+
+   It reads each task's `dependsOn`, reports what each task blocks and what is startable now, and
+   exits 1 on a dependency naming a task that does not exist or on a cycle. A graph assembled from
+   the conversation instead would agree with the tasks only by luck (TASK-043). Then name any
    `successCriteria` no task serves — an uncovered criterion means the phase cannot reach its milestone
    as planned, and it is cheaper to see that now than at phase summary
 
@@ -124,6 +132,7 @@ Task directories use three-digit numbering (`TASK-001`), continuing across phase
   "targetModule": "the-module-name",
   "status": "draft",
   "archetype": "backend-feature",
+  "dependsOn": ["TASK-000"],
   "acceptanceCriteria": [
     { "id": "AC-1", "description": "Given [context], When [action], Then [outcome]." },
     { "id": "AC-2", "description": "Given [context], When [action], Then [outcome]." }
@@ -135,6 +144,10 @@ Task directories use three-digit numbering (`TASK-001`), continuing across phase
 - `targetModule` — MUST be the `name` of a module present in `.nit/boundaries/modules.json`.
 - `status` — a new task is `draft`.
 - `archetype` — the id agreed in the Archetype Proposal step above.
+- `dependsOn` — the task ids that must complete before this one can start. Omit it when nothing
+  blocks the task; do NOT record an ordering in prose instead, because prose is invisible to the
+  graph and to validation. Every id must name a task that exists — `nit validate --schema task`
+  resolves them and fails on a reference that does not.
 - `acceptanceCriteria` — the Given/When/Then criteria, each with an `AC-N` id.
 - The user story and scope are discussed and confirmed interactively; the lean task schema records the
   acceptance criteria as the durable contract. Do NOT also write a prose `TASK.md`.
@@ -195,7 +208,8 @@ When routed here with such a task:
 4. Every acceptance criterion of the original must land in exactly one subtask, or be dropped
    deliberately with the user's agreement — a split that silently loses a criterion changes the
    contract
-5. Set a dependency between subtasks if one needs the other first (discuss with the user)
+5. Set a dependency between subtasks if one needs the other first (discuss with the user), recording
+   it in the dependent subtask's `dependsOn` — subtask ids carry the letter suffix, `TASK-044a`
 6. Present to the user for approval
 
 The original task stays `blocked`. It is superseded, not completed, and closing it is a human
@@ -216,6 +230,7 @@ decision — do not edit its `state.json` or `task.json` to say otherwise.
 - YAGNI — every task directly serves the phase milestone, and names the success criterion it advances
 - The phase milestone is guidance for scope, not a binding task list
 - Write and validate each `task.json` immediately after the user approves — do not batch
+- Record ordering constraints in `dependsOn`, never in prose — and check the graph with `nit deps`
 - `targetModule` must exist in `.nit/boundaries/modules.json`; `archetype` must be a concrete archetype from `cli/archetypes/`
 - `task.json` is the canonical output — validate every one against `task.schema.json`; never leave an invalid task file behind, and never write a parallel prose `TASK.md`
 - If a task spans two types, split into subtasks (TASK-00Ma, TASK-00Mb) — never design across types
