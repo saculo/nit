@@ -220,8 +220,27 @@ export async function runResolveRouting(args: string[]): Promise<number> {
     }
 
     const outPath = flag(args, "--out") ?? join(taskDir, "routing.json");
+
+    // `resolvedAt` moves on every run, so re-resolving an unchanged routing used
+    // to produce a diff that said nothing changed. Keep the existing timestamp
+    // when nothing else moved: it then means "when this routing became current",
+    // which is the more useful of the two readings, and the file is byte-stable
+    // across re-resolutions. Skipping the write instead would leave the printed
+    // routing disagreeing with the one on disk.
+    const existing = Bun.file(outPath);
+    let unchanged = false;
+    if (await existing.exists()) {
+      try {
+        const prior = (await existing.json()) as Routing;
+        unchanged =
+          JSON.stringify({ ...prior, resolvedAt: "" }) === JSON.stringify({ ...routing, resolvedAt: "" });
+        if (unchanged) routing.resolvedAt = prior.resolvedAt;
+      } catch {
+        // An unreadable routing.json is replaced, not preserved.
+      }
+    }
     await Bun.write(outPath, JSON.stringify(routing, null, 2) + "\n");
-    console.log(JSON.stringify({ wrote: outPath, ...routing }, null, 2));
+    console.log(JSON.stringify({ wrote: outPath, unchanged, ...routing }, null, 2));
     return 0;
   } catch (error) {
     if (error instanceof RoutingInputError) {

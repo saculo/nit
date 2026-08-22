@@ -99,6 +99,20 @@ describe("the trace records every candidate, not only the survivors", () => {
     expect(routing.customSkills!.filter((s) => s === "ddd")).toHaveLength(1);
   });
 
+  // RV-2 — two modules sharing a language put it in the language layer *and*
+  // the custom layer, and the agent received the same skill twice. Pre-existing,
+  // and invisible until the trace made every candidate visible.
+  test("a language two modules share is not handed to the agent twice", () => {
+    const CLI: ModuleEntry = { name: "cli", languageId: "typescript" };
+    const { routing, trace } = explainRouting(opts({ modules: [API, CLI], skillExists: () => true }));
+    expect(orderedSkillList(routing).filter((s) => s === "typescript")).toHaveLength(1);
+    expect(trace.find((e) => e.layer === "custom" && e.skill === "typescript")).toMatchObject({
+      source: "cli",
+      included: false,
+      dropped: "duplicate",
+    });
+  });
+
   test("a secondary module's language enters the custom layer, named by its module", () => {
     const { trace } = explainRouting(opts({ modules: [API, WEB] }));
     expect(trace.find((e) => e.skill === "react")).toMatchObject({ layer: "custom", source: "web" });
@@ -293,6 +307,35 @@ describe("the commands", () => {
     const w = workspace({ state: { taskId: "TASK-040", currentStepId: "review", stepOrder: ["analyze", "review"] } });
     await run(runResolveRouting, w.base);
     expect(JSON.parse(readFileSync(join(w.taskDir, "routing.json"), "utf8")).baseSkill).toBe("nit:review");
+  });
+
+  // RV-1 — the same lesson as TASK-039's RV-3: routing.json is committed, and a
+  // rebuild that only moves a timestamp shows a diff claiming a change that did
+  // not happen. Diffs that lie get skimmed.
+  test("re-resolving an unchanged routing does not rewrite the file", async () => {
+    const w = workspace({ state: { taskId: "TASK-040", currentStepId: "implement", stepOrder: ["implement"] } });
+    await run(runResolveRouting, w.base);
+    const first = readFileSync(join(w.taskDir, "routing.json"), "utf8");
+    // Without this the two runs land in the same millisecond and the test passes
+    // whether or not the timestamp is preserved — a false green found by
+    // reverting the mechanism and seeing nothing fail.
+    await new Promise((r) => setTimeout(r, 5));
+    const { code, out } = await run(runResolveRouting, w.base);
+    expect(code).toBe(0);
+    expect(readFileSync(join(w.taskDir, "routing.json"), "utf8")).toBe(first);
+    expect(JSON.parse(out).unchanged).toBe(true);
+  });
+
+  test("a routing that did change is written, timestamp and all", async () => {
+    const w = workspace({ state: { taskId: "TASK-040", currentStepId: "implement", stepOrder: ["implement", "review"] } });
+    await run(runResolveRouting, w.base);
+    const first = JSON.parse(readFileSync(join(w.taskDir, "routing.json"), "utf8"));
+    await new Promise((r) => setTimeout(r, 5));
+    const { out } = await run(runResolveRouting, [...w.base, "--step", "review"]);
+    const second = JSON.parse(readFileSync(join(w.taskDir, "routing.json"), "utf8"));
+    expect(second.baseSkill).toBe("nit:review");
+    expect(second.resolvedAt).not.toBe(first.resolvedAt);
+    expect(JSON.parse(out).unchanged).toBe(false);
   });
 
   test("--out puts it elsewhere", async () => {

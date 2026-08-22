@@ -167,7 +167,11 @@ export function explainRouting(options: ResolveRoutingOptions): RoutingExplanati
     }
   }
 
-  const customSkills: string[] = [];
+  // Seeded with the primary language: two modules sharing a language used to put
+  // it in both the language layer and the custom layer, and the agent received
+  // the same skill twice. Seeded whether or not the file exists — an absent
+  // skill named twice is still one absent skill.
+  const customSkills: string[] = [primary.languageId];
   for (const candidate of candidates) {
     if (customSkills.includes(candidate.skill)) {
       trace.push({ ...candidate, included: false, dropped: "duplicate" });
@@ -177,7 +181,7 @@ export function explainRouting(options: ResolveRoutingOptions): RoutingExplanati
     const included = present(candidate.skill);
     trace.push({ ...candidate, included, ...(included ? {} : { dropped: "absent" as const }) });
   }
-  const resolvedCustom = customSkills.filter(present);
+  const resolvedCustom = customSkills.slice(1).filter(present);
 
   // Layer 4 — global custom skills from the registry.
   const globalSkills: string[] = [];
