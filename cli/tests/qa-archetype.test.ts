@@ -174,3 +174,32 @@ describe("every step qa-setup dispatches has a skill", () => {
     }
   });
 });
+
+// RV-1 — the qa agent told itself it was "the last step of the archetype".
+// That was already untrue for architecture-decision and this task made a second
+// exception. An agent that believes a false thing about its own dispatch is the
+// kind of instruction that produces confident wrong behaviour.
+describe("the qa agent is not told it always runs last", () => {
+  test("its definition names the archetypes that do not dispatch it", () => {
+    const agent = read(".claude/agents/qa.md");
+    expect(agent).toContain("qa-setup");
+    expect(agent).toContain("architecture-decision");
+    expect(agent).not.toMatch(/^The last step of the archetype\./m);
+  });
+
+  test("it says why its own archetype has no qa step", () => {
+    expect(read(".claude/agents/qa.md")).toMatch(/verifying your own work/i);
+  });
+
+  test("every archetype that keeps a qa step really does dispatch the qa role", async () => {
+    const names = readdirSync(join(ROOT, "cli/archetypes"))
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.slice(0, -".json".length))
+      .filter((name) => !JSON.parse(read(`cli/archetypes/${name}.json`)).abstract);
+    for (const name of names) {
+      const resolved = await resolveArchetype(name);
+      const qa = (resolved.steps as ArchetypeStep[]).find((s) => s.id === "qa");
+      if (qa) expect(qa.role).toBe("qa");
+    }
+  });
+});
