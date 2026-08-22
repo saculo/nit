@@ -238,46 +238,37 @@ Same fail-fast validation pattern: validate each file immediately after writing.
 
 ### 5a — task-types.json
 
-Write `.nit/registry/task-types.json`:
+Write `.nit/registry/task-types.json`. Its `id`s are the **task types** from `task.schema.json` —
+`backend`, `frontend`, `devops`, `qa` — because that is what `nit:tasks` looks up when it proposes an
+archetype. Keying it by archetype id instead makes every lookup miss silently (TASK-042); the
+archetypes themselves are shipped in `cli/archetypes/` and do not need a second registry.
 
 ```json
 {
   "types": [
     {
-      "id": "backend-feature",
-      "label": "Backend Feature",
-      "description": "Server-side logic, APIs, services, and data processing",
+      "id": "backend",
+      "label": "Backend",
+      "description": "Server-side logic, APIs, services, data processing, backend config, data schema, integrations.",
       "defaultArchetype": "backend-feature"
     },
     {
-      "id": "frontend-feature",
-      "label": "Frontend Feature",
-      "description": "UI components, client-side logic, and styling",
+      "id": "frontend",
+      "label": "Frontend",
+      "description": "UI components, client-side logic, styling, frontend config.",
       "defaultArchetype": "frontend-feature"
     },
     {
-      "id": "infra-change",
-      "label": "Infrastructure Change",
-      "description": "CI/CD, deployment, containerization, and environment setup",
+      "id": "devops",
+      "label": "DevOps",
+      "description": "CI/CD, deployment, containerization, environment setup, build tooling.",
       "defaultArchetype": "infra-change"
     },
     {
-      "id": "cross-module-change",
-      "label": "Cross-Module Change",
-      "description": "Changes that span multiple modules or module boundaries",
-      "defaultArchetype": "cross-module-change"
-    },
-    {
-      "id": "bugfix",
-      "label": "Bug Fix",
-      "description": "Defect correction in existing functionality",
-      "defaultArchetype": "bugfix"
-    },
-    {
-      "id": "architecture-decision",
-      "label": "Architecture Decision",
-      "description": "Significant design decision requiring an Architecture Decision Record",
-      "defaultArchetype": "architecture-decision"
+      "id": "qa",
+      "label": "QA",
+      "description": "Test infrastructure and harness setup \u2014 not a task's own tests, which are DoD for every task.",
+      "defaultArchetype": "infra-change"
     }
   ]
 }
@@ -287,6 +278,9 @@ Validate:
 ```bash
 bun run ./cli/src/cli.ts validate --schema task-types .nit/registry/task-types.json
 ```
+
+Every `defaultArchetype` must name a shipped archetype, and every task type the schema allows must
+have an entry — a type with no entry has no starting point for the Archetype Proposal.
 
 ### 5b — roles.json
 
