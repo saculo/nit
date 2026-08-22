@@ -352,8 +352,7 @@ Write `.nit/registry/skills.json`:
 
 ```json
 {
-  "globalCustomSkills": [],
-  "moduleSkills": []
+  "globalCustomSkills": []
 }
 ```
 
@@ -519,7 +518,29 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 ---
 
-## Step 8 — Display Completion Summary
+## Step 8 — Verify the Skills the Workspace References
+
+The registries now name skills: each module's `languageId`, any `customSkills`, and the registry's
+`globalCustomSkills`. Routing drops a named skill whose `SKILL.md` is absent **without a word**, so a
+gap here is invisible until a specialist runs without the skill it was supposed to have.
+
+```bash
+bun run ./cli/src/cli.ts skills --missing
+```
+
+Exit 0 means every skill the workspace references exists. Exit 1 lists the ones that do not — report
+them to the user with what to do about each:
+
+- A **language** skill is missing because stub generation (Step 7c) runs only on the brownfield path.
+  A greenfield workspace declares `languageId` per module and has no stub, so this is the expected
+  result and the user should be told, not left to discover it at dispatch.
+- A **custom** or **global** skill is missing because it was registered before it was written.
+
+Do NOT create stubs to make the check pass on the greenfield path — a skill file with nothing in it
+is worse than an absent one, because routing will then load it and the specialist will act on empty
+guidance. Report the gap and let the user decide.
+
+## Step 9 — Display Completion Summary
 
 Display a confirmation message to the user:
 

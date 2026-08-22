@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nit.dev/schemas/skills-registry.schema.json",
   "title": "Skills Registry",
-  "description": "Registry of available skills for task routing.",
+  "description": "Custom skills available to routing beyond the base step skill and the module's language. Module-scoped skills live on the module itself, in boundaries/modules.json — this file is the global layer.",
   "type": "object",
   "properties": {
     "globalCustomSkills": {
@@ -17,31 +17,8 @@
         "required": ["id", "path"]
       },
       "description": "Custom skills available globally across all modules."
-    },
-    "moduleSkills": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "moduleId": { "type": "string" },
-          "skills": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string" },
-                "path": { "type": "string" },
-                "description": { "type": "string" }
-              },
-              "required": ["id", "path"]
-            }
-          }
-        },
-        "required": ["moduleId", "skills"]
-      },
-      "description": "Skills scoped to specific modules."
     }
   },
-  "required": ["globalCustomSkills", "moduleSkills"],
+  "required": ["globalCustomSkills"],
   "additionalProperties": false
 }
