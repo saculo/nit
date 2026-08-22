@@ -10,6 +10,7 @@ import { runBoundaries } from "./commands/boundaries";
 import { runAdrTriggers } from "./commands/adr-triggers";
 import { runAdrIndex } from "./commands/adr-index";
 import { runExplainRouting, runResolveRouting } from "./commands/routing";
+import { runSkills } from "./commands/skills";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -29,6 +30,7 @@ async function main(): Promise<number> {
     console.log("  adr-index [--outstanding]         Build the ADR candidate index, list it, or record a promotion");
     console.log("  explain-routing --task-dir <dir>  Show the full skill composition chain, including what was dropped");
     console.log("  resolve-routing --task-dir <dir>  Resolve and write routing.json for a task's current step");
+    console.log("  skills [--missing]                List every skill by layer, including declared-but-absent ones");
     return 0;
   }
 
@@ -55,6 +57,8 @@ async function main(): Promise<number> {
       return runExplainRouting(args.slice(1));
     case "resolve-routing":
       return runResolveRouting(args.slice(1));
+    case "skills":
+      return runSkills(args.slice(1));
     default:
       console.error(`Unknown command: "${command}"`);
       console.error("Run 'nit --help' for available commands.");
