@@ -1,0 +1,441 @@
+{
+  "phaseId": "PHASE-4",
+  "title": "Boundary Enforcement, ADR Automation, and Routing Introspection",
+  "milestone": {
+    "reached": false,
+    "criteria": [
+      {
+        "id": "SC-1",
+        "result": "met",
+        "evidence": "cli/src/boundary-check.ts decides what an implementation crossed and `nit boundaries --task-dir` reports it; 78 tests across boundary-check and dependency-rules cover the allow/deny precedence and the own-record exclusion. Verified by running the command, not only in tests. Evidence is code and tests rather than step output \u2014 see unreadable[].",
+        "taskIds": [
+          "TASK-034",
+          "TASK-035",
+          "TASK-036"
+        ]
+      },
+      {
+        "id": "SC-2",
+        "result": "met",
+        "evidence": "validation-result carries `policyValid` separately from `schemaValid`, with boundary violations recorded as structured entries; the supervisor sets policyValid false without touching schemaValid, so a boundary failure is distinguishable from a malformed output at the field level.",
+        "taskIds": [
+          "TASK-035"
+        ]
+      },
+      {
+        "id": "SC-3",
+        "result": "met",
+        "evidence": "cli/src/adr-triggers.ts decides six closed trigger kinds including `multi-module-change` and `new-shared-component`; both were fired through `nit adr-triggers` with evidence attached, and a test asserts every kind the evaluator supports is exercised by a configured trigger.",
+        "taskIds": [
+          "TASK-037"
+        ]
+      },
+      {
+        "id": "SC-4",
+        "result": "unmet",
+        "evidence": "The instruction exists \u2014 nit:design, nit:implement and nit:boundary-check each name `adrCandidates`, state what belongs in one, and give an executable ordering \u2014 but nothing demonstrates a specialist emitting one. No task in this project has run through the supervisor, so no STEP-NNN-*/output.json exists; `nit adr-index` scans the whole repository and finds 0 candidates. Outstanding until a task runs end-to-end (PHASE-5 SC-8).",
+        "taskIds": [
+          "TASK-037",
+          "TASK-038",
+          "TASK-039"
+        ]
+      },
+      {
+        "id": "SC-5",
+        "result": "met",
+        "evidence": "`nit explain-routing --task-dir` prints all five layers with the module or registry that offered each candidate and why any was dropped. Delivered as a CLI command, not as a `/nit:explain-routing` skill as the criterion's name implies: the capability is complete and tested (48 tests), the slash-command surface does not exist. Recorded as a deviation.",
+        "taskIds": [
+          "TASK-040"
+        ]
+      },
+      {
+        "id": "SC-6",
+        "result": "met",
+        "evidence": "`nit skills` lists every skill by layer with the modules associated, and lists declared-but-absent skills as missing. Same interface deviation as SC-5: a command, not a skill. Run against this repository it correctly reports `typescript` and `markdown` as declared by all three modules and absent from disk.",
+        "taskIds": [
+          "TASK-041"
+        ]
+      },
+      {
+        "id": "SC-7",
+        "result": "met",
+        "evidence": "Every field added this phase has a named consumer proven by test \u2014 the adr-index schema's seven candidate fields are covered by a map asserted complete against the schema, and `dependsOn` is read by the graph, the readiness answer and validation. Enforced in the other direction too: `template`, `moduleSkills` and the archetype-keyed task-types registry were removed for having no successful consumer.",
+        "taskIds": [
+          "TASK-037",
+          "TASK-039",
+          "TASK-041",
+          "TASK-042",
+          "TASK-043"
+        ]
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "taskId": "TASK-032",
+      "title": "Migrate the nit Workspace to v2 Artifacts",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-033",
+      "title": "No Archetype Serves a qa-Type Task",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-034",
+      "title": "Dependency Rules Format and Schema",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-035",
+      "title": "Boundary Enforcement at Ingest",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-036",
+      "title": "nit:boundary-check Step Skill",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-037",
+      "title": "ADR Trigger Evaluation in the Supervisor",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-038",
+      "title": "Specialists Emit adrCandidates When a Trigger Fires",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-039",
+      "title": "ADR Index and Its Management Commands",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-040",
+      "title": "Routing Introspection Commands",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-041",
+      "title": "nit:skills Listing Command",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-042",
+      "title": "task-types.json Is Keyed by Archetype, Not Task Type",
+      "status": "done",
+      "readable": false
+    },
+    {
+      "taskId": "TASK-043",
+      "title": "task.json Cannot Record Task Dependencies",
+      "status": "done",
+      "readable": false
+    }
+  ],
+  "deviations": [
+    {
+      "taskId": "TASK-040",
+      "item": "SC-5's nit:explain-routing was built as a CLI command rather than a skill; deterministic logic belongs in tested code (ADR-0004), but no /nit:explain-routing invocation exists.",
+      "category": "architecture",
+      "affectsPhase": "PHASE-5"
+    },
+    {
+      "taskId": "TASK-041",
+      "item": "SC-6's nit:skills was likewise built as a CLI command rather than a skill.",
+      "category": "architecture",
+      "affectsPhase": "PHASE-5"
+    },
+    {
+      "taskId": "TASK-036",
+      "item": "Automatic boundary enforcement at ingest was deferred for archetypes carrying a boundary-check step, changing TASK-035's behaviour from the task that followed it.",
+      "category": "architecture"
+    },
+    {
+      "taskId": "TASK-042",
+      "item": "infra-change's engineerRole changed from infra-engineer to $detect, so a non-devops task using that archetype now reaches a different specialist than before.",
+      "category": "architecture"
+    },
+    {
+      "taskId": "TASK-043",
+      "item": "The task id pattern was widened to accept split-task suffixes (TASK-044a); nit:tasks documented producing ids the schema rejected.",
+      "category": "architecture"
+    },
+    {
+      "taskId": "TASK-033",
+      "item": "qa-setup omits the qa step, so a qa-type task is verified by the reviewer alone rather than by a reviewer and an independent qa pass.",
+      "category": "architecture"
+    }
+  ],
+  "techDebt": [
+    {
+      "taskId": "TASK-035",
+      "item": "Boundary enforcement checks the implement step's self-reported filesChanged, not the diff; a change omitted from the report is invisible to both the command and the gate.",
+      "category": "code-quality",
+      "affectsPhase": "PHASE-5"
+    },
+    {
+      "taskId": "TASK-037",
+      "item": "Trigger `evidence` holds module names for multi-module-change and file paths for every other kind, so a consumer cannot assume its shape.",
+      "category": "code-quality"
+    },
+    {
+      "taskId": "TASK-037",
+      "item": "Trigger kinds are a closed enum, so a project whose public API is not its schemas cannot express its own condition without a code change.",
+      "category": "architecture"
+    },
+    {
+      "taskId": "TASK-039",
+      "item": "The ADR index holds only candidates a step raised; emergent candidates from phase summaries never enter it.",
+      "category": "code-quality",
+      "affectsPhase": "PHASE-5"
+    },
+    {
+      "taskId": "TASK-041",
+      "item": "nit:init scaffolds language-skill stubs only on the brownfield path, so every greenfield workspace declares a languageId per module with no skill for it. This repository has that gap today.",
+      "category": "code-quality",
+      "affectsPhase": "PHASE-5"
+    },
+    {
+      "taskId": "TASK-043",
+      "item": "dependsOn is advisory: nit continue does not consult it, so the field records an intention rather than enforcing one.",
+      "category": "architecture",
+      "affectsPhase": "PHASE-5"
+    },
+    {
+      "taskId": "TASK-041",
+      "item": "Prose conformance tests catch deletion, renaming and unexecutability, and cannot catch guidance that is followable and wrong.",
+      "category": "test-coverage"
+    }
+  ],
+  "reviewFindings": [
+    {
+      "taskId": "TASK-036",
+      "item": "The boundary query and the ingest gate disagreed about what 'configured' means, giving two answers to one question."
+    },
+    {
+      "taskId": "TASK-040",
+      "item": "nit continue silently degraded to base-skill-only dispatch for a target absent from the registry, where the introspection commands failed loudly on the same input."
+    },
+    {
+      "taskId": "TASK-043",
+      "item": "Readiness read task.json's hand-maintained status while the supervisor writes state.json's, so a task the pipeline had finished kept blocking everything behind it."
+    },
+    {
+      "taskId": "TASK-040",
+      "item": "Two modules sharing a language handed the agent the same skill twice \u2014 present since the resolver was written, invisible until the routing trace listed every candidate."
+    },
+    {
+      "taskId": "TASK-042",
+      "item": "task-types.json was keyed by archetype id while its only consumer looked up task types, so every lookup missed silently."
+    },
+    {
+      "taskId": "TASK-042",
+      "item": "No shipped archetype's implement step reached the qa engineer, so a qa task was implemented by whichever specialist its archetype named."
+    },
+    {
+      "taskId": "TASK-038",
+      "item": "The adrCandidates guidance was unexecutable in the order it gave: it told the specialist to query triggers from an output.json that does not yet exist."
+    },
+    {
+      "taskId": "TASK-039",
+      "item": "`--outstanding` against an index that was never built printed the same sentence a genuinely clear project gets."
+    },
+    {
+      "taskId": "TASK-039",
+      "item": "`--promote --to` recorded a path to any file, including one nobody had written, making the index assert something false."
+    },
+    {
+      "taskId": "TASK-041",
+      "item": "Skill descriptions were read from the first `description:` line anywhere in the file, so a skill documenting a config example quoted someone else's words as its own."
+    },
+    {
+      "taskId": "TASK-041",
+      "item": "Two names for one file (nit:review and a custom `review`) compose into separate layers, so the agent receives the same guidance twice."
+    },
+    {
+      "taskId": "TASK-033",
+      "item": "The qa agent's definition claimed the qa step is always the last step of the archetype, which was already untrue for architecture-decision."
+    },
+    {
+      "taskId": "TASK-036",
+      "item": "Method defect: verification counted only lines matching '^(fail)', missing load-time errors, so a removed file could read as a false green."
+    },
+    {
+      "taskId": "TASK-040",
+      "item": "Method defect: a timestamp test passed with its mechanism removed because both runs landed in the same millisecond, and the fix had two redundant halves with neither individually pinned."
+    },
+    {
+      "taskId": "TASK-041",
+      "item": "Coverage gap: hardcoding the archetype-derived step list inside the command broke nothing, because only the helper was tested."
+    }
+  ],
+  "qaIssues": [],
+  "adrCandidates": [
+    {
+      "taskId": "TASK-035",
+      "title": "The module model must distinguish 'may depend on' from 'may change'",
+      "context": "Twelve of twelve PHASE-4 tasks changed a module other than their target, measured from git history with each task's own record excluded. @nit/cli and @nit/skills change together by necessity: a command and the skill that calls it must ship in one PR or the tree is inconsistent. The dependency rules encode a layering relation and are being read as a change-scope constraint. Boundary enforcement is opt-in today; enabling it would block every task this project has ever written.",
+      "decision": "Either merge @nit/cli and @nit/skills into one module, or extend dependency-rules to express change-scope separately from dependency, and re-derive one-task-one-module from whichever is chosen.",
+      "status": "proposed"
+    },
+    {
+      "taskId": "TASK-043",
+      "title": "Ask 'what else answers this question?' as a standing review check",
+      "context": "Three unrelated defects in this phase were two mechanisms answering one question differently: the boundary query versus the ingest gate, the supervisor versus the routing commands, and task.json's status versus state.json's. Each side was individually correct, so no test could find them; all three were found by a reviewer asking the question explicitly.",
+      "decision": "Add the question to the review skill's convention guards so it is asked every time rather than when a reviewer happens to think of it.",
+      "status": "proposed"
+    },
+    {
+      "taskId": "TASK-038",
+      "title": "A mechanism verified only against fixtures is not verified",
+      "context": "Boundary enforcement, trigger evaluation, ADR indexing and routing composition are all tested against hand-written fixtures shaped like what the schema promises. No task in this project has run through the supervisor, so none has been tested against what the pipeline actually emits. Four mechanisms now carry this same caveat, restated in four separate reviews.",
+      "decision": "Treat an end-to-end run producing real step outputs as a precondition for considering any pipeline mechanism verified, and say so where the claim is made.",
+      "status": "proposed"
+    }
+  ],
+  "recommendations": [
+    {
+      "phaseId": "PHASE-5",
+      "scopeItem": "SC-8 \u2014 full pipeline end-to-end on a multi-module project",
+      "recommendation": "Run it against a task in this repository before any fixture project, and treat it as the item that closes PHASE-4's SC-4.",
+      "reason": "SC-4 is unmet solely because no task has produced step output; everything else this phase built is already verified against fixtures and unverified against real runs."
+    },
+    {
+      "phaseId": "PHASE-5",
+      "scopeItem": "Phase planning",
+      "recommendation": "Settle the module model before any task is written: merge @nit/cli and @nit/skills, or separate change-scope from dependency in the rules.",
+      "reason": "Twelve of twelve PHASE-4 tasks crossed a boundary the rules forbid; the moment a project enables enforcement, that becomes twelve blocked tasks."
+    },
+    {
+      "phaseId": "PHASE-5",
+      "scopeItem": "SC-1 \u2014 nit:add-skill creates a valid custom skill",
+      "recommendation": "Build it on top of `nit skills` rather than beside it, reusing its inventory and its declared-but-absent reporting.",
+      "reason": "nit skills already enumerates skills by layer and module; a second enumeration would give two answers to what skills exist, which is the defect class this phase found three times."
+    },
+    {
+      "phaseId": "PHASE-5",
+      "scopeItem": "SC-2 and SC-3 \u2014 install and update",
+      "recommendation": "Fix nit:init's greenfield path to scaffold language-skill stubs as the brownfield path does, as part of the install work.",
+      "reason": "A greenfield workspace declares a languageId per module and scaffolds no skill for it; this repository reports exactly that gap under `nit skills --missing`."
+    },
+    {
+      "phaseId": "PHASE-5",
+      "scopeItem": "SC-6 \u2014 nit:status shows run history",
+      "recommendation": "Decide whether user-facing capabilities need a /nit: slash-command surface, and apply the decision to explain-routing, resolve-routing, skills and deps.",
+      "reason": "PHASE-4's SC-5 and SC-6 named skills and were delivered as CLI commands; the substance shipped and the named invocation surface did not."
+    }
+  ],
+  "unreadable": [
+    {
+      "taskId": "TASK-032",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "TASK.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-033",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "TASK.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-034",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-035",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-036",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-037",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-038",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-039",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-040",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-041",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-042",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    },
+    {
+      "taskId": "TASK-043",
+      "reason": "Executed by hand rather than through the supervisor: no state.json and no STEP-NNN-*/output.json exist, so nothing could be aggregated from structured step output. The criteria were verified against code, schemas, tests and CLI runs instead, and each evidence string says so. REVIEW.md is prose and was deliberately not parsed into structured fields.",
+      "found": [
+        "REVIEW.md",
+        "task.json"
+      ]
+    }
+  ],
+  "plr": ".nit/plr/0003-phase-4-boundaries-adr-routing.md"
+}
