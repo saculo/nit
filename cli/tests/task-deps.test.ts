@@ -8,6 +8,7 @@ import {
   findCycles,
   readyTasks,
   renderGraph,
+  isDone,
   phasesRootFor,
   type TaskNode,
 } from "../src/task-deps";
@@ -212,6 +213,68 @@ describe("reading a phases tree", () => {
 
   test("a phases tree that does not exist is empty, not an error", () => {
     expect(loadTasks(join(tmpdir(), "nit-no-phases-43"))).toEqual([]);
+  });
+
+  // RV-2 — "PHASE-10" sorts before "PHASE-2" lexicographically, which would
+  // reorder the graph the first time a project reaches ten phases.
+  test("phases are ordered by number, not by string", () => {
+    const dir = mkdtempSync(join(tmpdir(), "deps-order-"));
+    const phases = join(dir, "phases");
+    for (const [phase, id] of [["PHASE-2", "TASK-002"], ["PHASE-10", "TASK-010"]] as [string, string][]) {
+      const taskDir = join(phases, phase, "tasks", id);
+      mkdirSync(taskDir, { recursive: true });
+      writeFileSync(join(taskDir, "task.json"), JSON.stringify({ ...task(id), phase }));
+    }
+    expect(loadTasks(phases).map((t) => t.id)).toEqual(["TASK-002", "TASK-010"]);
+  });
+
+  // RV-1 — two files answer "is this done": task.json's status, maintained by
+  // hand, and state.json's, written by the supervisor. Readiness must follow the
+  // supervisor, or a task finished by the pipeline keeps blocking everything
+  // behind it until someone remembers to edit its task.json.
+  describe("completion comes from the supervisor's record", () => {
+    function withState(taskStatus: string, stateStatus?: string): string {
+      const dir = mkdtempSync(join(tmpdir(), "deps-state-"));
+      const phases = join(dir, "phases");
+      const taskDir = join(phases, "PHASE-1", "tasks", "TASK-001");
+      mkdirSync(taskDir, { recursive: true });
+      writeFileSync(join(taskDir, "task.json"), JSON.stringify(task("TASK-001", { status: taskStatus })));
+      if (stateStatus) {
+        writeFileSync(
+          join(taskDir, "state.json"),
+          JSON.stringify({ taskId: "TASK-001", currentStepId: "qa", stepOrder: ["qa"], status: stateStatus })
+        );
+      }
+      const second = join(phases, "PHASE-1", "tasks", "TASK-002");
+      mkdirSync(second, { recursive: true });
+      writeFileSync(
+        join(second, "task.json"),
+        JSON.stringify(task("TASK-002", { dependsOn: ["TASK-001"] }))
+      );
+      return phases;
+    }
+
+    test("state.json's done unblocks what waits on it, even when task.json says draft", () => {
+      const tasks = loadTasks(withState("draft", "done"));
+      expect(isDone(tasks[0]!)).toBe(true);
+      expect(readyTasks(tasks).map((t) => t.id)).toEqual(["TASK-002"]);
+    });
+
+    test("state.json's in-progress keeps it blocking, even when task.json says done", () => {
+      const tasks = loadTasks(withState("done", "in-progress"));
+      expect(isDone(tasks[0]!)).toBe(false);
+      expect(readyTasks(tasks).map((t) => t.id)).toEqual(["TASK-001"]);
+    });
+
+    test("with no state.json, task.json's status stands", () => {
+      const tasks = loadTasks(withState("done"));
+      expect(isDone(tasks[0]!)).toBe(true);
+      expect(readyTasks(tasks).map((t) => t.id)).toEqual(["TASK-002"]);
+    });
+
+    test("the graph shows the status readiness actually followed", () => {
+      expect(renderGraph(loadTasks(withState("draft", "done")))).toContain("TASK-001 [done]");
+    });
   });
 
   describe("the command", () => {

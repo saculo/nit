@@ -6,8 +6,24 @@ export interface TaskNode {
   id: string;
   phase?: string;
   title?: string;
+  /** As recorded in task.json. */
   status?: string;
+  /**
+   * As recorded in state.json, when the supervisor has run the task.
+   *
+   * Two files answer "is this done": task.json's `status`, maintained by hand,
+   * and state.json's, written by the supervisor. Readiness must follow the
+   * supervisor — a task whose state says `done` is done whether or not anyone
+   * remembered to update its task.json, and treating it as blocking would stall
+   * everything behind it.
+   */
+  stateStatus?: string;
   dependsOn?: string[];
+}
+
+/** Whether a task is finished, preferring the supervisor's record. */
+export function isDone(task: TaskNode): boolean {
+  return (task.stateStatus ?? task.status) === "done";
 }
 
 /** A dependency that cannot stand: the reason is what the author needs. */
@@ -45,7 +61,13 @@ export function phasesRootFor(taskFilePath: string): string | undefined {
 export function loadTasks(phasesDir: string): TaskNode[] {
   if (!existsSync(phasesDir)) return [];
   const tasks: TaskNode[] = [];
-  for (const phase of readdirSync(phasesDir).sort()) {
+  const phaseNumber = (name: string): number => Number(name.replace(/^PHASE-/, "")) || 0;
+  const phases = readdirSync(phasesDir).sort(
+    // "PHASE-10" sorts before "PHASE-2" lexicographically, which would reorder
+    // the graph the first time a project reaches ten phases.
+    (a, b) => phaseNumber(a) - phaseNumber(b) || a.localeCompare(b)
+  );
+  for (const phase of phases) {
     const tasksDir = join(phasesDir, phase, "tasks");
     if (!existsSync(tasksDir)) continue;
     for (const taskDir of readdirSync(tasksDir).sort()) {
@@ -53,7 +75,16 @@ export function loadTasks(phasesDir: string): TaskNode[] {
       if (!existsSync(file)) continue;
       try {
         const task = JSON.parse(readFileSync(file, "utf8")) as TaskNode;
-        if (task?.id) tasks.push(task);
+        if (!task?.id) continue;
+        const stateFile = join(tasksDir, taskDir, "state.json");
+        if (existsSync(stateFile)) {
+          try {
+            task.stateStatus = JSON.parse(readFileSync(stateFile, "utf8"))?.status;
+          } catch {
+            // An unreadable state.json leaves task.json's status standing.
+          }
+        }
+        tasks.push(task);
       } catch {
         // A task.json that will not parse is `nit validate`'s business, not the
         // graph's; skipping it costs its edges, not the whole graph.
@@ -138,10 +169,8 @@ export function findCycles(tasks: TaskNode[]): Cycle[] {
 
 /** Tasks nothing blocks, and which are therefore startable now. */
 export function readyTasks(tasks: TaskNode[]): TaskNode[] {
-  const done = new Set(tasks.filter((t) => t.status === "done").map((t) => t.id));
-  return tasks.filter(
-    (t) => t.status !== "done" && (t.dependsOn ?? []).every((d) => done.has(d))
-  );
+  const done = new Set(tasks.filter(isDone).map((t) => t.id));
+  return tasks.filter((t) => !isDone(t) && (t.dependsOn ?? []).every((d) => done.has(d)));
 }
 
 /**
@@ -164,14 +193,17 @@ export function renderGraph(tasks: TaskNode[]): string {
   for (const task of tasks) {
     const deps = task.dependsOn ?? [];
     const blocks = blockedBy.get(task.id) ?? [];
-    const status = task.status ? ` [${task.status}]` : "";
+    // Show the supervisor's status where it exists, since that is the one
+    // readiness follows; a stale task.json would otherwise explain nothing.
+    const shown = task.stateStatus ?? task.status;
+    const status = shown ? ` [${shown}]` : "";
     lines.push(`${task.id}${status} ${task.title ?? ""}`.trimEnd());
     if (deps.length > 0) lines.push(`  after:   ${deps.join(", ")}`);
     if (blocks.length > 0) lines.push(`  blocks:  ${blocks.join(", ")}`);
   }
 
   const ready = readyTasks(tasks);
-  const unfinished = tasks.filter((t) => t.status !== "done");
+  const unfinished = tasks.filter((t) => !isDone(t));
   lines.push("");
   if (unfinished.length === 0) {
     lines.push("Every task is done.");
