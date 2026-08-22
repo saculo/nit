@@ -127,14 +127,16 @@ describe("nit archetype", () => {
     );
   });
 
-  test("resolves infra-change", async () => {
+  // TASK-042 — infra-change defers the engineer to the task's type. A devops
+  // task still reaches infra-engineer, and a qa task reaches qa, which the
+  // hardcoded role made impossible. `nit archetype` has no task to detect
+  // from, so the placeholder is still visible here; the supervisor resolves it.
+  test("resolves infra-change, deferring the engineer to the task", async () => {
     const { exitCode, stdout } = await runCli(["archetype", "infra-change"]);
     expect(exitCode).toBe(0);
     const result = JSON.parse(stdout);
     expect(result.steps).toHaveLength(5);
-    expect(result.steps.find((s: { id: string }) => s.id === "implement").role).toBe(
-      "infra-engineer"
-    );
+    expect(result.steps.find((s: { id: string }) => s.id === "implement").role).toBe("$detect");
   });
 
   test("resolves architecture-decision with 3 steps", async () => {

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nit.dev/schemas/task-types.schema.json",
   "title": "Task Types",
-  "description": "Registry of recognized task types.",
+  "description": "The task types a project recognises, each with the archetype nit:tasks proposes by default. Keyed by the `type` enum in task.schema.json — an entry keyed by an archetype id is never found, because the lookup is by task type.",
   "type": "object",
   "properties": {
     "types": {
@@ -12,7 +12,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Task type identifier."
+            "description": "A task type from task.schema.json's `type` enum, not an archetype id."
           },
           "label": {
             "type": "string",
@@ -24,10 +24,10 @@
           },
           "defaultArchetype": {
             "type": "string",
-            "description": "Default archetype for tasks of this type."
+            "description": "The archetype nit:tasks proposes for this type by default. Must name an archetype shipped in cli/archetypes/."
           }
         },
-        "required": ["id", "label"]
+        "required": ["id", "label", "defaultArchetype"]
       }
     }
   },

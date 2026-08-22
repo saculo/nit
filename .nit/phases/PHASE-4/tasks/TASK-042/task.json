@@ -4,7 +4,7 @@
   "title": "task-types.json Is Keyed by Archetype, Not Task Type",
   "type": "devops",
   "targetModule": "@nit/workspace",
-  "status": "draft",
+  "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [
     {
