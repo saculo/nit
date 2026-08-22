@@ -8,9 +8,9 @@ import type { ModuleEntry } from "../src/routing-resolver";
 
 const ROOT = dirname(dirname(dirname(import.meta.path)));
 const MODULES = [
-  { name: "api", path: "src/api", languageId: "ts", allowedDependencies: ["core"] },
-  { name: "core", path: "src/core", languageId: "ts", allowedDependencies: [] },
-  { name: "web", path: "web", languageId: "ts", allowedDependencies: ["core"] },
+  { name: "api", paths: ["src/api"], languageId: "ts", allowedDependencies: ["core"] },
+  { name: "core", paths: ["src/core"], languageId: "ts", allowedDependencies: [] },
+  { name: "web", paths: ["web"], languageId: "ts", allowedDependencies: ["core"] },
 ] as unknown as ModuleEntry[];
 const RULES = loadDependencyRules({ rules: [] }, MODULES);
 const CTX = { targetModule: "api", modules: MODULES, rules: RULES };
@@ -172,8 +172,12 @@ describe("nit adr-triggers, the specialist's query", () => {
     return dir;
   };
 
+  // TASK-044 — the fixture spans the two modules the registry now holds. Under
+  // the old three-module split, `cli/` and `.claude/` were two, and this trigger
+  // fired on the change every task in PHASE-4 made. It fires less often now, and
+  // when it fires the modules really are separate.
   test("it reports what fired, with exit 1", () => {
-    const r = run(["--task-dir", taskDir([[".claude/skills/x/SKILL.md", "modified"], ["cli/src/y.ts", "modified"]])]);
+    const r = run(["--task-dir", taskDir([[".nit/prd/summary.json", "modified"], ["cli/src/y.ts", "modified"]])]);
     const out = JSON.parse(r.stdout.toString());
     expect(out.configured).toBe(true);
     expect(out.fired.map((f: any) => f.kind)).toContain("multi-module-change");
@@ -279,5 +283,35 @@ describe("planned paths feed triggers but not enforcement", () => {
   test("an implement result still reports what changed, not a plan", async () => {
     const { plannedPaths } = await import("../src/boundary-check");
     expect(plannedPaths(impl([["src/api/a.ts", "modified"]]))).toEqual([]);
+  });
+});
+
+// The change TASK-044 made, asserted rather than left to the registry file.
+describe("the shipped tree is one module", () => {
+  const REPO_MODULES = JSON.parse(
+    readFileSync(join(ROOT, ".nit", "boundaries", "modules.json"), "utf8")
+  ).modules as ModuleEntry[];
+  const REPO_RULES = loadDependencyRules(
+    JSON.parse(readFileSync(join(ROOT, ".nit", "boundaries", "dependency-rules.json"), "utf8")),
+    REPO_MODULES
+  );
+  const CTX_REPO = { targetModule: "@nit/core", modules: REPO_MODULES, rules: REPO_RULES };
+
+  test("a change touching cli/ and .claude/ is no longer a multi-module change", () => {
+    const m = evaluateTriggers(
+      impl([["cli/src/a.ts", "modified"], [".claude/skills/design/SKILL.md", "modified"]]),
+      [trigger("multi-module-change")],
+      CTX_REPO
+    );
+    expect(m).toEqual([]);
+  });
+
+  test("a change touching the shipped tree and the workspace still is", () => {
+    const m = evaluateTriggers(
+      impl([["cli/src/a.ts", "modified"], [".nit/prd/summary.json", "modified"]]),
+      [trigger("multi-module-change")],
+      CTX_REPO
+    );
+    expect(m[0]!.evidence.sort()).toEqual(["@nit/core", "@nit/workspace"]);
   });
 });

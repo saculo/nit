@@ -3,7 +3,7 @@
   "phase": "PHASE-3",
   "title": "Phase Success Criteria Need a v2 Home",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

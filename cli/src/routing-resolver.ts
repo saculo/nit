@@ -7,6 +7,8 @@ import { existsSync } from "fs";
  */
 export interface ModuleEntry {
   name: string;
+  /** The directories this module owns. More than one when its parts must change together. */
+  paths?: string[];
   languageId: string;
   customSkills?: string[];
   stepOverrides?: Record<string, { addSkills?: string[] } | undefined>;

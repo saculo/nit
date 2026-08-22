@@ -14,9 +14,12 @@
             "type": "string",
             "description": "Module name."
           },
-          "path": {
-            "type": "string",
-            "description": "Filesystem path to the module."
+          "paths": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "The directories this module owns, relative to the repository root. A module spans more than one when its parts must change together — splitting them produces a boundary no task can respect (TASK-044)."
           },
           "languageId": {
             "type": "string",
@@ -43,7 +46,7 @@
             "description": "Modules this module is allowed to depend on."
           }
         },
-        "required": ["name", "path", "languageId"]
+        "required": ["name", "paths", "languageId"]
       }
     }
   },

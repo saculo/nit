@@ -3,7 +3,7 @@
   "phase": "PHASE-4",
   "title": "Specialists Emit adrCandidates When a Trigger Fires",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [

@@ -461,12 +461,19 @@ Write `.nit/boundaries/modules.json` with the detected modules:
   "modules": [
     {
       "name": "<directory-name>",
-      "path": "<relative-path-from-repo-root>",
+      "paths": ["<relative-path-from-repo-root>"],
       "languageId": "<detected-language>"
     }
   ]
 }
 ```
+
+A module may own **more than one** directory, and should when its parts must change together —
+a package and the templates or definitions that ship with it, for example. Splitting those into
+separate modules produces a boundary no task can respect, which is how nit's own registry got it
+wrong: `cli/` and `.claude/` were two modules, and every task in PHASE-4 crossed between them
+(TASK-044). Ask which directories would have to change in the same PR, and declare those as one
+module.
 
 Then validate:
 ```bash

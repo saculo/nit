@@ -1,0 +1,27 @@
+{
+  "id": "TASK-044",
+  "phase": "PHASE-4",
+  "title": "One Module for the Shipped Tree",
+  "type": "devops",
+  "targetModule": "@nit/core",
+  "status": "in-progress",
+  "archetype": "infra-change",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "description": "Given a module that spans more than one directory, When the registry declares it, Then the schema accepts a list of paths and a file under any of them resolves to that module."
+    },
+    {
+      "id": "AC-2",
+      "description": "Given @nit/cli and @nit/skills, When the registry is rewritten, Then they are one module covering both trees, and every task's targetModule names a module the registry still holds."
+    },
+    {
+      "id": "AC-3",
+      "description": "Given the dependency rules, When the registry changes, Then no rule names a module that no longer exists and the rule loader still cross-checks the registry."
+    },
+    {
+      "id": "AC-4",
+      "description": "Given PHASE-4's twelve tasks, When their changed files are measured against the new registry, Then no task crosses a boundary, asserted by test rather than by prose."
+    }
+  ]
+}

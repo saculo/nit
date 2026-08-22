@@ -3,7 +3,7 @@
   "phase": "PHASE-2",
   "title": "Skill Composition Engine",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

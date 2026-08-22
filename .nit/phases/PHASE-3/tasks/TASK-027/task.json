@@ -3,7 +3,7 @@
   "phase": "PHASE-3",
   "title": "Rejection Routing Must Target a Step That Exists",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

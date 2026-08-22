@@ -3,7 +3,7 @@
   "phase": "PHASE-2",
   "title": "Agent Definitions for v2 Roles",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "in-progress",
   "acceptanceCriteria": [
     {

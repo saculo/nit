@@ -3,7 +3,7 @@
   "phase": "PHASE-4",
   "title": "nit:boundary-check Step Skill",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [

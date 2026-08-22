@@ -3,7 +3,7 @@
   "phase": "PHASE-3",
   "title": "Rewrite nit:orchestrate for the v2 Pipeline",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

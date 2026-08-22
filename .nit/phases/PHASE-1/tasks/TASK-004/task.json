@@ -3,7 +3,7 @@
   "phase": "PHASE-1",
   "title": "Brownfield Analysis Skills",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

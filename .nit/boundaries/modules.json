@@ -1,24 +1,22 @@
 {
   "modules": [
     {
-      "name": "@nit/cli",
-      "path": "cli",
+      "name": "@nit/core",
+      "paths": [
+        "cli",
+        ".claude"
+      ],
       "languageId": "typescript",
-      "description": "The deterministic core: supervisor state machine, archetype and routing resolvers, JSON schemas, and the nit CLI. Everything ADR-0004 says must be tested code rather than prose.",
+      "description": "The shipped tree: the deterministic CLI (supervisor, resolvers, schemas) and the agent-facing definitions that drive it (step skills, command skills, agent personas). One module because they change together \u2014 a command and the skill that calls it must ship in one PR or the tree is inconsistent. ADR-0006's layering still holds inside it: skills invoke the CLI, the CLI never reads a skill.",
       "allowedDependencies": []
     },
     {
-      "name": "@nit/skills",
-      "path": ".claude",
-      "languageId": "markdown",
-      "description": "The agent-facing definitions: step and command skills, agent personas, and the validation hooks. Skills invoke the CLI; the CLI never reads a skill.",
-      "allowedDependencies": ["@nit/cli"]
-    },
-    {
       "name": "@nit/workspace",
-      "path": ".nit",
+      "paths": [
+        ".nit"
+      ],
       "languageId": "markdown",
-      "description": "Project business state — PRD, phases, tasks, decisions, retrospectives. Consumed by the skills and the CLI; depends on neither (ADR-0006).",
+      "description": "Project business state \u2014 PRD, phases, tasks, decisions, retrospectives. Consumed by the shipped tree; depends on nothing (ADR-0006).",
       "allowedDependencies": []
     }
   ]
