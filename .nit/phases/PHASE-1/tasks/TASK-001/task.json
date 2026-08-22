@@ -3,7 +3,7 @@
   "phase": "PHASE-1",
   "title": "Agent Persona Definitions",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

@@ -3,7 +3,7 @@
   "phase": "PHASE-4",
   "title": "nit:skills Listing Command",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [

@@ -3,7 +3,7 @@
   "phase": "PHASE-2",
   "title": "nit:approve, nit:reject, and nit:analyze",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

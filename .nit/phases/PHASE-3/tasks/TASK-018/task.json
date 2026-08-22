@@ -3,7 +3,7 @@
   "phase": "PHASE-3",
   "title": "Blocked-Step Escalation Contract for Step Skills",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

@@ -3,7 +3,7 @@
   "phase": "PHASE-2",
   "title": "Deterministic Supervisor (nit:continue)",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

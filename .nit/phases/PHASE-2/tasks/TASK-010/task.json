@@ -3,7 +3,7 @@
   "phase": "PHASE-2",
   "title": "Validation Hooks, nit:status, and Integration Testing",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "draft",
   "acceptanceCriteria": [
     {

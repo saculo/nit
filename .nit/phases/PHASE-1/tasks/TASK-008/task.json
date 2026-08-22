@@ -3,7 +3,7 @@
   "phase": "PHASE-1",
   "title": "Replace Claude Code Review with CodeRabbit",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

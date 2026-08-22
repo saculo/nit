@@ -1,18 +1,20 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync } from "fs";
 import { tmpdir } from "os";
-import { join } from "path";
+import { dirname, join } from "path";
 import { moduleForPath, changedPaths, checkBoundaries, isOwnRecord } from "../src/boundary-check";
 import { loadDependencyRules } from "../src/dependency-rules";
 import { ingest, type TaskState } from "../src/supervisor";
 import { resolveArchetype, type ArchetypeStep } from "../src/archetype-resolver";
 import type { ModuleEntry } from "../src/routing-resolver";
 
+const ROOT = dirname(dirname(import.meta.dir));
+
 const NOW = "2026-08-20T00:00:00.000Z";
 const MODULES = [
-  { name: "api", path: "src/api", languageId: "typescript", allowedDependencies: ["core"] },
-  { name: "core", path: "src/core", languageId: "typescript", allowedDependencies: [] },
-  { name: "web", path: "web", languageId: "typescript", allowedDependencies: [] },
+  { name: "api", paths: ["src/api"], languageId: "typescript", allowedDependencies: ["core"] },
+  { name: "core", paths: ["src/core"], languageId: "typescript", allowedDependencies: [] },
+  { name: "web", paths: ["web"], languageId: "typescript", allowedDependencies: [] },
 ] as unknown as ModuleEntry[];
 const RULES = loadDependencyRules(
   { rules: [{ from: "api", to: "web", allowed: false, reason: "the api must not reach into the UI." }] },
@@ -42,7 +44,7 @@ describe("mapping files to modules", () => {
   });
 
   test("the longest matching path wins, so a nested module is not shadowed", () => {
-    const nested = [...MODULES, { name: "api-v2", path: "src/api/v2", languageId: "ts" }] as ModuleEntry[];
+    const nested = [...MODULES, { name: "api-v2", paths: ["src/api/v2"], languageId: "ts" }] as ModuleEntry[];
     expect(moduleForPath("src/api/v2/handler.ts", nested)).toBe("api-v2");
     expect(moduleForPath("src/api/handler.ts", nested)).toBe("api");
   });
@@ -87,7 +89,7 @@ describe("checking boundaries", () => {
     expect(isOwnRecord(own, "TASK-035")).toBe(true);
     expect(isOwnRecord(".nit/phases/PHASE-4/tasks/TASK-030/task.json", "TASK-035")).toBe(false);
 
-    const mods = [...MODULES, { name: "ws", path: ".nit", languageId: "md" }] as ModuleEntry[];
+    const mods = [...MODULES, { name: "ws", paths: [".nit"], languageId: "md" }] as ModuleEntry[];
     expect(checkBoundaries(implOutput([own]), "api", mods, RULES, "TASK-035")).toEqual([]);
     // another task's record is still a crossing
     expect(
@@ -201,10 +203,13 @@ describe("nit boundaries reports whether enforcement is live", () => {
     const dir = mkdtempSync(join(tmpdir(), "nit-bq-"));
     writeFileSync(join(dir, "task.json"), JSON.stringify({
       id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
-      targetModule: "@nit/cli", status: "draft" }));
+      targetModule: "@nit/core", status: "draft" }));
     mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
+    // A genuine crossing under the TASK-044 registry: the shipped tree reaching
+    // into another project's workspace state. Touching cli/ and .claude/ in one
+    // task is not a crossing any more — that is the whole point of the change.
     writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
-      implOutput(["cli/src/x.ts", ".claude/skills/design/SKILL.md"])));
+      implOutput(["cli/src/x.ts", ".nit/phases/PHASE-9/tasks/TASK-998/task.json"])));
     return dir;
   };
 
@@ -229,7 +234,7 @@ describe("nit boundaries reports whether enforcement is live", () => {
     const dir = mkdtempSync(join(tmpdir(), "nit-bq-"));
     writeFileSync(join(dir, "task.json"), JSON.stringify({
       id: "TASK-999", phase: "PHASE-4", title: "t", type: "devops",
-      targetModule: "@nit/cli", status: "draft" }));
+      targetModule: "@nit/core", status: "draft" }));
     mkdirSync(join(dir, "STEP-003-implement"), { recursive: true });
     writeFileSync(join(dir, "STEP-003-implement", "output.json"), JSON.stringify(
       implOutput(["cli/src/x.ts"])));
@@ -302,5 +307,122 @@ describe("boundary enforcement through ingest", () => {
     const input = read(join(dir, "STEP-003-implement", "input.json"));
     expect(input.context.repairErrors[0].message).toContain("boundary:");
     expect(read(join(dir, "state.json")).reopenCount).toBe(1);
+  });
+});
+
+// AC-4 — the phase summary's headline finding, as a check rather than as prose.
+//
+// Under the three-module split, twelve of twelve PHASE-4 tasks changed a module
+// other than their target. Collapsing the shipped tree closes that boundary
+// completely: no task crosses between `cli/` and `.claude/`, because they are
+// now the one thing they always were.
+//
+// It does not close the other one. Eight tasks still touch `.nit/` from
+// `@nit/core`, in two shapes: a task that changes a schema must migrate this
+// workspace's instance of it, and a task may edit another task's record. Both
+// are "changed a file in", not "depends on" — the distinction the rules still do
+// not encode. Folding `.nit/` in as well would leave one module and no boundary
+// at all, which would destroy the ADR-0006 claim that actually matters: the
+// shipped tool must not assume a workspace layout.
+//
+// So this asserts what is true and worth protecting, and names what is not yet.
+// AC-1 — a module may own several directories. Found by reversion: honouring
+// only the first declared path broke nothing, because every other fixture
+// declares one.
+describe("a module that spans more than one directory", () => {
+  const SPANNING = [
+    { name: "shipped", paths: ["cli", ".claude"], languageId: "typescript" },
+    { name: "state", paths: [".nit"], languageId: "markdown" },
+  ] as ModuleEntry[];
+
+  test.each([
+    ["cli/src/supervisor.ts", "shipped"],
+    [".claude/skills/design/SKILL.md", "shipped"],
+    [".nit/prd/summary.json", "state"],
+  ])("%s belongs to %s", (file, owner) => {
+    expect(moduleForPath(file, SPANNING)).toBe(owner);
+  });
+
+  test("a file under none of the declared paths is unowned, not misfiled", () => {
+    expect(moduleForPath("README.md", SPANNING)).toBeUndefined();
+  });
+
+  test("the longest declared path still wins across modules", () => {
+    const nested = [...SPANNING, { name: "plugins", paths: ["cli/plugins"], languageId: "ts" }] as ModuleEntry[];
+    expect(moduleForPath("cli/plugins/a.ts", nested)).toBe("plugins");
+    expect(moduleForPath("cli/src/a.ts", nested)).toBe("shipped");
+  });
+
+  test("this repository's shipped tree really does declare both trees", () => {
+    const modules: ModuleEntry[] = JSON.parse(
+      readFileSync(join(ROOT, ".nit", "boundaries", "modules.json"), "utf8")
+    ).modules;
+    const core = modules.find((m) => m.name === "@nit/core")!;
+    expect(core.paths).toEqual(["cli", ".claude"]);
+    expect(moduleForPath(".claude/skills/init/SKILL.md", modules)).toBe("@nit/core");
+  });
+});
+
+describe("this repository's own tasks against its own boundaries", () => {
+  const modules: ModuleEntry[] = JSON.parse(
+    readFileSync(join(ROOT, ".nit", "boundaries", "modules.json"), "utf8")
+  ).modules;
+
+  function filesFor(taskId: string): string[] {
+    const hashes = Bun.spawnSync(["git", "log", "--format=%H", "--grep", `^${taskId}:`, "--all"], {
+      cwd: ROOT,
+    }).stdout.toString().split("\n").filter(Boolean);
+    const files = new Set<string>();
+    for (const hash of hashes) {
+      const out = Bun.spawnSync(["git", "show", "--name-only", "--format=", "-1", hash], {
+        cwd: ROOT,
+      }).stdout.toString();
+      for (const line of out.split("\n")) if (line.trim()) files.add(line.trim());
+    }
+    return [...files];
+  }
+
+  function crossings(taskId: string): string[] {
+    const task = JSON.parse(
+      readFileSync(join(ROOT, ".nit", "phases", "PHASE-4", "tasks", taskId, "task.json"), "utf8")
+    );
+    const crossed = filesFor(task.id)
+      // A task writing its own record is not a crossing (isOwnRecord).
+      .filter((p) => !isOwnRecord(p, task.id))
+      .map((p) => moduleForPath(p, modules))
+      .filter((m): m is string => Boolean(m) && m !== task.targetModule);
+    return [...new Set(crossed)].sort();
+  }
+
+  const phase4 = readdirSync(join(ROOT, ".nit", "phases", "PHASE-4", "tasks")).sort();
+
+  test.each(phase4)("%s does not cross inside the shipped tree", (taskId) => {
+    // Every crossing that remains is between the shipped tree and the
+    // workspace. None is between the CLI and the skills that call it, which is
+    // the boundary TASK-044 removed.
+    expect(crossings(taskId).every((m) => m === "@nit/core" || m === "@nit/workspace")).toBe(true);
+  });
+
+  test("the boundary the split created is gone for every task", () => {
+    const inside = phase4.filter((taskId) => {
+      const task = JSON.parse(
+        readFileSync(join(ROOT, ".nit", "phases", "PHASE-4", "tasks", taskId, "task.json"), "utf8")
+      );
+      if (task.targetModule !== "@nit/core") return false;
+      return filesFor(task.id)
+        .filter((p) => !isOwnRecord(p, task.id))
+        .some((p) => {
+          const m = moduleForPath(p, modules);
+          return m !== undefined && m !== "@nit/core" && m !== "@nit/workspace";
+        });
+    });
+    expect(inside).toEqual([]);
+  });
+
+  // Declared, not silently tolerated: this is the residue Option A cannot
+  // reach, and the number is the evidence for whether to act on it.
+  test("the crossings that remain are core-to-workspace and no worse than today", () => {
+    const crossing = phase4.filter((taskId) => crossings(taskId).length > 0);
+    expect(crossing.length).toBeLessThanOrEqual(8);
   });
 });

@@ -3,7 +3,7 @@
   "phase": "PHASE-3",
   "title": "Rework Context Must Reach the Reopened Step",
   "type": "devops",
-  "targetModule": "@nit/cli",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

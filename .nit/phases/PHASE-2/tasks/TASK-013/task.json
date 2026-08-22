@@ -3,7 +3,7 @@
   "phase": "PHASE-2",
   "title": "Rewrite nit:clarify, nit:phases, nit:tasks for JSON Output",
   "type": "devops",
-  "targetModule": "@nit/skills",
+  "targetModule": "@nit/core",
   "status": "done",
   "acceptanceCriteria": [
     {

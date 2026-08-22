@@ -181,13 +181,26 @@ describe("this repository's dependency rules", () => {
     expect(rules.rules.length).toBeGreaterThan(0);
   });
 
-  test("skills may depend on the cli, and nothing may depend on either skills or the workspace", () => {
-    expect(resolveDependency("@nit/skills", "@nit/cli", modules, rules).allowed).toBe(true);
-    expect(resolveDependency("@nit/cli", "@nit/skills", modules, rules).allowed).toBe(false);
-    expect(resolveDependency("@nit/cli", "@nit/workspace", modules, rules).allowed).toBe(false);
-    expect(resolveDependency("@nit/skills", "@nit/workspace", modules, rules).allowed).toBe(false);
-    expect(resolveDependency("@nit/workspace", "@nit/cli", modules, rules).allowed).toBe(false);
-    expect(resolveDependency("@nit/workspace", "@nit/skills", modules, rules).allowed).toBe(false);
+  // TASK-044 — the shipped tree is one module, so the cli/skills direction is no
+  // longer a dependency at all: it is internal. What remains is the one boundary
+  // ADR-0006 is actually about, and it is closed in both directions.
+  test("the shipped tree and the workspace depend on each other in neither direction", () => {
+    expect(resolveDependency("@nit/core", "@nit/workspace", modules, rules).allowed).toBe(false);
+    expect(resolveDependency("@nit/workspace", "@nit/core", modules, rules).allowed).toBe(false);
+  });
+
+  // AC-3 — a rule naming a module that no longer exists is a rule nothing can
+  // apply, and the loader is the only thing positioned to notice.
+  test("no rule names a module the registry does not hold", () => {
+    const known = new Set(modules.map((m) => m.name));
+    for (const rule of rules.rules) {
+      expect(known.has(rule.from)).toBe(true);
+      expect(known.has(rule.to)).toBe(true);
+    }
+  });
+
+  test("the registry holds exactly the two modules the project has", () => {
+    expect(modules.map((m) => m.name).sort()).toEqual(["@nit/core", "@nit/workspace"]);
   });
 
   test("every rule explains itself, so a violation can say what to do", () => {
