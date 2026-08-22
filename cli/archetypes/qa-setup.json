@@ -1,0 +1,14 @@
+{
+  "id": "qa-setup",
+  "extends": "base",
+  "engineerRole": "$detect",
+  "rejectionRouting": {
+    "analyze": "analyze",
+    "design": "design",
+    "implement": "implement",
+    "review": "implement"
+  },
+  "overrides": {
+    "removeSteps": ["qa"]
+  }
+}

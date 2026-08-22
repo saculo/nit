@@ -35,7 +35,7 @@ analysis that later steps (design, implementation) build on. Your output is a ma
 3. Form recommendations that guide the design step (patterns to prefer, boundaries to respect).
 4. Propose a concrete archetype: start from the task type's `defaultArchetype` and refine by the
    task's description and target module (per U-11). Use one of the concrete archetypes in
-   `cli/archetypes/` (e.g. `backend-feature`, `frontend-feature`, `infra-change`, `bugfix`,
+   `cli/archetypes/` (e.g. `backend-feature`, `frontend-feature`, `infra-change`, `qa-setup`, `bugfix`,
    `cross-module-change`, `architecture-decision`) — never the abstract `base`.
 5. Write `output.json` in the step directory and validate it:
 
