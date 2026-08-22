@@ -1,5 +1,6 @@
 import { resolveSchema, availableSchemaTypes } from "../schema-resolver";
 import { createAjv } from "../ajv";
+import { checkDependencies, loadTasks, phasesRootFor, type TaskNode } from "../task-deps";
 
 /**
  * Validate a JSON file against a named schema.
@@ -58,6 +59,19 @@ export async function runValidate(args: string[]): Promise<number> {
   const valid = validate(data);
 
   if (valid) {
+    // A schema cannot check that TASK-017 exists — only that the string looks
+    // like a task id. An unresolvable dependency reads as a considered ordering
+    // constraint and describes an ordering that can never happen, so it fails
+    // here rather than being discovered when the task never becomes startable
+    // (TASK-043 AC-3).
+    if (schemaType === "task") {
+      const problems = resolveTaskDependencies(data as TaskNode, filePath);
+      if (problems.length > 0) {
+        console.error("Validation failed:\n");
+        for (const message of problems) console.error(`  ${message}`);
+        return 1;
+      }
+    }
     console.log("Valid");
     return 0;
   }
@@ -70,4 +84,32 @@ export async function runValidate(args: string[]): Promise<number> {
   }
 
   return 1;
+}
+
+/**
+ * Resolve a task's `dependsOn` against the project's other tasks.
+ *
+ * The phases root is derived from the file's own path, so no flag is needed for
+ * the layout nit creates. A task file somewhere else cannot have its references
+ * resolved, and saying so is better than passing it: a declared dependency this
+ * cannot verify is a claim nobody has checked.
+ */
+function resolveTaskDependencies(task: TaskNode, filePath: string): string[] {
+  const declared = task?.dependsOn ?? [];
+  if (declared.length === 0) return [];
+
+  const phasesDir = phasesRootFor(filePath);
+  if (!phasesDir) {
+    return [
+      `/dependsOn: cannot resolve ${declared.join(", ")} — ${filePath} is not inside a ` +
+        `phases/PHASE-N/tasks/TASK-NNN/ layout, so there is no set of tasks to resolve against.`,
+    ];
+  }
+  const tasks = loadTasks(phasesDir);
+  // The file being validated may not be on disk in the form given (it is, but
+  // its id must be in the set for a self-reference to be caught either way).
+  const known = tasks.some((t) => t.id === task.id) ? tasks : [...tasks, task];
+  return checkDependencies(known)
+    .filter((p) => p.taskId === task.id)
+    .map((p) => `/dependsOn: ${p.message}`);
 }

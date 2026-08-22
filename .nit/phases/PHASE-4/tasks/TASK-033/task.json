@@ -6,6 +6,9 @@
   "targetModule": "@nit/cli",
   "status": "draft",
   "archetype": "infra-change",
+  "dependsOn": [
+    "TASK-042"
+  ],
   "acceptanceCriteria": [
     {
       "id": "AC-1",

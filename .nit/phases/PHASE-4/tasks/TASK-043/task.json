@@ -4,7 +4,7 @@
   "title": "task.json Cannot Record Task Dependencies",
   "type": "devops",
   "targetModule": "@nit/cli",
-  "status": "draft",
+  "status": "done",
   "archetype": "infra-change",
   "acceptanceCriteria": [
     {
