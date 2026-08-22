@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync, readdirSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { dirname, join } from "path";
 import {
   resolveArchetype,
@@ -165,5 +165,31 @@ describe("the skills that read it agree", () => {
 
   test("nit:analyze reads the same registry for the same reason", () => {
     expect(read(".claude/skills/analyze/SKILL.md")).toContain("task-types.json");
+  });
+});
+
+// RV-1 — making a role *reachable* is not the same as making it dispatchable.
+// The qa engineer was unreachable from every archetype, so nothing had ever
+// exercised the rest of its path: an agent definition, a roles entry, and a
+// routing rule. Reaching it without those would fail at dispatch instead of at
+// proposal, which is later and harder to read.
+describe("every engineer a task type implies is dispatchable", () => {
+  const roles = (): string[] => JSON.parse(read(".nit/registry/roles.json")).roles.map((r: { id: string }) => r.id);
+  const routed = (): string[] => JSON.parse(read(".nit/config/role-routing.json")).rules.map((r: { role: string }) => r.role);
+
+  test.each(Object.entries(ENGINEER_ROLE_FOR_TASK_TYPE))("a %s task's engineer (%s) has an agent definition", (_type, role) => {
+    expect(existsSync(join(ROOT, ".claude/agents", `${role}.md`))).toBe(true);
+  });
+
+  test.each(Object.values(ENGINEER_ROLE_FOR_TASK_TYPE))("%s is a registered role", (role) => {
+    expect(roles()).toContain(role);
+  });
+
+  test.each(Object.values(ENGINEER_ROLE_FOR_TASK_TYPE))("%s has a routing rule that includes the implement skill", (role) => {
+    expect(routed()).toContain(role);
+    const rule = JSON.parse(read(".nit/config/role-routing.json")).rules.find(
+      (r: { role: string }) => r.role === role
+    );
+    expect(rule.skills).toContain("implement");
   });
 });
