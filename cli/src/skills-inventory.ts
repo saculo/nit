@@ -48,8 +48,13 @@ export function skillsOnDisk(skillsRootDir: string): string[] {
  */
 export function skillDescription(path: string): string | undefined {
   if (!existsSync(path)) return undefined;
-  const head = readFileSync(path, "utf8").slice(0, 4000);
-  const match = head.match(/^description:\s*"?(.*?)"?\s*$/m);
+  const source = readFileSync(path, "utf8");
+  // Frontmatter only. A `description:` line inside a body example is not the
+  // skill describing itself, and quoting one would put someone else's words in
+  // the listing.
+  const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatter) return undefined;
+  const match = frontmatter[1]!.match(/^description:\s*"?(.*?)"?\s*$/m);
   const text = match?.[1]?.trim();
   if (!text) return undefined;
   return text.length > 140 ? `${text.slice(0, 137)}…` : text;
@@ -130,8 +135,31 @@ export function missing(records: SkillRecord[]): SkillRecord[] {
   return records.filter((r) => !r.present);
 }
 
-/** Render the inventory for a person reading a terminal. */
-export function renderInventory(records: SkillRecord[]): string {
+/**
+ * Groups of records that resolve to the same SKILL.md under different names.
+ *
+ * `nit:review` and a custom skill called `review` are one file, and routing
+ * composes them into separate layers — so the agent receives the same guidance
+ * twice under two names. The same class of defect TASK-040 found between the
+ * language and custom layers, visible here because this is where every name is
+ * listed side by side.
+ */
+export function sameFile(records: SkillRecord[]): SkillRecord[][] {
+  const byPath = new Map<string, SkillRecord[]>();
+  for (const r of records.filter((x) => x.present)) {
+    byPath.set(r.path, [...(byPath.get(r.path) ?? []), r]);
+  }
+  return [...byPath.values()].filter((group) => group.length > 1);
+}
+
+/**
+ * Render the inventory for a person reading a terminal.
+ *
+ * `total` is the size of the whole inventory, which is not `records.length` when
+ * the caller is showing a filtered view — a footer counting the filter's output
+ * as the project's skills would misreport the project.
+ */
+export function renderInventory(records: SkillRecord[], total = records.length): string {
   const lines: string[] = [];
   for (const group of SKILL_GROUPS) {
     const inGroup = records.filter((r) => r.group === group);
@@ -151,8 +179,14 @@ export function renderInventory(records: SkillRecord[]): string {
   const absent = missing(records);
   lines.push(
     absent.length === 0
-      ? `${records.length} skills, all present.`
-      : `${records.length} skills, ${absent.length} declared and missing: ${absent.map((r) => r.name).join(", ")}.`
+      ? `${total} skills, all present.`
+      : `${total} skills, ${absent.length} declared and missing: ${absent.map((r) => r.name).join(", ")}.`
   );
+  for (const group of sameFile(records)) {
+    lines.push(
+      `Note: ${group.map((r) => r.name).join(" and ")} are the same file (${group[0]!.path}); ` +
+        `routing would hand it to the agent more than once.`
+    );
+  }
   return lines.join("\n");
 }

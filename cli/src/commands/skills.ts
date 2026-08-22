@@ -87,7 +87,7 @@ export async function runSkills(args: string[]): Promise<number> {
     } else if (onlyMissing && absent.length === 0) {
       console.log("No declared skill is missing from disk.");
     } else {
-      console.log(renderInventory(shown));
+      console.log(renderInventory(shown, records.length));
     }
 
     // A listing is not a verdict — `nit skills` alone always succeeds, so it can

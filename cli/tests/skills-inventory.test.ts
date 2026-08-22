@@ -9,6 +9,7 @@ import {
   skillsOnDisk,
   skillDescription,
   SKILL_GROUPS,
+  sameFile,
   type SkillRecord,
 } from "../src/skills-inventory";
 import { runSkills, shippedStepIds } from "../src/commands/skills";
@@ -70,6 +71,18 @@ describe("reading what is on disk", () => {
 
   test("a skill with no frontmatter simply has no description", () => {
     const dir = skillsDir(["one"]);
+    expect(skillDescription(join(dir, "one", "SKILL.md"))).toBeUndefined();
+  });
+
+  // RV-2 — a `description:` inside a body example is not the skill describing
+  // itself, and quoting one puts someone else's words in the listing.
+  test("a description: line in the body is not mistaken for the skill's own", () => {
+    const dir = mkdtempSync(join(tmpdir(), "skills-body-"));
+    mkdirSync(join(dir, "one"), { recursive: true });
+    writeFileSync(
+      join(dir, "one", "SKILL.md"),
+      "# one\n\nWrite a task.json:\n\n```yaml\ndescription: \"not the skill's own\"\n```\n"
+    );
     expect(skillDescription(join(dir, "one", "SKILL.md"))).toBeUndefined();
   });
 
@@ -386,5 +399,63 @@ describe("the skills registry declares nothing without a consumer", () => {
   test("this workspace's registry is valid without it", () => {
     const registry = JSON.parse(readFileSync(join(ROOT, ".nit/registry/skills.json"), "utf8"));
     expect(registry).toEqual({ globalCustomSkills: [] });
+  });
+});
+
+// RV-3 — `nit:review` and a custom skill called `review` are one file, composed
+// into two layers, so the agent receives the same guidance twice under two
+// names. The same defect class TASK-040 found between the language and custom
+// layers, visible here because this is where every name is listed side by side.
+describe("two names for one file", () => {
+  const collide = () =>
+    buildInventory({
+      stepIds: ["review"],
+      modules: [{ name: "api", languageId: "typescript", customSkills: ["review"] }],
+      skillsRootDir: skillsDir(["review", "typescript"]),
+    });
+
+  test("both names are listed, in their own layers", () => {
+    const records = collide();
+    expect(byName(records, "nit:review").group).toBe("base");
+    expect(byName(records, "review").group).toBe("custom");
+  });
+
+  test("the collision is detected", () => {
+    expect(sameFile(collide())[0]!.map((r) => r.name).sort()).toEqual(["nit:review", "review"]);
+  });
+
+  test("the listing says the agent would receive it more than once", () => {
+    expect(renderInventory(collide())).toContain("routing would hand it to the agent more than once");
+  });
+
+  test("an absent skill is not a collision — two names for one missing file is one gap", () => {
+    const records = buildInventory({
+      stepIds: ["review"],
+      modules: [{ name: "api", languageId: "typescript", customSkills: ["review"] }],
+      skillsRootDir: skillsDir([]),
+    });
+    expect(sameFile(records)).toEqual([]);
+  });
+
+  test("this repository has no such collision", async () => {
+    const modules = JSON.parse(readFileSync(join(ROOT, ".nit/boundaries/modules.json"), "utf8")).modules;
+    const records = buildInventory({
+      stepIds: await shippedStepIds(join(ROOT, "cli/archetypes")),
+      modules,
+      registry: JSON.parse(readFileSync(join(ROOT, ".nit/registry/skills.json"), "utf8")),
+      skillsRootDir: join(ROOT, ".claude/skills"),
+    });
+    expect(sameFile(records)).toEqual([]);
+  });
+});
+
+// RV-1 — a footer counting the filter's output as the project's skills
+// misreports the project to the person who filtered.
+describe("a filtered view still reports the whole project", () => {
+  test("--missing counts the inventory, not the gaps", () => {
+    const records = inventory({ skillsRootDir: skillsDir(["analyze", "implement"]) });
+    const text = renderInventory(missing(records), records.length);
+    expect(text).toContain(`${records.length} skills, 4 declared and missing`);
+    expect(text).not.toContain("4 skills, 4 declared");
   });
 });
