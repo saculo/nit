@@ -139,9 +139,9 @@ Everything you route on is machine-readable. Never infer from prose:
 
 There is no engineer routing table here any more. In v1 this skill read `<type>` from `DESIGN.md` and
 chose an agent. In v2 the archetype declares the role for every step — concretely, as `$engineer`
-resolved from the archetype's `engineerRole`, or as `$detect`, which `bugfix` and
-`cross-module-change` use to defer the choice to the task's own `type`. The supervisor resolves all
-three at dispatch. Choosing an engineer is not your decision to make.
+resolved from the archetype's `engineerRole`, or as `$detect`, which `bugfix`,
+`cross-module-change`, `infra-change` and `qa-setup` use to defer the choice to the task's own
+`type`. The supervisor resolves all three at dispatch. Choosing an engineer is not your decision to make.
 
 ## Gates
 

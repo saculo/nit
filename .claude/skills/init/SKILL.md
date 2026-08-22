@@ -268,7 +268,7 @@ archetypes themselves are shipped in `cli/archetypes/` and do not need a second 
       "id": "qa",
       "label": "QA",
       "description": "Test infrastructure and harness setup \u2014 not a task's own tests, which are DoD for every task.",
-      "defaultArchetype": "infra-change"
+      "defaultArchetype": "qa-setup"
     }
   ]
 }

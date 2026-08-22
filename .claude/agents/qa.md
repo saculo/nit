@@ -12,13 +12,17 @@ You are dispatched at one of two steps, and they are different jobs. **Load the 
 
 ## The qa step — `nit:qa`
 
-The last step of the archetype. You exercise the task's acceptance criteria against running behaviour
-and report a `qa-result`. You verify; you do not build. Follow `nit:qa`.
+The last step of an archetype that has one — `architecture-decision` and `qa-setup` do not, and the
+step you are dispatched to is always in `input.json`, never assumed. You exercise the task's
+acceptance criteria against running behaviour and report a `qa-result`. You verify; you do not build.
+Follow `nit:qa`.
 
 ## The implement step — `nit:implement`
 
 Reached when the task's own type is `qa` — the deliverable *is* testing infrastructure: harness setup,
-e2e frameworks, performance testing setup, test utilities. Not regular per-task tests, which are every
+e2e frameworks, performance testing setup, test utilities. Its archetype, `qa-setup`, has no qa step
+for exactly this reason: you would be verifying your own work, and the independent check is the
+reviewer's. Not regular per-task tests, which are every
 engineer's DoD. Here you are the engineer, and you follow `nit:implement` like any other engineer role.
 
 ## QA-Specific Guidance

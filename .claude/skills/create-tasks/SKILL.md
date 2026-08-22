@@ -100,8 +100,8 @@ supervisor will run for this task. This is the lightweight in-task proposal (dis
 2. Consider the task description and the target module's characteristics; the proposed id may refine
    the default (e.g., a bug-fix task → `bugfix`; work crossing module boundaries → `cross-module-change`).
 3. The proposed id MUST be one of the concrete archetypes shipped in `cli/archetypes/`:
-   `backend-feature`, `frontend-feature`, `infra-change`, `bugfix`, `cross-module-change`,
-   `architecture-decision`. (`base` is abstract — never propose it.)
+   `backend-feature`, `frontend-feature`, `infra-change`, `qa-setup`, `bugfix`,
+   `cross-module-change`, `architecture-decision`. (`base` is abstract — never propose it.)
 4. Present the proposed archetype to the user with the task; record the agreed id in `task.json.archetype`.
 
 ## Output
