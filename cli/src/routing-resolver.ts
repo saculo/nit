@@ -80,15 +80,31 @@ export function skillFileExists(name: string, skillsRootDir: string): boolean {
   return existsSync(skillFilePath(name, skillsRootDir));
 }
 
-/** Append items to a list, skipping duplicates and empty values. */
-function pushUnique(list: string[], items: string[] | undefined): void {
-  for (const item of items ?? []) {
-    if (item && !list.includes(item)) list.push(item);
-  }
+/** The layer a candidate skill came from, in composition order. */
+export const ROUTING_LAYERS = ["base", "language", "custom", "step-override", "global"] as const;
+export type RoutingLayer = (typeof ROUTING_LAYERS)[number];
+
+/** Why a candidate skill is not in the resolved routing. */
+export type DropReason = "absent" | "duplicate";
+
+/** One candidate skill considered during composition, kept or dropped. */
+export interface RoutingTraceEntry {
+  layer: RoutingLayer;
+  skill: string;
+  /** What contributed it: a module name, the registry, or the step id. */
+  source: string;
+  included: boolean;
+  dropped?: DropReason;
+}
+
+/** A resolved routing together with every candidate that produced it. */
+export interface RoutingExplanation {
+  routing: Routing;
+  trace: RoutingTraceEntry[];
 }
 
 /**
- * Resolve the layered skill routing for a task at a given step.
+ * Resolve the layered skill routing, and record every candidate considered.
  *
  * Layer order (PRD Section 9): base step skill -> language skill -> custom
  * skills -> global skills. Step-override addSkills are appended within the
@@ -98,8 +114,14 @@ function pushUnique(list: string[], items: string[] | undefined): void {
  * across all target modules (KD-5). Any language/custom/global skill whose
  * SKILL.md is absent is dropped without error (KD-2). The base step skill is
  * always retained (it is nit's own and required by the schema).
+ *
+ * Dropping silently is right at dispatch — a missing optional skill must not
+ * stop work — and wrong when someone is asking why an agent did not get the
+ * skill they configured. The trace is that answer, and it is produced by the
+ * same pass that produces the routing rather than by a second implementation
+ * that would drift from it (TASK-040).
  */
-export function resolveRouting(options: ResolveRoutingOptions): Routing {
+export function explainRouting(options: ResolveRoutingOptions): RoutingExplanation {
   const skillsRootDir = options.skillsRootDir ?? DEFAULT_SKILLS_ROOT;
   const modules = options.modules;
   if (modules.length === 0) {
@@ -111,29 +133,69 @@ export function resolveRouting(options: ResolveRoutingOptions): Routing {
 
   const primary = modules[0]!;
   const baseSkill = baseSkillForStep(options.step);
+  const trace: RoutingTraceEntry[] = [
+    // Always retained: it is nit's own skill and the schema requires it.
+    { layer: "base", skill: baseSkill, source: options.step, included: true },
+  ];
 
   // Layer 2 — primary module's language skill (dropped if its file is missing).
-  const languageSkill = present(primary.languageId) ? primary.languageId : undefined;
+  const languagePresent = present(primary.languageId);
+  const languageSkill = languagePresent ? primary.languageId : undefined;
+  trace.push({
+    layer: "language",
+    skill: primary.languageId,
+    source: primary.name,
+    included: languagePresent,
+    ...(languagePresent ? {} : { dropped: "absent" as const }),
+  });
 
   // Layer 3 — custom skills:
   //   secondary-module languages, then each module's custom skills, then the
   //   current step's override addSkills. Unioned and deduped, missing dropped.
-  const customSkills: string[] = [];
+  const candidates: { layer: RoutingLayer; skill: string; source: string }[] = [];
   for (const mod of modules.slice(1)) {
-    pushUnique(customSkills, [mod.languageId]);
+    candidates.push({ layer: "custom", skill: mod.languageId, source: mod.name });
   }
   for (const mod of modules) {
-    pushUnique(customSkills, mod.customSkills);
+    for (const skill of mod.customSkills ?? []) {
+      if (skill) candidates.push({ layer: "custom", skill, source: mod.name });
+    }
   }
   for (const mod of modules) {
-    pushUnique(customSkills, mod.stepOverrides?.[options.step]?.addSkills);
+    for (const skill of mod.stepOverrides?.[options.step]?.addSkills ?? []) {
+      if (skill) candidates.push({ layer: "step-override", skill, source: `${mod.name} @ ${options.step}` });
+    }
   }
-  const resolvedCustom = customSkills.filter(present);
+
+  // Seeded with the primary language: two modules sharing a language used to put
+  // it in both the language layer and the custom layer, and the agent received
+  // the same skill twice. Seeded whether or not the file exists — an absent
+  // skill named twice is still one absent skill.
+  const customSkills: string[] = [primary.languageId];
+  for (const candidate of candidates) {
+    if (customSkills.includes(candidate.skill)) {
+      trace.push({ ...candidate, included: false, dropped: "duplicate" });
+      continue;
+    }
+    customSkills.push(candidate.skill);
+    const included = present(candidate.skill);
+    trace.push({ ...candidate, included, ...(included ? {} : { dropped: "absent" as const }) });
+  }
+  const resolvedCustom = customSkills.slice(1).filter(present);
 
   // Layer 4 — global custom skills from the registry.
-  const globalSkills = (options.registry?.globalCustomSkills ?? [])
-    .map((s) => s.id)
-    .filter(present);
+  const globalSkills: string[] = [];
+  for (const entry of options.registry?.globalCustomSkills ?? []) {
+    const included = present(entry.id);
+    if (included) globalSkills.push(entry.id);
+    trace.push({
+      layer: "global",
+      skill: entry.id,
+      source: "registry/skills.json",
+      included,
+      ...(included ? {} : { dropped: "absent" as const }),
+    });
+  }
 
   const routing: Routing = {
     taskId: options.taskId,
@@ -145,7 +207,18 @@ export function resolveRouting(options: ResolveRoutingOptions): Routing {
   if (resolvedCustom.length > 0) routing.customSkills = resolvedCustom;
   if (globalSkills.length > 0) routing.globalSkills = globalSkills;
 
-  return routing;
+  return { routing, trace };
+}
+
+/**
+ * Resolve the layered skill routing for a task at a given step.
+ *
+ * One implementation, two views: the routing is what `explainRouting` computed,
+ * so an explanation can never describe a composition the supervisor would not
+ * actually perform.
+ */
+export function resolveRouting(options: ResolveRoutingOptions): Routing {
+  return explainRouting(options).routing;
 }
 
 /**

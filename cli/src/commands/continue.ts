@@ -62,7 +62,20 @@ export async function runContinue(args: string[]): Promise<number> {
       if (await modulesFile.exists()) {
         const allModules: ModuleEntry[] = (await modulesFile.json()).modules ?? [];
         const entry = allModules.find((m) => m.name === target);
-        if (entry) {
+        // A target named but absent from the registry used to fall through to
+        // base-skill-only dispatch, silently: the specialist got a shorter list
+        // than configured and nothing said why. TASK-040 made that a hard error
+        // in the introspection commands, and the supervisor cannot answer the
+        // same question differently on the same inputs.
+        if (!entry) {
+          console.error(
+            `Module "${target}" is not in ${modulesPath}.\n` +
+              `Known modules: ${allModules.map((m) => m.name).join(", ") || "(none)"}.\n` +
+              `Dispatching would silently drop every language, custom and global skill.`
+          );
+          return 1;
+        }
+        {
           let registry;
           if (registryPath) {
             const rf = Bun.file(registryPath);
